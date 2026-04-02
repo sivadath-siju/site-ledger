@@ -48,15 +48,39 @@ export function StatCard({ icon: Icon, value, label, color, delay=0 }) {
 }
 
 export function Btn({ children, variant="primary", onClick, disabled, fullWidth, small, style }) {
-  const { tk } = useApp();
+  const { tk, theme } = useApp();
   const [pressed, setPressed] = useState(false);
+  
+  const isDark = theme === "dark";
+  
   const variants = {
-    primary: { bg:tk.acc, color:"#fff", border:"none", boxShadow: "0 4px 12px " + tk.acc + "44" },
-    secondary: { bg:tk.surf, color:tk.tx, border: `1.5px solid ${tk.bdr2}`, boxShadow: tk.sh },
-    danger: { bg:tk.red, color:"#fff", border:"none", boxShadow: "0 4px 12px " + tk.red + "44" },
-    ghost: { bg:tk.surf2, color:tk.tx, border: `1.5px solid ${tk.bdr}` },
+    primary: { 
+      bg: isDark ? "#fff" : "#0f172a", 
+      color: isDark ? "#000" : "#fff", 
+      border: "none", 
+      boxShadow: isDark ? "0 4px 20px rgba(255,255,255,0.15)" : "0 4px 20px rgba(0,0,0,0.2)" 
+    },
+    secondary: { 
+      bg: isDark ? "#1e293b" : "#f1f5f9", 
+      color: tk.tx, 
+      border: `1.5px solid ${tk.bdr2}`, 
+      boxShadow: "none" 
+    },
+    danger: { 
+      bg: "#e11d48", 
+      color: "#fff", 
+      border: "none", 
+      boxShadow: "0 4px 12px rgba(225,29,72,0.3)" 
+    },
+    ghost: { 
+      bg: "transparent", 
+      color: tk.tx2, 
+      border: `1.5px solid ${tk.bdr}` 
+    },
   };
+  
   const v = variants[variant] || variants.primary;
+  
   return (
     <button
       onClick={onClick}
@@ -67,15 +91,17 @@ export function Btn({ children, variant="primary", onClick, disabled, fullWidth,
       onTouchEnd={() => setPressed(false)}
       style={{
         display:"inline-flex", alignItems:"center", justifyContent:"center", gap:7,
-        padding: small ? "5px 12px" : "10px 20px",
+        padding: small ? "6px 14px" : "12px 24px",
         borderRadius: small ? 8 : 12,
-        fontSize: small ? 11 : 14, fontWeight:700,
+        fontSize: small ? 12 : 14, fontWeight:700,
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? .5 : 1,
         width: fullWidth ? "100%" : "auto",
         transition:"all .2s cubic-bezier(0.4, 0, 0.2, 1)", 
         transform: pressed ? "scale(.96)" : "scale(1)",
         whiteSpace:"nowrap",
+        textTransform: "uppercase",
+        letterSpacing: "0.025em",
         ...v, ...style
       }}
     >{children}</button>
