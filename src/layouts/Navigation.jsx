@@ -46,13 +46,13 @@ export function Sidebar({ open, onClose }) {
       )}
       <div style={{
         position:"fixed", top:0, left:0, bottom:0, width:260,
-        background:tk.surf, borderRight:`1px solid `,
+        background:tk.surf, borderRight: `1px solid ${tk.bdr}`,
         zIndex:201, display:"flex", flexDirection:"column",
         transform: open ? "translateX(0)" : "translateX(-100%)",
         transition:"transform .28s cubic-bezier(.4,0,.2,1)",
         boxShadow: open ? tk.shLg : "none",
       }}>
-        <div style={{ height:56, display:"flex", alignItems:"center", padding:"0 16px", borderBottom:`1px solid `, flexShrink:0, gap:10 }}>
+        <div style={{ height:56, display:"flex", alignItems:"center", padding:"0 16px", borderBottom: `1px solid ${tk.bdr}`, flexShrink:0, gap:10 }}>
           <IHardHat size={20} color={tk.acc} />
           <span style={{ fontSize:16, fontWeight:700, letterSpacing:"-.3px" }}>Site<span style={{ color:tk.acc }}>Ledger</span></span>
           <button onClick={onClose} style={{ marginLeft:"auto", background:"none", border:"none", cursor:"pointer", color:tk.tx3, padding:4 }}>
@@ -102,10 +102,10 @@ export function Topbar({ onMenuClick }) {
   const { tk, user } = useApp();
   return (
     <div style={{
-      height:56, background:tk.surf, borderBottom:`1px solid `,
+      height:56, background:tk.surf, borderBottom: "none",
       display:"flex", alignItems:"center", padding:"0 14px", gap:10,
       flexShrink:0, zIndex:100,
-      boxShadow:`0 1px 0 , 0 2px 8px rgba(0,0,0,.04)`,
+      boxShadow: `0 2px 8px rgba(0,0,0,.04)`,
     }}>
       <button onClick={onMenuClick} style={{ background:"none", border:"none", cursor:"pointer", color:tk.tx, padding:4, display:"flex", alignItems:"center" }}>
         <IMenu size={22} color={tk.tx} />
@@ -127,7 +127,7 @@ export function BottomNav() {
   const { tk, page, setPage, mats } = useApp();
   const lsc = mats.filter(m => m.stock <= m.min).length;
   return (
-    <nav style={{ display:"flex", background:tk.surf, borderTop:`1px solid `, flexShrink:0, width:"100%", overflow:"hidden" }}>
+    <nav style={{ display:"flex", background:tk.surf, borderTop: "none", flexShrink:0, width:"100%", overflow:"hidden", boxShadow: `0 -2px 8px rgba(0,0,0,.04)` }}>
       {BOTTOM_NAV.map(n => {
         const active = page === n.id;
         return (
@@ -145,7 +145,7 @@ export function BottomNav() {
             }}
           >
             {n.id === "materials" && lsc > 0 && (
-              <span style={{ position:"absolute", top:4, right:"calc(50% - 14px)", width:7, height:7, borderRadius:"50%", background:tk.red, border:`2px solid `, animation:"badgePop .3s" }} />
+              <span style={{ position:"absolute", top:4, right:"calc(50% - 14px)", width:7, height:7, borderRadius:"50%", background:tk.red, border: `2px solid ${tk.surf}`, animation:"badgePop .3s" }} />
             )}
             <n.Icon size={18} color={active ? tk.acc : tk.tx3} style={{ transition:"transform .25s cubic-bezier(.34,1.56,.64,1)", transform: active ? "scale(1.15)" : "scale(1)" }} />
             <span>{n.label}</span>
