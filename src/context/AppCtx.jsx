@@ -3,7 +3,7 @@ import { createContext, useContext } from "react";
 export const LIGHT = {
   bg:"#f0f2f5", surf:"#ffffff", surf2:"#f7f8fa", surf3:"#eef0f5",
   bdr:"#e2e5eb", bdr2:"#cdd1da",
-  tx:"#0f1623", tx2:"#4a5568", tx3:"#8896a8",
+  tx:"#0f1623", tx2:"#4a5568", tx3:"#003a85",
   acc:"#1a56db", accL:"#ebf0fd", accD:"#1240a8",
   grn:"#0d7a4e", grnL:"#e6f7f1",
   red:"#c0392b", redL:"#fdf0ee",
