@@ -1,14 +1,14 @@
 import React from "react";
 import { useApp } from "../context/AppCtx";
 import { Card, CardTitle, Btn, Toggle } from "../components/Primitives";
-import { ISettings, IMoon, ISun, IFileSpread, IDownload, IUsers, ILogOut } from "../icons/Icons";
+import { ISettings, IMoon, ISun, IFileSpread, IDownload, IUsers, ILogOut, IPackage } from "../icons/Icons";
 import * as API from "../api";
 import * as XLSX from "xlsx";
 
 const today = () => new Date().toISOString().split("T")[0];
 
 export default function Settings() {
-  const { tk, theme, setTheme, user, setUser, att, exp, mats, workers, inv } = useApp();
+  const { tk, theme, setTheme, user, setUser, att, mats } = useApp();
   const isDark = theme === "dark";
 
   const exportXL = (type) => {
