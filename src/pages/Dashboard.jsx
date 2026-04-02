@@ -68,9 +68,9 @@ export default function Dashboard() {
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:13, fontWeight:500, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                    {isA ? `${x.name} — ${x.role} · ${x.hours}h` : `${x.category} — ${x.desc}`}
+                    {isA ? `${x.name} - ${x.role} . ${x.hours}h` : `${x.category} - ${x.desc}`}
                   </div>
-                  <div style={{ fontSize:11, color:tk.tx3, marginTop:1 }}>{x.date} · {x.by}</div>
+                  <div style={{ fontSize:11, color:tk.tx3, marginTop:1 }}>{x.date} . {x.by}</div>
                 </div>
                 <span style={{ fontFamily:"'DM Mono',monospace", fontWeight:700, fontSize:13, color: isA ? tk.tx : tk.acc }}>
                   {isA ? Rs(x.total) : Rs(x.amount)}
