@@ -45,12 +45,23 @@ export default function Expenses() {
         <Btn variant="secondary" small onClick={()=>setCatOpen(true)}><ITag size={13}/>Categories</Btn>
       </div>
 
-      <div style={{ display:"flex", gap:2, background:tk.surf2, border: `1px solid ${tk.bdr}`, borderRadius:10, padding:3, marginBottom:14 }}>
-        {["add","list"].map(t=>(
-          <button key={t} onClick={()=>setTab(t)} style={{ flex:1, padding:"7px 10px", borderRadius:8, border:"none", background:tab===t?tk.surf:"transparent", color:tab===t?tk.tx:tk.tx3, fontWeight:600, fontSize:12, cursor:"pointer", boxShadow:tab===t?tk.sh:"none", transition:"all .15s", fontFamily:"'DM Sans',sans-serif" }}>
-            {t==="add"?"Add Expense":"All Expenses"}
-          </button>
-        ))}
+      <div style={{ display:"flex", gap:8, padding:4, marginBottom:14 }}>
+        <Btn 
+          variant={tab === "add" ? "primary" : "secondary"} 
+          small 
+          onClick={() => setTab("add")}
+          style={{ flex: 1 }}
+        >
+          Add Expense
+        </Btn>
+        <Btn 
+          variant={tab === "list" ? "primary" : "secondary"} 
+          small 
+          onClick={() => setTab("list")}
+          style={{ flex: 1 }}
+        >
+          All Expenses
+        </Btn>
       </div>
 
       {tab==="add" ? (
@@ -76,7 +87,7 @@ export default function Expenses() {
             </Field>
           </FormGrid>
           <Field label="Date"><Input type="date" value={date} onChange={e=>setDate(e.target.value)}/></Field>
-          <Btn onClick={submit}><ISave size={14}/>Add Expense</Btn>
+          <Btn fullWidth onClick={submit}><ISave size={14}/>Add Expense</Btn>
         </Card>
       ) : (
         <Card delay={.05}>
