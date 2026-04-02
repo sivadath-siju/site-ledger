@@ -4,7 +4,7 @@ import { Card, CardTitle, StatCard, SummaryRow, ProgressBar, Alert, Empty } from
 import { IRupee, IUsers, IListChecks, IPkgX, ITrending, IPackage, IActivity, IInbox, IUserCheck, IReceipt, IAlertTri } from "../icons/Icons";
 
 const today = () => new Date().toISOString().split("T")[0];
-const Rs = n => "?" + Number(n||0).toLocaleString("en-IN");
+const Rs = n => "â‚¹" + Number(n||0).toLocaleString("en-IN");
 
 export default function Dashboard() {
   const { tk, mats, att, exp, tasks } = useApp();
@@ -25,7 +25,7 @@ export default function Dashboard() {
       </div>
 
       {lsc > 0 && (
-        <Alert type="warn"><IAlertTri size={14} /><span><strong>{lsc} material{lsc>1?"s":""}</strong> below minimum stock — reorder required</span></Alert>
+        <Alert type="warn"><IAlertTri size={14} /><span><strong>{lsc} material{lsc>1?"s":""}</strong> below minimum stock â€” reorder required</span></Alert>
       )}
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
@@ -62,15 +62,15 @@ export default function Dashboard() {
           : [...att.slice(0,2).map(a=>({...a,_k:"a"})),...exp.slice(0,3).map(e=>({...e,_k:"e"}))].slice(0,5).map((x, i) => {
             const isA = x._k === "a";
             return (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0", borderBottom: i < 4 ? `1px solid ` : "none" }}>
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0", borderBottom: i < 4 ? `1px solid ${tk.bdr}` : "none" }}>
                 <div style={{ width:32, height:32, borderRadius:8, background: isA ? tk.grnL : tk.ambL, color: isA ? tk.grn : tk.amb, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                   {isA ? <IUserCheck size={14} /> : <IReceipt size={14} />}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:13, fontWeight:500, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                    {isA ? \ — \ · \h : \ — \}
+                    {isA ? `${x.name} â€” ${x.role} Â· ${x.hours}h` : `${x.category} â€” ${x.desc}`}
                   </div>
-                  <div style={{ fontSize:11, color:tk.tx3, marginTop:1 }}>{x.date} · {x.by}</div>
+                  <div style={{ fontSize:11, color:tk.tx3, marginTop:1 }}>{x.date} Â· {x.by}</div>
                 </div>
                 <span style={{ fontFamily:"'DM Mono',monospace", fontWeight:700, fontSize:13, color: isA ? tk.tx : tk.acc }}>
                   {isA ? Rs(x.total) : Rs(x.amount)}
