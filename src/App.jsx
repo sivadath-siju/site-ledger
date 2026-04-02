@@ -5,10 +5,16 @@ import { GlobalStyles } from "./styles/GlobalStyles";
 import { Sidebar, Topbar, BottomNav } from "./layouts/Navigation";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
-
-// For other pages, we can either move them now or leave them as placeholders/stubs
-// To be fully modular, we'd move Materials, Attendance, etc. 
-// For now, I'll keep the main App structure and import what we've moved.
+import Materials from "./pages/Materials";
+import Attendance from "./pages/Attendance";
+import Expenses from "./pages/Expenses";
+import Tasks from "./pages/Tasks";
+import Invoices from "./pages/Invoices";
+import Vendors from "./pages/Vendors";
+import Reports from "./pages/Reports";
+import AI from "./pages/AI";
+import Workflow from "./pages/Workflow";
+import Settings from "./pages/Settings";
 
 const DEF_ROLES = ["Mason","Carpenter","Electrician","Plumber","Helper","Supervisor","Driver","Other"];
 
@@ -76,9 +82,18 @@ export default function App() {
 
   const renderPage = () => {
     switch(page) {
-      case "dashboard": return <Dashboard />;
-      // Other pages can be added here as they are moved to separate files
-      default: return <Dashboard />; 
+      case "dashboard":  return <Dashboard />;
+      case "materials":  return <Materials />;
+      case "attendance": return <Attendance />;
+      case "expenses":   return <Expenses />;
+      case "tasks":      return <Tasks />;
+      case "invoices":   return <Invoices />;
+      case "vendors":    return <Vendors />;
+      case "reports":    return <Reports />;
+      case "ai":         return <AI />;
+      case "workflow":   return <Workflow />;
+      case "settings":   return <Settings />;
+      default:           return <Dashboard />;
     }
   };
 
