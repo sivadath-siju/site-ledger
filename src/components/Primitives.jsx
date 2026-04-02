@@ -55,7 +55,7 @@ export function Btn({ children, variant="primary", onClick, disabled, fullWidth,
   
   const variants = {
     primary: { 
-      bg: isDark ? "#fff" : "#0f172a", 
+      bg: isDark ? "#c81b1b" : "#219e25", 
       color: isDark ? "#000" : "#fff", 
       border: "none", 
       boxShadow: isDark ? "0 4px 20px rgba(255,255,255,0.15)" : "0 4px 20px rgba(0,0,0,0.2)" 
