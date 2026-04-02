@@ -1,14 +1,14 @@
 import React from "react";
 import { useApp } from "../context/AppCtx";
 import { Card, CardTitle, Btn, Toggle } from "../components/Primitives";
-import { ISettings, IMoon, ISun, IFileSpread, IDownload, IUsers, ILogOut, IPackage } from "../icons/Icons";
+import { ISettings, IMoon, ISun, IFileSpread, IDownload, IUsers, ILogOut, IPackage, IReceipt, IFileText } from "../icons/Icons";
 import * as API from "../api";
 import * as XLSX from "xlsx";
 
 const today = () => new Date().toISOString().split("T")[0];
 
 export default function Settings() {
-  const { tk, theme, setTheme, user, setUser, att, mats } = useApp();
+  const { tk, theme, setTheme, user, setUser, att, exp, mats, workers, inv } = useApp();
   const isDark = theme === "dark";
 
   const exportXL = (type) => {
@@ -20,6 +20,8 @@ export default function Settings() {
     };
     if(type==="all"||type==="materials"){ sh("Stock",["Material","Unit","Stock","Min"],mats.map(m=>[m.name,m.unit,m.stock,m.min])); }
     if(type==="all"||type==="attendance"){ sh("Attendance",["Date","Name","Role","Status"],att.map(a=>[a.date,a.name,a.role,a.present])); }
+    if(type==="all"||type==="expenses"){ sh("Expenses",["Date","Category","Description","Amount"],exp.map(e=>[e.date,e.category,e.desc,e.amount])); }
+    if(type==="all"||type==="invoices"){ sh("Invoices",["Vendor","Description","Amount","Status"],inv.map(i=>[i.vendor,i.desc,i.amount,i.status])); }
     XLSX.writeFile(wb, `SiteLedger_${type}_${today()}.xlsx`);
   };
 
@@ -59,6 +61,8 @@ export default function Settings() {
           {k:"all",        ic:IFileSpread, l:"Full Report",        sub:"All data in one Excel file"},
           {k:"materials",  ic:IPackage,     l:"Materials Log",      sub:"Stock levels and transactions"},
           {k:"attendance", ic:IUsers,       l:"Attendance Register",sub:"Labour records and wages"},
+          {k:"expenses",   ic:IReceipt,     l:"Expense Ledger",     sub:"All categorised expenses"},
+          {k:"invoices",   ic:IFileText,   l:"Invoices",           sub:"Payables and status"},
         ].map(x=>(
           <SettingRow key={x.k} icon={x.ic} iconBg={tk.accL} iconColor={tk.acc} label={x.l} sub={x.sub}
             right={<Btn variant="secondary" small onClick={()=>exportXL(x.k)}><IDownload size={13}/>Export</Btn>}/>
