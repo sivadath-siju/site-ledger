@@ -1,16 +1,13 @@
 /* ════════════════════════════════════════════════
-   api.js — Drop this in your React src/ folder
-   All backend calls go through here
+   api.js — SiteLedger API layer
 ════════════════════════════════════════════════ */
 
 const BASE = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
 
-// ── TOKEN MANAGEMENT ────────────────────────────
-export const getToken = () => localStorage.getItem("sl_token");
-export const setToken = (t) => localStorage.setItem("sl_token", t);
+export const getToken   = () => localStorage.getItem("sl_token");
+export const setToken   = (t) => localStorage.setItem("sl_token", t);
 export const clearToken = () => localStorage.removeItem("sl_token");
 
-// ── BASE FETCH ──────────────────────────────────
 async function request(path, options = {}) {
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
@@ -22,75 +19,93 @@ async function request(path, options = {}) {
     ...options,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
-
   const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(data.error || `Request failed: ${res.status}`);
-  }
-
+  if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
   return data;
 }
 
-const get    = (path)         => request(path);
-const post   = (path, body)   => request(path, { method: "POST",   body });
-const patch  = (path, body)   => request(path, { method: "PATCH",  body });
-const del    = (path)         => request(path, { method: "DELETE" });
+const get   = (path)       => request(path);
+const post  = (path, body) => request(path, { method: "POST",   body });
+const patch = (path, body) => request(path, { method: "PATCH",  body });
+const put   = (path, body) => request(path, { method: "PUT",    body });
+const del   = (path)       => request(path, { method: "DELETE" });
 
 // ── AUTH ────────────────────────────────────────
-export const login   = (username, password) => post("/auth/login", { username, password });
-export const getMe   = ()                   => get("/auth/me");
-export const getUsers = ()                  => get("/auth/users");
-export const createUser = (data)            => post("/auth/users", data);
-export const deleteUser = (id)              => del(`/auth/users/${id}`);
+export const login      = (u, p)  => post("/auth/login", { username: u, password: p });
+export const getMe      = ()      => get("/auth/me");
+export const getUsers   = ()      => get("/auth/users");
+export const createUser = (d)     => post("/auth/users", d);
+export const deleteUser = (id)    => del(`/auth/users/${id}`);
 
 // ── MATERIALS ───────────────────────────────────
-export const getMaterials    = ()          => get("/materials");
-export const addMaterial     = (data)      => post("/materials", data);
-export const updateMaterial  = (id, data)  => patch(`/materials/${id}`, data);
-export const deleteMaterial  = (id)        => del(`/materials/${id}`);
-export const getMatLogs      = (params)    => get(`/materials/logs?${new URLSearchParams(params)}`);
-export const recordMatMovement = (data)    => post("/materials/log", data);
+export const getMaterials      = ()        => get("/materials");
+export const addMaterial       = (d)       => post("/materials", d);
+export const updateMaterial    = (id, d)   => patch(`/materials/${id}`, d);
+export const deleteMaterial    = (id)      => del(`/materials/${id}`);
+export const getMatLogs        = (p)       => get(`/materials/logs?${new URLSearchParams(p)}`);
+export const recordMatMovement = (d)       => post("/materials/log", d);
 
 // ── WORKERS ─────────────────────────────────────
 export const getWorkers       = ()         => get("/workers");
-export const addWorker        = (data)     => post("/workers", data);
-export const updateWorker     = (id, data) => patch(`/workers/${id}`, data);
+export const addWorker        = (d)        => post("/workers", d);
+export const updateWorker     = (id, d)    => patch(`/workers/${id}`, d);
 export const deleteWorker     = (id)       => del(`/workers/${id}`);
 export const getWorkerSummary = ()         => get("/workers/summary");
 
 // ── ATTENDANCE ──────────────────────────────────
-export const getAttendance    = (params)   => get(`/workers/attendance?${new URLSearchParams(params)}`);
-export const recordAttendance = (data)     => post("/workers/attendance", data);
+export const getAttendance    = (p)        => get(`/workers/attendance?${new URLSearchParams(p)}`);
+export const recordAttendance = (d)        => post("/workers/attendance", d);
 export const deleteAttendance = (id)       => del(`/workers/attendance/${id}`);
 
 // ── EXPENSES ────────────────────────────────────
-export const getExpenses     = (params)    => get(`/expenses?${new URLSearchParams(params)}`);
-export const addExpense      = (data)      => post("/expenses", data);
-export const deleteExpense   = (id)        => del(`/expenses/${id}`);
-export const getExpCats      = ()          => get("/expenses/categories");
-export const addExpCat       = (name)      => post("/expenses/categories", { name });
-export const deleteExpCat    = (id)        => del(`/expenses/categories/${id}`);
+export const getExpenses  = (p)            => get(`/expenses?${new URLSearchParams(p)}`);
+export const addExpense   = (d)            => post("/expenses", d);
+export const deleteExpense = (id)          => del(`/expenses/${id}`);
+export const getExpCats   = ()             => get("/expenses/categories");
+export const addExpCat    = (name)         => post("/expenses/categories", { name });
+export const deleteExpCat = (id)           => del(`/expenses/categories/${id}`);
 
 // ── VENDORS ─────────────────────────────────────
-export const getVendors      = ()          => get("/expenses/vendors");
-export const addVendor       = (data)      => post("/expenses/vendors", data);
-export const updateVendor    = (id, data)  => patch(`/expenses/vendors/${id}`, data);
-export const deleteVendor    = (id)        => del(`/expenses/vendors/${id}`);
+export const getVendors   = ()             => get("/expenses/vendors");
+export const addVendor    = (d)            => post("/expenses/vendors", d);
+export const updateVendor = (id, d)        => patch(`/expenses/vendors/${id}`, d);
+export const deleteVendor = (id)           => del(`/expenses/vendors/${id}`);
 
 // ── INVOICES ────────────────────────────────────
-export const getInvoices     = ()          => get("/expenses/invoices");
-export const addInvoice      = (data)      => post("/expenses/invoices", data);
-export const updateInvoice   = (id, data)  => patch(`/expenses/invoices/${id}`, data);
-export const deleteInvoice   = (id)        => del(`/expenses/invoices/${id}`);
+export const getInvoices   = ()            => get("/expenses/invoices");
+export const addInvoice    = (d)           => post("/expenses/invoices", d);
+export const updateInvoice = (id, d)       => patch(`/expenses/invoices/${id}`, d);
+export const deleteInvoice = (id)          => del(`/expenses/invoices/${id}`);
+
+// ── PAYMENTS (partial payment support) ──────────
+// GET  /expenses/invoices/:id/payments  → list all payments for an invoice
+// POST /expenses/invoices/:id/payments  → record a new (partial) payment
+// DELETE /expenses/invoices/:id/payments/:pid → remove a payment
+export const getPayments   = (invoiceId)        => get(`/expenses/invoices/${invoiceId}/payments`);
+export const addPayment    = (invoiceId, d)      => post(`/expenses/invoices/${invoiceId}/payments`, d);
+export const deletePayment = (invoiceId, pid)    => del(`/expenses/invoices/${invoiceId}/payments/${pid}`);
+
+// ── BALANCE SHEET ───────────────────────────────
+// GET /reports/balance-sheet?vendor_id=&from=&to=
+//   → { entries: [{date,time,particulars,ref,type,amount,running_balance}], summary }
+export const getBalanceSheet = (p)         => get(`/reports/balance-sheet?${new URLSearchParams(p)}`);
+// GET /reports/vendor-ledger/:id
+//   → { vendor, total_invoiced, total_paid, balance, entries }
+export const getVendorLedger = (vendorId)  => get(`/reports/vendor-ledger/${vendorId}`);
 
 // ── TASKS ───────────────────────────────────────
-export const getTasks        = (params)    => get(`/tasks?${new URLSearchParams(params)}`);
-export const addTask         = (data)      => post("/tasks", data);
-export const updateTask      = (id, data)  => patch(`/tasks/${id}`, data);
-export const deleteTask      = (id)        => del(`/tasks/${id}`);
-export const getDailyLogs    = ()          => get("/tasks/logs");
-export const saveDailyLog    = (data)      => post("/tasks/logs", data);
+export const getTasks   = (p)              => get(`/tasks?${new URLSearchParams(p)}`);
+export const addTask    = (d)              => post("/tasks", d);
+export const updateTask = (id, d)          => patch(`/tasks/${id}`, d);
+export const deleteTask = (id)             => del(`/tasks/${id}`);
+
+// ── DAILY LOGS — 1 per day, upsert ──────────────
+// GET  /tasks/logs?date=YYYY-MM-DD  → single log for that date or null
+// PUT  /tasks/logs                  → upsert (insert or replace) by date
+// GET  /tasks/logs/all              → all logs, newest first
+export const getDailyLog    = (date)       => get(`/tasks/logs?date=${date}`);
+export const saveDailyLog   = (d)          => put("/tasks/logs", d);
+export const getAllDailyLogs = ()           => get("/tasks/logs/all");
 
 // ── REPORTS ─────────────────────────────────────
 export const getReportSummary = ()         => get("/reports/summary");
