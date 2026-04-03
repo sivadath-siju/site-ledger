@@ -99,6 +99,7 @@ export function Sidebar({ open, onClose, desktop = false }) {
             </div>
             {sec.items.map(item => {
               const active = page === item.id;
+              const isBS = item.id === "balancesheet";
               return (
                 <button
                   key={item.id}
@@ -107,15 +108,15 @@ export function Sidebar({ open, onClose, desktop = false }) {
                     display: "flex", alignItems: "center", gap: 10,
                     padding: "10px 12px", margin: "1px 8px", borderRadius: 10,
                     border: "none",
-                    background: active ? tk.accL : "transparent",
-                    color: active ? tk.acc : tk.tx2,
-                    fontWeight: active ? 600 : 500,
+                    background: active ? (isBS ? "rgba(245, 158, 11, 0.12)" : tk.accL) : "transparent",
+                    color: active ? (isBS ? "#f59e0b" : tk.acc) : (isBS ? "#f59e0b" : tk.tx2),
+                    fontWeight: active || isBS ? 600 : 500,
                     fontSize: 13, cursor: "pointer",
                     width: "calc(100% - 16px)",
                     textAlign: "left", transition: "background .15s, color .15s",
                   }}
                 >
-                  <item.Icon size={15} color={active ? tk.acc : tk.tx3} />
+                  <item.Icon size={15} color={active ? (isBS ? "#f59e0b" : tk.acc) : (isBS ? "#f59e0b" : tk.tx3)} />
                   {item.label}
                   {item.id === "materials" && lsc > 0 && (
                     <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, background: tk.red, color: "#fff", padding: "2px 6px", borderRadius: 20 }}>{lsc}</span>
@@ -206,6 +207,7 @@ export function BottomNav() {
     }}>
       {BOTTOM_NAV.map(n => {
         const active = page === n.id;
+        const isBS = n.id === "balancesheet";
         return (
           <button
             key={n.id}
@@ -215,7 +217,7 @@ export function BottomNav() {
               display: "flex", flexDirection: "column", alignItems: "center",
               justifyContent: "center", gap: 3, padding: "7px 2px 9px",
               fontSize: 9, fontWeight: 600,
-              color: active ? tk.acc : tk.tx3,
+              color: active ? (isBS ? "#f59e0b" : tk.acc) : (isBS ? "#f59e0b" : tk.tx3),
               background: "none", border: "none", cursor: "pointer",
               transition: "color .15s", position: "relative",
               fontFamily: "'DM Sans',sans-serif",
@@ -224,12 +226,12 @@ export function BottomNav() {
             {n.id === "materials" && lsc > 0 && (
               <span style={{ position: "absolute", top: 5, right: "calc(50% - 16px)", width: 7, height: 7, borderRadius: "50%", background: tk.red, border: `2px solid ${tk.surf}` }} />
             )}
-            <n.Icon size={20} color={active ? tk.acc : tk.tx3}
+            <n.Icon size={20} color={active ? (isBS ? "#f59e0b" : tk.acc) : (isBS ? "#f59e0b" : tk.tx3)}
               style={{ transition: "transform .25s cubic-bezier(.34,1.56,.64,1)", transform: active ? "scale(1.15)" : "scale(1)" }}
             />
             <span>{n.label}</span>
             {active && (
-              <span style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 28, height: 3, background: tk.acc, borderRadius: "0 0 4px 4px" }} />
+              <span style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 28, height: 3, background: isBS ? "#f59e0b" : tk.acc, borderRadius: "0 0 4px 4px" }} />
             )}
           </button>
         );
