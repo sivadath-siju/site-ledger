@@ -3,19 +3,17 @@ import { useApp } from "../context/AppCtx";
 import {
   ILayoutDash, IClipboard, IPackage, IUsers, ICheckSq,
   IReceipt, IFileText, IBuilding, IPieChart,
-  ISettings, IHardHat, IX, IMenu, IFileSpread,
+  ISettings, IHardHat, IX, IMenu,
 } from "../icons/Icons";
 
-// Balance-scale icon for balance sheet
 const IBalance = ({ size = 16, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
     fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="3" x2="12" y2="21"/>
-    <path d="M3 9l4 4 4-4"/>
-    <path d="M13 9l4 4 4-4"/>
-    <line x1="3" y1="21" x2="21" y2="21"/>
-    <line x1="2" y1="9" x2="10" y2="9"/>
-    <line x1="14" y1="9" x2="22" y2="9"/>
+    <line x1="12" y1="3" x2="12" y2="21" />
+    <path d="M3 9l4.5 4.5L12 9" /><path d="M12 9l4.5 4.5L21 9" />
+    <line x1="3" y1="21" x2="21" y2="21" />
+    <line x1="1.5" y1="9" x2="10.5" y2="9" />
+    <line x1="13.5" y1="9" x2="22.5" y2="9" />
   </svg>
 );
 
@@ -51,13 +49,93 @@ const BOTTOM_NAV = [
   { id: "balancesheet", Icon: IBalance,    label: "Ledger"  },
 ];
 
-export function Sidebar({ open, onClose }) {
+// ─────────────────────────────────────────────────────────────────
+// Sidebar — works in both desktop (always open) and mobile (overlay)
+// ─────────────────────────────────────────────────────────────────
+export function Sidebar({ open, onClose, desktop = false }) {
   const { tk, page, setPage, mats, inv } = useApp();
   const lsc = mats.filter(m => m.stock <= m.min).length;
   const pi  = inv.filter(i => i.status === "Unpaid" || i.status === "Partially Paid").length;
 
-  const navigate = (id) => { setPage(id); onClose(); };
+  const navigate = (id) => { setPage(id); if (!desktop) onClose(); };
 
+  const sidebarContent = (
+    <div style={{
+      width: 260,
+      height: "100%",
+      background: tk.surf,
+      borderRight: `1px solid ${tk.bdr}`,
+      display: "flex",
+      flexDirection: "column",
+      flexShrink: 0,
+    }}>
+      {/* Logo */}
+      <div style={{
+        height: 54, display: "flex", alignItems: "center",
+        padding: "0 18px", borderBottom: `1px solid ${tk.bdr}`,
+        flexShrink: 0, gap: 10,
+      }}>
+        <IHardHat size={20} color={tk.acc} />
+        <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-.3px" }}>
+          Site<span style={{ color: tk.acc }}>Ledger</span>
+        </span>
+        {!desktop && (
+          <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8 }}>
+            <IX size={18} color={tk.tx3} />
+          </button>
+        )}
+      </div>
+
+      {/* Nav */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "10px 0 20px" }}>
+        {NAV_SECTIONS.map(sec => (
+          <div key={sec.section}>
+            <div style={{
+              fontSize: 9, fontWeight: 700, color: tk.tx3,
+              textTransform: "uppercase", letterSpacing: ".12em",
+              padding: "12px 18px 4px",
+            }}>
+              {sec.section}
+            </div>
+            {sec.items.map(item => {
+              const active = page === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.id)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "10px 12px", margin: "1px 8px", borderRadius: 10,
+                    border: "none",
+                    background: active ? tk.accL : "transparent",
+                    color: active ? tk.acc : tk.tx2,
+                    fontWeight: active ? 600 : 500,
+                    fontSize: 13, cursor: "pointer",
+                    width: "calc(100% - 16px)",
+                    textAlign: "left", transition: "background .15s, color .15s",
+                  }}
+                >
+                  <item.Icon size={15} color={active ? tk.acc : tk.tx3} />
+                  {item.label}
+                  {item.id === "materials" && lsc > 0 && (
+                    <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, background: tk.red, color: "#fff", padding: "2px 6px", borderRadius: 20 }}>{lsc}</span>
+                  )}
+                  {item.id === "invoices" && pi > 0 && (
+                    <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, background: tk.red, color: "#fff", padding: "2px 6px", borderRadius: 20 }}>{pi}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // Desktop: render inline (no overlay, no transform)
+  if (desktop) return sidebarContent;
+
+  // Mobile: overlay with backdrop
   return (
     <>
       {open && (
@@ -67,81 +145,31 @@ export function Sidebar({ open, onClose }) {
         />
       )}
       <div style={{
-        position: "fixed", top: 0, left: 0, bottom: 0, width: 265,
-        background: tk.surf, borderRight: `1px solid ${tk.bdr}`,
-        zIndex: 201, display: "flex", flexDirection: "column",
+        position: "fixed", top: 0, left: 0, bottom: 0,
+        width: 260, zIndex: 201,
         transform: open ? "translateX(0)" : "translateX(-100%)",
         transition: "transform .28s cubic-bezier(.4,0,.2,1)",
-        boxShadow: open ? tk.shLg : "none",
+        boxShadow: open ? "4px 0 32px rgba(0,0,0,.18)" : "none",
       }}>
-        {/* Header */}
-        <div style={{ height: 56, display: "flex", alignItems: "center", padding: "0 16px", borderBottom: `1px solid ${tk.bdr}`, flexShrink: 0, gap: 10 }}>
-          <IHardHat size={20} color={tk.acc} />
-          <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-.3px" }}>
-            Site<span style={{ color: tk.acc }}>Ledger</span>
-          </span>
-          <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8, color: tk.tx3 }}>
-            <IX size={18} color={tk.tx3} />
-          </button>
-        </div>
-
-        {/* Nav items */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "8px 0 16px" }}>
-          {NAV_SECTIONS.map(sec => (
-            <div key={sec.section}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".12em", padding: "12px 18px 4px" }}>
-                {sec.section}
-              </div>
-              {sec.items.map(item => {
-                const active = page === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => navigate(item.id)}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      padding: "10px 12px", margin: "1px 8px", borderRadius: 10,
-                      border: "none",
-                      background: active ? tk.accL : "transparent",
-                      color: active ? tk.acc : tk.tx2,
-                      fontWeight: active ? 600 : 500,
-                      fontSize: 13, cursor: "pointer",
-                      width: "calc(100% - 16px)",
-                      textAlign: "left", transition: "all .15s",
-                    }}
-                  >
-                    <item.Icon size={15} color={active ? tk.acc : tk.tx3} />
-                    {item.label}
-                    {item.id === "materials" && lsc > 0 && (
-                      <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, background: tk.red, color: "#fff", padding: "2px 6px", borderRadius: 20 }}>{lsc}</span>
-                    )}
-                    {item.id === "invoices" && pi > 0 && (
-                      <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, background: tk.red, color: "#fff", padding: "2px 6px", borderRadius: 20 }}>{pi}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+        {sidebarContent}
       </div>
     </>
   );
 }
 
+// ─────────────────────────────────────────────────────────────────
+// Topbar — mobile only
+// ─────────────────────────────────────────────────────────────────
 export function Topbar({ onMenuClick }) {
   const { tk, user } = useApp();
   return (
     <div style={{
-      height: 56, background: tk.surf,
+      height: 54, background: tk.surf,
       display: "flex", alignItems: "center", padding: "0 14px", gap: 10,
       flexShrink: 0, zIndex: 100,
       boxShadow: "0 1px 0 rgba(0,0,0,.07), 0 2px 8px rgba(0,0,0,.04)",
     }}>
-      <button
-        onClick={onMenuClick}
-        style={{ background: "none", border: "none", cursor: "pointer", padding: 6, display: "flex", alignItems: "center", borderRadius: 8 }}
-      >
+      <button onClick={onMenuClick} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, display: "flex", alignItems: "center", borderRadius: 8 }}>
         <IMenu size={22} color={tk.tx} />
       </button>
       <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 16, fontWeight: 700, letterSpacing: "-.3px" }}>
@@ -162,6 +190,9 @@ export function Topbar({ onMenuClick }) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────
+// BottomNav — mobile only (not rendered on desktop)
+// ─────────────────────────────────────────────────────────────────
 export function BottomNav() {
   const { tk, page, setPage, mats } = useApp();
   const lsc = mats.filter(m => m.stock <= m.min).length;
@@ -169,7 +200,7 @@ export function BottomNav() {
     <nav style={{
       display: "flex", background: tk.surf,
       borderTop: `1px solid ${tk.bdr}`,
-      flexShrink: 0, width: "100%",
+      width: "100%",
       boxShadow: "0 -2px 12px rgba(0,0,0,.06)",
       paddingBottom: "env(safe-area-inset-bottom, 0px)",
     }}>
@@ -193,9 +224,7 @@ export function BottomNav() {
             {n.id === "materials" && lsc > 0 && (
               <span style={{ position: "absolute", top: 5, right: "calc(50% - 16px)", width: 7, height: 7, borderRadius: "50%", background: tk.red, border: `2px solid ${tk.surf}` }} />
             )}
-            <n.Icon
-              size={20}
-              color={active ? tk.acc : tk.tx3}
+            <n.Icon size={20} color={active ? tk.acc : tk.tx3}
               style={{ transition: "transform .25s cubic-bezier(.34,1.56,.64,1)", transform: active ? "scale(1.15)" : "scale(1)" }}
             />
             <span>{n.label}</span>
