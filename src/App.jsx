@@ -17,14 +17,13 @@ import Workflow     from "./pages/Workflow";
 import Settings     from "./pages/Settings";
 
 const DEF_ROLES = ["Mason","Carpenter","Electrician","Plumber","Helper","Supervisor","Driver","Other"];
-const SIDEBAR_W = 260;
 const DESKTOP   = 768;
 
 export default function App() {
-  const [theme, _setTheme] = useState(() => localStorage.getItem("sl_theme") || "light");
+  const [theme, _setTheme]    = useState(() => localStorage.getItem("sl_theme") || "light");
   const [user, setUser]       = useState(null);
   const [page, setPage]       = useState("dashboard");
-  const [sideOpen, setSideOpen] = useState(false);   // mobile only
+  const [sideOpen, setSideOpen] = useState(false);
   const [appLoading, setAppLoading] = useState(true);
   const [isDesktop, setIsDesktop]   = useState(() => window.innerWidth >= DESKTOP);
 
@@ -39,7 +38,6 @@ export default function App() {
   const [expCats, setExpCats] = useState([]);
   const roles = DEF_ROLES;
 
-  // Track viewport width
   useEffect(() => {
     const onResize = () => setIsDesktop(window.innerWidth >= DESKTOP);
     window.addEventListener("resize", onResize);
@@ -107,6 +105,12 @@ export default function App() {
     }
   };
 
+  // ── Bottom nav height + safe area (used for padding-bottom on mobile) ──
+  // 58px is the rendered nav height; env() adds iPhone home-bar clearance.
+  // This is in the inline style so it actually takes effect (CSS !important
+  // cannot override inline styles in all browsers).
+  const mobileBottomPad = "calc(58px + env(safe-area-inset-bottom, 16px) + 16px)";
+
   return (
     <AppCtx.Provider value={{
       tk, theme, setTheme, user, setUser, page, setPage,
@@ -119,42 +123,38 @@ export default function App() {
 
       <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: tk.bg }}>
 
-        {/* ── Desktop: always-visible sidebar ── */}
-        {isDesktop && (
-          <Sidebar open={true} onClose={() => {}} desktop />
-        )}
+        {/* Desktop: permanent inline sidebar */}
+        {isDesktop && <Sidebar open desktop />}
 
-        {/* ── Mobile: overlay sidebar ── */}
-        {!isDesktop && (
-          <Sidebar open={sideOpen} onClose={() => setSideOpen(false)} />
-        )}
+        {/* Mobile: overlay sidebar */}
+        {!isDesktop && <Sidebar open={sideOpen} onClose={() => setSideOpen(false)} />}
 
-        {/* ── Main content column ── */}
-        <div style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          // on desktop the sidebar takes up space, so we don't need margin
-        }}>
-          {/* Topbar: only on mobile */}
+        {/* Right side: topbar + scrollable content */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+
+          {/* Mobile topbar */}
           {!isDesktop && <Topbar onMenuClick={() => setSideOpen(true)} />}
 
-          {/* Desktop topbar — slimmer, just breadcrumb + user */}
+          {/* Desktop topbar */}
           {isDesktop && <DesktopTopbar tk={tk} user={user} page={page} />}
 
+          {/* Scrollable page content */}
           <main style={{
             flex: 1,
             overflowY: "auto",
-            padding: isDesktop ? "24px 32px 32px" : "16px 14px 90px",
+            overflowX: "hidden",
             WebkitOverflowScrolling: "touch",
+            // ── THE FIX: inline calc+env so last card is never hidden ──
+            padding: isDesktop
+              ? "24px 32px 40px"
+              : `16px 14px ${mobileBottomPad}`,
           }}>
             <div style={{ maxWidth: isDesktop ? 1100 : 800, margin: "0 auto" }}>
               {renderPage()}
             </div>
           </main>
 
-          {/* Bottom nav: mobile only */}
+          {/* Mobile-only bottom nav — fixed to viewport bottom */}
           {!isDesktop && (
             <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100 }}>
               <BottomNav />
@@ -166,7 +166,6 @@ export default function App() {
   );
 }
 
-// Slim desktop topbar — page title + user avatar
 function DesktopTopbar({ tk, user, page }) {
   const PAGE_LABELS = {
     dashboard: "Dashboard", materials: "Materials", attendance: "Labour & Attendance",
@@ -177,12 +176,10 @@ function DesktopTopbar({ tk, user, page }) {
   return (
     <div style={{
       height: 54, flexShrink: 0,
-      display: "flex", alignItems: "center",
-      padding: "0 32px",
-      borderBottom: `1px solid ${tk.bdr}`,
-      background: tk.surf,
+      display: "flex", alignItems: "center", padding: "0 32px",
+      borderBottom: `1px solid ${tk.bdr}`, background: tk.surf,
     }}>
-      <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-.2px", color: tk.tx }}>
+      <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-.2px" }}>
         {PAGE_LABELS[page] || "SiteLedger"}
       </span>
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
