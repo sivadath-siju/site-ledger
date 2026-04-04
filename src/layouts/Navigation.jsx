@@ -2,11 +2,13 @@ import React from "react";
 import { useApp } from "../context/AppCtx";
 import {
   ILayoutDash, IClipboard, IPackage, IUsers, ICheckSq,
-  IReceipt, IFileText, IBuilding, IPieChart,
-  ISettings, IX, IMenu,
+  IReceipt, IFileText, IBuilding, IPieChart, ISettings, IX, IMenu,
 } from "../icons/Icons";
 
-// House icon for Ciel Homes
+// Dark orange accent for ledger/finance
+const ORANGE = "#c75a00";
+const ORANGE_L = "#fff0e6";
+
 const IHome = ({ size = 18, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
     fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -26,6 +28,7 @@ const IBalance = ({ size = 16, color = "currentColor" }) => (
   </svg>
 );
 
+// items marked ledger:true get the orange treatment
 const NAV_SECTIONS = [
   { section: "Overview", items: [
     { id: "dashboard",    label: "Dashboard",          Icon: ILayoutDash },
@@ -40,7 +43,7 @@ const NAV_SECTIONS = [
     { id: "expenses",     label: "Expenses",            Icon: IReceipt    },
     { id: "invoices",     label: "Invoices & Payables", Icon: IFileText   },
     { id: "vendors",      label: "Vendors",             Icon: IBuilding   },
-    { id: "balancesheet", label: "Balance Sheet",       Icon: IBalance    },
+    { id: "balancesheet", label: "Balance Sheet",       Icon: IBalance,   ledger: true },
   ]},
   { section: "Analytics", items: [
     { id: "reports",      label: "Reports",             Icon: IPieChart   },
@@ -51,11 +54,11 @@ const NAV_SECTIONS = [
 ];
 
 const BOTTOM_NAV = [
-  { id: "dashboard",    Icon: ILayoutDash, label: "Home"    },
-  { id: "materials",    Icon: IPackage,    label: "Stock"   },
-  { id: "attendance",   Icon: IUsers,      label: "Labour"  },
-  { id: "invoices",     Icon: IFileText,   label: "Bills"   },
-  { id: "balancesheet", Icon: IBalance,    label: "Ledger"  },
+  { id: "dashboard",    Icon: ILayoutDash, label: "Home"   },
+  { id: "materials",    Icon: IPackage,    label: "Stock"  },
+  { id: "attendance",   Icon: IUsers,      label: "Labour" },
+  { id: "invoices",     Icon: IFileText,   label: "Bills"  },
+  { id: "balancesheet", Icon: IBalance,    label: "Ledger", ledger: true },
 ];
 
 export function Sidebar({ open, onClose, desktop = false }) {
@@ -92,7 +95,7 @@ export function Sidebar({ open, onClose, desktop = false }) {
         )}
       </div>
 
-      {/* Nav items */}
+      {/* Nav */}
       <div style={{ flex: 1, overflowY: "auto", padding: "10px 0" }}>
         {NAV_SECTIONS.map(sec => (
           <div key={sec.section}>
@@ -100,24 +103,46 @@ export function Sidebar({ open, onClose, desktop = false }) {
               {sec.section}
             </div>
             {sec.items.map(item => {
-              const active = page === item.id;
+              const active   = page === item.id;
+              const isLedger = !!item.ledger;
+              // Ledger item uses orange; others use accent blue
+              const activeColor = isLedger ? ORANGE    : tk.acc;
+              const activeBg    = isLedger ? ORANGE_L  : tk.accL;
+
               return (
-                <button key={item.id} onClick={() => navigate(item.id)} style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 12px", margin: "1px 8px", borderRadius: 10,
-                  border: "none", background: active ? tk.accL : "transparent",
-                  color: active ? tk.acc : tk.tx2,
-                  fontWeight: active ? 600 : 500, fontSize: 13,
-                  cursor: "pointer", width: "calc(100% - 16px)",
-                  textAlign: "left", transition: "background .15s, color .15s",
-                }}>
-                  <item.Icon size={15} color={active ? tk.acc : tk.tx3} />
-                  {item.label}
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.id)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "10px 12px", margin: "1px 8px", borderRadius: 10,
+                    border: "none",
+                    background: active ? activeBg : "transparent",
+                    color:      active ? activeColor : tk.tx2,
+                    fontWeight: active ? 700 : 500,
+                    fontSize: 13, cursor: "pointer",
+                    width: "calc(100% - 16px)",
+                    textAlign: "left", transition: "background .15s, color .15s",
+                  }}
+                >
+                  <item.Icon
+                    size={15}
+                    color={active ? activeColor : isLedger ? "#a04800" : tk.tx3}
+                  />
+                  <span style={isLedger && !active ? { color: "#a04800", fontWeight: 600 } : undefined}>
+                    {item.label}
+                  </span>
                   {item.id === "materials" && lsc > 0 && (
                     <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, background: tk.red, color: "#fff", padding: "2px 6px", borderRadius: 20 }}>{lsc}</span>
                   )}
                   {item.id === "invoices" && pi > 0 && (
                     <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, background: tk.amb, color: "#fff", padding: "2px 6px", borderRadius: 20 }}>{pi}</span>
+                  )}
+                  {/* Ledger pill indicator */}
+                  {isLedger && !active && (
+                    <span style={{ marginLeft: "auto", fontSize: 9, fontWeight: 700, background: ORANGE_L, color: ORANGE, padding: "2px 7px", borderRadius: 20, border: `1px solid ${ORANGE}44` }}>
+                      LEDGER
+                    </span>
                   )}
                 </button>
               );
@@ -126,11 +151,8 @@ export function Sidebar({ open, onClose, desktop = false }) {
         ))}
       </div>
 
-      {/* Credit footer */}
-      <div style={{
-        padding: "12px 18px", borderTop: `1px solid ${tk.bdr}`,
-        fontSize: 10, color: tk.tx3, lineHeight: 1.5,
-      }}>
+      {/* Credit */}
+      <div style={{ padding: "12px 18px", borderTop: `1px solid ${tk.bdr}`, fontSize: 10, color: tk.tx3, lineHeight: 1.5 }}>
         <div style={{ fontWeight: 600, color: tk.tx2 }}>Ciel Homes</div>
         <div>Software made by Sivadath Siju</div>
       </div>
@@ -169,9 +191,7 @@ export function Topbar({ onMenuClick }) {
         <IMenu size={22} color={tk.tx} />
       </button>
       <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 15, fontWeight: 800, letterSpacing: "-.3px" }}>
-        <svg xmlns="http://www.w3.org/2000/svg" width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={tk.acc} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
+        <IHome size={18} color={tk.acc} />
         Ciel<span style={{ color: tk.acc }}> Homes</span>
       </div>
       <div style={{ marginLeft: "auto" }}>
@@ -186,30 +206,52 @@ export function Topbar({ onMenuClick }) {
 export function BottomNav() {
   const { tk, page, setPage, mats } = useApp();
   const lsc = mats.filter(m => m.stock <= m.min).length;
+
   return (
     <nav style={{
-      display: "flex", background: tk.surf, borderTop: `1px solid ${tk.bdr}`,
-      width: "100%", boxShadow: "0 -2px 12px rgba(0,0,0,.06)",
+      display: "flex", background: tk.surf,
+      borderTop: `1px solid ${tk.bdr}`,
+      width: "100%",
+      boxShadow: "0 -2px 12px rgba(0,0,0,.06)",
       paddingBottom: "env(safe-area-inset-bottom, 0px)",
     }}>
       {BOTTOM_NAV.map(n => {
-        const active = page === n.id;
+        const active   = page === n.id;
+        const isLedger = !!n.ledger;
+        const activeColor  = isLedger ? ORANGE    : tk.acc;
+        const inactiveColor = isLedger ? "#a04800" : tk.tx3;
+
         return (
-          <button key={n.id} onClick={() => setPage(n.id)} style={{
-            flex: 1, minWidth: 0,
-            display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", gap: 3, padding: "7px 2px 8px",
-            fontSize: 9, fontWeight: 600,
-            color: active ? tk.acc : tk.tx3,
-            background: "none", border: "none", cursor: "pointer",
-            position: "relative", fontFamily: "'DM Sans',sans-serif",
-          }}>
+          <button
+            key={n.id}
+            onClick={() => setPage(n.id)}
+            style={{
+              flex: 1, minWidth: 0,
+              display: "flex", flexDirection: "column", alignItems: "center",
+              justifyContent: "center", gap: 3, padding: "7px 2px 8px",
+              fontSize: 9, fontWeight: active ? 700 : 600,
+              color: active ? activeColor : inactiveColor,
+              background: "none", border: "none", cursor: "pointer",
+              transition: "color .15s", position: "relative",
+              fontFamily: "'DM Sans',sans-serif",
+            }}
+          >
             {n.id === "materials" && lsc > 0 && (
               <span style={{ position: "absolute", top: 5, right: "calc(50% - 16px)", width: 7, height: 7, borderRadius: "50%", background: tk.red, border: `2px solid ${tk.surf}` }} />
             )}
-            <n.Icon size={20} color={active ? tk.acc : tk.tx3} />
+            <n.Icon
+              size={20}
+              color={active ? activeColor : inactiveColor}
+              style={{ transition: "transform .25s cubic-bezier(.34,1.56,.64,1)", transform: active ? "scale(1.15)" : "scale(1)" }}
+            />
             <span>{n.label}</span>
-            {active && <span style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 28, height: 3, background: tk.acc, borderRadius: "0 0 4px 4px" }} />}
+            {active && (
+              <span style={{
+                position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
+                width: 28, height: 3, background: activeColor,
+                borderRadius: "0 0 4px 4px",
+              }} />
+            )}
           </button>
         );
       })}

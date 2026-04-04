@@ -7,11 +7,7 @@ export const clearToken = () => localStorage.removeItem("sl_token");
 async function request(path, options = {}) {
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers },
     ...options,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
@@ -20,11 +16,11 @@ async function request(path, options = {}) {
   return data;
 }
 
-const get  = path       => request(path);
-const post = (path, b)  => request(path, { method: "POST",   body: b });
-const patch= (path, b)  => request(path, { method: "PATCH",  body: b });
-const put  = (path, b)  => request(path, { method: "PUT",    body: b });
-const del  = path       => request(path, { method: "DELETE" });
+const get  = p      => request(p);
+const post = (p, b) => request(p, { method: "POST",   body: b });
+const patch= (p, b) => request(p, { method: "PATCH",  body: b });
+const put  = (p, b) => request(p, { method: "PUT",    body: b });
+const del  = p      => request(p, { method: "DELETE" });
 
 // AUTH
 export const login      = (u, p) => post("/auth/login", { username: u, password: p });
@@ -42,25 +38,34 @@ export const getMatLogs        = p       => get(`/materials/logs?${new URLSearch
 export const recordMatMovement = d       => post("/materials/log", d);
 
 // WORKERS
-export const getWorkers            = ()      => get("/workers");
-export const addWorker             = d       => post("/workers", d);
-export const updateWorker          = (id, d) => patch(`/workers/${id}`, d);
-export const deleteWorker          = id      => del(`/workers/${id}`);
-export const getWorkerSummary      = ()      => get("/workers/summary");
-export const getWorkerCategoryTotals = ()   => get("/workers/category-totals");
+export const getWorkers              = ()      => get("/workers");
+export const addWorker               = d       => post("/workers", d);
+export const updateWorker            = (id, d) => patch(`/workers/${id}`, d);
+export const deleteWorker            = id      => del(`/workers/${id}`);
+export const getWorkerSummary        = ()      => get("/workers/summary");
+export const getWorkerCategoryTotals = ()      => get("/workers/category-totals");
 
 // ATTENDANCE
 export const getAttendance    = p  => get(`/workers/attendance?${new URLSearchParams(p)}`);
 export const recordAttendance = d  => post("/workers/attendance", d);
 export const deleteAttendance = id => del(`/workers/attendance/${id}`);
 
+// SUBCONTRACTORS
+export const getSubcontractors     = ()      => get("/subcontractors");
+export const getSubcontractor      = id      => get(`/subcontractors/${id}`);
+export const addSubcontractor      = d       => post("/subcontractors", d);
+export const updateSubcontractor   = (id, d) => patch(`/subcontractors/${id}`, d);
+export const deleteSubcontractor   = id      => del(`/subcontractors/${id}`);
+export const getSubcontractorAtt   = (id, p) => get(`/subcontractors/${id}/attendance?${new URLSearchParams(p)}`);
+export const getSubcontractorTotals= ()      => get("/subcontractors/totals/summary");
+
 // EXPENSES
 export const getExpenses   = p  => get(`/expenses?${new URLSearchParams(p)}`);
 export const addExpense    = d  => post("/expenses", d);
 export const deleteExpense = id => del(`/expenses/${id}`);
 export const getExpCats    = () => get("/expenses/categories");
-export const addExpCat     = name  => post("/expenses/categories", { name });
-export const deleteExpCat  = id    => del(`/expenses/categories/${id}`);
+export const addExpCat     = n  => post("/expenses/categories", { name: n });
+export const deleteExpCat  = id => del(`/expenses/categories/${id}`);
 
 // VENDORS
 export const getVendors   = ()      => get("/expenses/vendors");
@@ -91,7 +96,8 @@ export const saveDailyLog   = d    => put("/tasks/logs", d);
 export const getAllDailyLogs = ()   => get("/tasks/logs/all");
 
 // REPORTS
-export const getReportSummary = () => get("/reports/summary");
-export const getDailyReport   = d  => get(`/reports/daily?date=${d}`);
-export const getBalanceSheet  = p  => get(`/reports/balance-sheet?${new URLSearchParams(p)}`);
-export const getVendorLedger  = id => get(`/reports/vendor-ledger/${id}`);
+export const getReportSummary  = ()  => get("/reports/summary");
+export const getDailyReport    = d   => get(`/reports/daily?date=${d}`);
+export const getBalanceSheet   = p   => get(`/reports/balance-sheet?${new URLSearchParams(p)}`);
+export const getVendorLedger   = id  => get(`/reports/vendor-ledger/${id}`);
+export const getLabourLedger   = p   => get(`/reports/labour-ledger?${new URLSearchParams(p || {})}`);
