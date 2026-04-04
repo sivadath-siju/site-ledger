@@ -355,7 +355,7 @@ export default function BalanceSheet() {
                                 <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.red, whiteSpace: "nowrap" }}>{Rs(running)}</td>
                                 <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "center" }}>{statusBadge(entry)}</td>
                                 <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>
-                                  <div style={{ display: "flex", gap: 4} }}>
+                                  <div style={{ display: "flex", gap: 4 }}>
                                     {!isPaid && <Btn variant="primary" small onClick={() => openPaySheet(entry)}><ICreditCard size={11} /> Pay</Btn>}
                                     {(entry.paid || 0) > 0 && <Btn variant="ghost" small onClick={() => openHistory(entry)}>Hist</Btn>}
                                   </div>
