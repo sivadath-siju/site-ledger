@@ -63,7 +63,7 @@ export default function Login({ onLogin }) {
         }}>
           {/* Brand */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
-            <div style={{ width: 46, height: 46, borderRadius: 14, background: tk.acc, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${tk.acc}55` }}>
+            <div style={{ width: 46, height: 46, borderRadius: 14, background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
               <IHome size={24} color="#fff" />
             </div>
             <div>
