@@ -18,11 +18,22 @@ import Settings     from "./pages/Settings";
 
 const DESKTOP = 768;
 
+// Roles with full financial access
+const FINANCE_ROLES = ["Administrator", "Site Owner", "Site Manager", "Accountant"];
+export const canViewFinance = (role) => FINANCE_ROLES.includes(role);
+
+const PAGE_LABELS = {
+  dashboard: "Dashboard", materials: "Materials", attendance: "Labour & Attendance",
+  expenses: "Expenses", tasks: "Task Tracker", invoices: "Invoices & Payables",
+  vendors: "Vendors", reports: "Reports", balancesheet: "Balance Sheet",
+  workflow: "Daily Workflow", settings: "Settings",
+};
+
 export default function App() {
-  const [theme, _setTheme]    = useState(() => localStorage.getItem("sl_theme") || "light");
-  const [user,  setUser]      = useState(null);
-  const [page,  setPage]      = useState("dashboard");
-  const [sideOpen, setSideOpen] = useState(false);
+  const [theme, _setTheme]  = useState(() => localStorage.getItem("sl_theme") || "light");
+  const [user,  setUser]    = useState(null);
+  const [page,  setPage]    = useState("dashboard");
+  const [sideOpen, setSideOpen]   = useState(false);
   const [appLoading, setAppLoading] = useState(true);
   const [isDesktop, setIsDesktop]   = useState(() => window.innerWidth >= DESKTOP);
 
@@ -40,23 +51,18 @@ export default function App() {
   const labourCategories = LABOUR_CATEGORIES;
 
   useEffect(() => {
-    const onResize = () => setIsDesktop(window.innerWidth >= DESKTOP);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    const fn = () => setIsDesktop(window.innerWidth >= DESKTOP);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
   }, []);
 
-  const setTheme = useCallback(t => {
-    _setTheme(t); localStorage.setItem("sl_theme", t);
-  }, []);
+  const setTheme = useCallback(t => { _setTheme(t); localStorage.setItem("sl_theme", t); }, []);
   const tk = theme === "dark" ? DARK : LIGHT;
 
   useEffect(() => {
     const token = API.getToken();
     if (!token) { setAppLoading(false); return; }
-    API.getMe()
-      .then(res => setUser(res.user))
-      .catch(() => API.clearToken())
-      .finally(() => setAppLoading(false));
+    API.getMe().then(r => setUser(r.user)).catch(() => API.clearToken()).finally(() => setAppLoading(false));
   }, []);
 
   const loadAllData = useCallback(async () => {
@@ -69,36 +75,10 @@ export default function App() {
       setMats(m.map(x => ({ ...x, min: x.min_stock, cost: x.unit_cost })));
       setWorkers(w.map(x => ({ ...x, rate: x.daily_rate })));
       setMatLogs(ml.map(x => ({ ...x, material: x.material_name, qty: x.quantity })));
-      setAtt(a.map(x => ({
-        ...x,
-        workerId: x.worker_id,
-        name: x.worker_name,
-        role: x.worker_role,
-        ot: x.ot_hours,
-        total: x.total_wage,
-        isSubcontract: !!x.is_subcontract,
-      })));
-      setExp(e.map(x => ({
-        ...x,
-        category: x.category_name,
-        desc: x.description,
-        vendor: x.vendor_name,
-        paymentMode: x.payment_mode,
-      })));
-      setInv(i.map(x => ({
-        ...x,
-        vendor: x.vendor_name,
-        desc: x.description,
-        due: x.due_date,
-        paid: x.amount_paid || 0,
-      })));
-      setVendors(v.map(x => ({
-        ...x,
-        cat: x.category,
-        ph: x.phone,
-        bal: x.invoice_outstanding || x.balance || 0,
-        expTotal: x.expense_total || 0,
-      })));
+      setAtt(a.map(x => ({ ...x, workerId: x.worker_id, name: x.worker_name, role: x.worker_role, ot: x.ot_hours, total: x.total_wage, isSubcontract: !!x.is_subcontract })));
+      setExp(e.map(x => ({ ...x, category: x.category_name, desc: x.description, vendor: x.vendor_name, paymentMode: x.payment_mode })));
+      setInv(i.map(x => ({ ...x, vendor: x.vendor_name, desc: x.description, due: x.due_date, paid: x.amount_paid || 0 })));
+      setVendors(v.map(x => ({ ...x, cat: x.category, ph: x.phone, bal: x.invoice_outstanding || x.balance || 0, expTotal: x.expense_total || 0 })));
       setTasks(t.map(x => ({ ...x, assigned: x.worker_name, pri: x.priority })));
       setExpCats(ec.map(x => x.name));
     } catch (err) { console.error("Data load error:", err); }
@@ -115,8 +95,12 @@ export default function App() {
     </AppCtx.Provider>
   );
 
+  // Guard: redirect Site Engineer away from balance sheet
+  const hasFinance = canViewFinance(user.role);
+  const safePage   = (!hasFinance && page === "balancesheet") ? "dashboard" : page;
+
   const renderPage = () => {
-    switch (page) {
+    switch (safePage) {
       case "dashboard":    return <Dashboard />;
       case "materials":    return <Materials />;
       case "attendance":   return <Attendance />;
@@ -125,7 +109,7 @@ export default function App() {
       case "invoices":     return <Invoices />;
       case "vendors":      return <Vendors />;
       case "reports":      return <Reports />;
-      case "balancesheet": return <BalanceSheet />;
+      case "balancesheet": return hasFinance ? <BalanceSheet /> : <Dashboard />;
       case "workflow":     return <Workflow />;
       case "settings":     return <Settings />;
       default:             return <Dashboard />;
@@ -136,12 +120,12 @@ export default function App() {
 
   return (
     <AppCtx.Provider value={{
-      tk, theme, setTheme, user, setUser, page, setPage,
+      tk, theme, setTheme, user, setUser, page: safePage, setPage,
       mats, setMats, workers, setWorkers, matLogs, setMatLogs,
       att, setAtt, exp, setExp, inv, setInv,
       vendors, setVendors, tasks, setTasks,
       expCats, setExpCats, roles, labourCategories,
-      loadAllData, isDesktop,
+      loadAllData, isDesktop, hasFinance,
     }}>
       <GlobalStyles tk={tk} isDesktop={isDesktop} />
 
@@ -151,7 +135,7 @@ export default function App() {
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
           {!isDesktop && <Topbar onMenuClick={() => setSideOpen(true)} />}
-          {isDesktop  && <DesktopTopbar tk={tk} user={user} page={page} />}
+          {isDesktop  && <DesktopTopbar tk={tk} user={user} page={safePage} />}
 
           <main style={{
             flex: 1, overflowY: "auto", overflowX: "hidden",
@@ -174,34 +158,16 @@ export default function App() {
   );
 }
 
-const PAGE_LABELS = {
-  dashboard: "Dashboard", materials: "Materials", attendance: "Labour & Attendance",
-  expenses: "Expenses", tasks: "Task Tracker", invoices: "Invoices & Payables",
-  vendors: "Vendors", reports: "Reports", balancesheet: "Balance Sheet",
-  workflow: "Daily Workflow", settings: "Settings",
-};
-
 function DesktopTopbar({ tk, user, page }) {
   return (
-    <div style={{
-      height: 54, flexShrink: 0,
-      display: "flex", alignItems: "center", padding: "0 32px",
-      borderBottom: `1px solid ${tk.bdr}`, background: tk.surf,
-    }}>
-      <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-.2px" }}>
-        {PAGE_LABELS[page] || "Ciel Homes"}
-      </span>
+    <div style={{ height: 54, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 32px", borderBottom: `1px solid ${tk.bdr}`, background: tk.surf }}>
+      <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-.2px" }}>{PAGE_LABELS[page] || "Ciel Homes"}</span>
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: tk.tx }}>{user?.name}</div>
           <div style={{ fontSize: 10, color: tk.tx3 }}>{user?.role}</div>
         </div>
-        <div style={{
-          width: 34, height: 34, borderRadius: "50%",
-          background: tk.acc, color: "#fff",
-          fontSize: 13, fontWeight: 700,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
+        <div style={{ width: 34, height: 34, borderRadius: "50%", background: tk.acc, color: "#fff", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {user?.ini || "U"}
         </div>
       </div>

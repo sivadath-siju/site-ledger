@@ -8,8 +8,7 @@ async function request(path, options = {}) {
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
     headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers },
-    ...options,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    ...options, body: options.body ? JSON.stringify(options.body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
@@ -17,9 +16,9 @@ async function request(path, options = {}) {
 }
 
 const get  = p      => request(p);
-const post = (p, b) => request(p, { method: "POST",   body: b });
-const patch= (p, b) => request(p, { method: "PATCH",  body: b });
-const put  = (p, b) => request(p, { method: "PUT",    body: b });
+const post = (p, b) => request(p, { method: "POST",  body: b });
+const patch= (p, b) => request(p, { method: "PATCH", body: b });
+const put  = (p, b) => request(p, { method: "PUT",   body: b });
 const del  = p      => request(p, { method: "DELETE" });
 
 // AUTH
@@ -51,13 +50,13 @@ export const recordAttendance = d  => post("/workers/attendance", d);
 export const deleteAttendance = id => del(`/workers/attendance/${id}`);
 
 // SUBCONTRACTORS
-export const getSubcontractors     = ()      => get("/subcontractors");
-export const getSubcontractor      = id      => get(`/subcontractors/${id}`);
-export const addSubcontractor      = d       => post("/subcontractors", d);
-export const updateSubcontractor   = (id, d) => patch(`/subcontractors/${id}`, d);
-export const deleteSubcontractor   = id      => del(`/subcontractors/${id}`);
-export const getSubcontractorAtt   = (id, p) => get(`/subcontractors/${id}/attendance?${new URLSearchParams(p)}`);
-export const getSubcontractorTotals= ()      => get("/subcontractors/totals/summary");
+export const getSubcontractors      = ()      => get("/subcontractors");
+export const getSubcontractor       = id      => get(`/subcontractors/${id}`);
+export const addSubcontractor       = d       => post("/subcontractors", d);
+export const updateSubcontractor    = (id, d) => patch(`/subcontractors/${id}`, d);
+export const deleteSubcontractor    = id      => del(`/subcontractors/${id}`);
+export const getSubcontractorAtt    = (id, p) => get(`/subcontractors/${id}/attendance?${new URLSearchParams(p)}`);
+export const getSubcontractorTotals = ()      => get("/subcontractors/totals/summary");
 
 // EXPENSES
 export const getExpenses   = p  => get(`/expenses?${new URLSearchParams(p)}`);
@@ -98,6 +97,7 @@ export const getAllDailyLogs = ()   => get("/tasks/logs/all");
 // REPORTS
 export const getReportSummary  = ()  => get("/reports/summary");
 export const getDailyReport    = d   => get(`/reports/daily?date=${d}`);
+export const getGrandTotals    = ()  => get("/reports/grand-totals");       // ← balance sheet header
 export const getBalanceSheet   = p   => get(`/reports/balance-sheet?${new URLSearchParams(p)}`);
 export const getVendorLedger   = id  => get(`/reports/vendor-ledger/${id}`);
-export const getLabourLedger   = p   => get(`/reports/labour-ledger?${new URLSearchParams(p || {})}`);
+export const getLabourLedger   = p   => get(`/reports/labour-ledger?${new URLSearchParams(p||{})}`);

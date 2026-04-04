@@ -1,73 +1,77 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
-import {
-  Card, CardTitle, StatCard, Btn, Alert, Field, Select, Input,
-  FormGrid, Sheet, Badge, Empty,
-} from "../components/Primitives";
-import { IFileText, IRupee, ICheckCirc, IXCircle, IBuilding, IClock, ITrash, IUsers, IReceipt } from "../icons/Icons";
+import { Card, CardTitle, Btn, Alert, Field, Select, Input, FormGrid, Sheet, Badge, Empty } from "../components/Primitives";
+import { IFileText, ICheckCirc, IXCircle, IBuilding, IClock, ITrash, IUsers, IReceipt } from "../icons/Icons";
 
-const Rs    = n  => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtD  = d  => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
-const fmtDT = d  => d ? new Date(d).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+/* ── Colour constants — no orange for data ─────────────────────── */
+const C = {
+  debitInvoice: "#b91c1c",   // red-700 — invoice debit
+  debitExpense: "#92400e",   // amber-800 — expense debit
+  debitLabour:  "#1d4ed8",   // blue-700 — labour debit
+  credit:       "#15803d",   // green-700 — credit/payment
+  balance:      "#111827",   // gray-900 — running balance
+  balanceDue:   "#b91c1c",   // red when positive
+  balanceClear: "#15803d",   // green when zero
+  headerBg:     "#f8fafc",
+};
+
+const Rs    = n => "₹" + Number(n||0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtD  = d => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+const fmtDT = d => d ? new Date(d).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 
 const PAYMENT_MODES = ["Cash", "UPI", "Bank Transfer", "Cheque", "NEFT/RTGS", "Card"];
-const ORANGE = "#c75a00";
 
+// Inline icons
 const IBalance = ({ size = 16, color = "currentColor" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
-    fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="12" y1="3" x2="12" y2="21"/><path d="M3 9l4.5 4.5L12 9"/><path d="M12 9l4.5 4.5L21 9"/>
     <line x1="3" y1="21" x2="21" y2="21"/><line x1="1.5" y1="9" x2="10.5" y2="9"/><line x1="13.5" y1="9" x2="22.5" y2="9"/>
   </svg>
 );
 const ICreditCard = ({ size = 14, color = "currentColor" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
-    fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
   </svg>
 );
-const IDownload = ({ size = 14, color = "currentColor" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
-    fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-    <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+const IDownload = ({ size = 13, color = "currentColor" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
   </svg>
 );
 
 function exportCSV(rows, filename) {
-  const csv  = rows.map(r => r.map(c => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const csv  = rows.map(r => r.map(c => `"${String(c??"").replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const a    = document.createElement("a");
-  a.href     = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const a    = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename; a.click(); URL.revokeObjectURL(a.href);
 }
 
-// Tab button
-function TabBtn({ active, onClick, children }) {
-  return (
-    <button onClick={onClick} style={{
-      padding: "7px 14px", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 600,
-      cursor: "pointer", transition: "all .15s",
-      background: active ? ORANGE : "transparent",
-      color: active ? "#fff" : "#a04800",
-      boxShadow: active ? `0 2px 8px ${ORANGE}44` : "none",
-    }}>{children}</button>
-  );
+// Colour-coded source badge
+function SourceBadge({ source }) {
+  const cfg = {
+    invoice: { bg: "#fef2f2", color: C.debitInvoice, label: "INV" },
+    expense: { bg: "#fffbeb", color: C.debitExpense, label: "EXP" },
+    payment: { bg: "#f0fdf4", color: C.credit,       label: "PMT" },
+    labour:  { bg: "#eff6ff", color: C.debitLabour,  label: "LAB" },
+  };
+  const c = cfg[source] || cfg.invoice;
+  return <span style={{ background: c.bg, color: c.color, fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6, border: `1px solid ${c.color}33`, whiteSpace: "nowrap" }}>{c.label}</span>;
 }
 
 export default function BalanceSheet() {
   const { tk, vendors, inv, setInv, exp, att, isDesktop } = useApp();
 
-  // Main tabs
-  const [tab, setTab] = useState("vendors"); // vendors | expenses | labour
+  // Grand totals from backend
+  const [grandTotals, setGrandTotals] = useState({ invoiceTotal: 0, expenseTotal: 0, labourTotal: 0, grandTotal: 0, paidTotal: 0, outstanding: 0 });
+  const [totalsLoading, setTotalsLoading] = useState(true);
 
-  // Vendor tab state
+  // View state
+  const [view, setView]                 = useState("summary"); // summary | vendor | labour
   const [selectedVendor, setSelectedVendor] = useState("all");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate,   setToDate]   = useState("");
+  const [vendorLedger, setVendorLedger] = useState(null);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [fromDate, setFromDate]         = useState("");
+  const [toDate,   setToDate]           = useState("");
 
   // Labour ledger
   const [labourLedger, setLabourLedger] = useState([]);
@@ -90,40 +94,54 @@ export default function BalanceSheet() {
   const [payments,    setPayments]    = useState([]);
   const [histLoading, setHistLoading] = useState(false);
 
-  // Load labour ledger when tab is active
+  // Load grand totals
+  const loadGrandTotals = useCallback(() => {
+    setTotalsLoading(true);
+    API.getGrandTotals()
+      .then(d => setGrandTotals(d))
+      .catch(() => {})
+      .finally(() => setTotalsLoading(false));
+  }, []);
+
+  useEffect(() => { loadGrandTotals(); }, [loadGrandTotals]);
+
+  // Load vendor ledger
   useEffect(() => {
-    if (tab !== "labour") return;
+    if (view !== "vendor" || selectedVendor === "all") { setVendorLedger(null); return; }
+    setLedgerLoading(true);
+    API.getVendorLedger(selectedVendor)
+      .then(d => setVendorLedger(d))
+      .catch(() => setVendorLedger(null))
+      .finally(() => setLedgerLoading(false));
+  }, [view, selectedVendor]);
+
+  // Load labour ledger
+  useEffect(() => {
+    if (view !== "labour") return;
     setLabourLoading(true);
     API.getLabourLedger({ from: fromDate || undefined, to: toDate || undefined })
       .then(d => setLabourLedger(d.entries || []))
       .catch(() => setLabourLedger([]))
       .finally(() => setLabourLoading(false));
-  }, [tab, fromDate, toDate]);
+  }, [view, fromDate, toDate]);
 
-  // Derived vendor data
-  const vendorInvoices = selectedVendor === "all"
-    ? inv
-    : inv.filter(i => { const v = vendors.find(v => String(v.id) === String(selectedVendor)); return v && i.vendor === v.name; });
+  // Derived
+  const totalExpAll = exp.reduce((s, e) => s + e.amount, 0);
 
-  const totalInvoiced = vendorInvoices.reduce((s, i) => s + i.amount, 0);
-  const totalPaid     = vendorInvoices.reduce((s, i) => s + (i.paid || 0), 0);
-  const totalDue      = totalInvoiced - totalPaid;
-
-  // Expense totals
-  const totalExpenses     = exp.reduce((s, e) => s + e.amount, 0);
-  const vendorExpenses    = selectedVendor === "all" ? exp : exp.filter(e => {
-    const v = vendors.find(v => String(v.id) === String(selectedVendor));
-    return v && e.vendor === v.name;
+  // Vendor summary: invoices + expenses per vendor
+  const vendorSummary = vendors.map(v => {
+    const vInv = inv.filter(i => i.vendor === v.name);
+    const vExp = exp.filter(e => e.vendor === v.name);
+    const invTotal = vInv.reduce((s,i) => s + i.amount, 0);
+    const expTotal = vExp.reduce((s,e) => s + e.amount, 0);
+    const paid     = vInv.reduce((s,i) => s + (i.paid||0), 0);
+    return { ...v, invTotal, expTotal, paid, debit: invTotal + expTotal, balance: invTotal + expTotal - paid };
   });
-  const vendorExpTotal    = vendorExpenses.reduce((s, e) => s + e.amount, 0);
-
-  // Direct labour total
-  const directLabourTotal = att.filter(a => !a.isSubcontract).reduce((s, a) => s + (a.total || 0), 0);
 
   // Pay handlers
   const openPaySheet = (invoice) => {
     setPayInvoice(invoice);
-    setPayAmount((invoice.amount - (invoice.paid || 0)).toFixed(2));
+    setPayAmount((invoice.amount - (invoice.paid||0)).toFixed(2));
     setPayMode("Cash"); setPayRef(""); setPayNotes("");
     setPayDate(new Date().toISOString().split("T")[0]);
     setPayMsg(null); setPaySheet(true);
@@ -132,14 +150,15 @@ export default function BalanceSheet() {
   const submitPayment = async () => {
     const amt = parseFloat(payAmount);
     if (!amt || amt <= 0) return setPayMsg({ t: "err", s: "Enter a valid amount." });
-    const remaining = payInvoice.amount - (payInvoice.paid || 0);
-    if (amt > remaining + 0.01) return setPayMsg({ t: "err", s: `Max payable: ${Rs(remaining)}` });
+    const rem = payInvoice.amount - (payInvoice.paid||0);
+    if (amt > rem + 0.01) return setPayMsg({ t: "err", s: `Max payable: ${Rs(rem)}` });
     setPaying(true);
     try {
-      await API.addPayment(payInvoice.id, { amount: amt, payment_mode: payMode, reference: payRef, notes: payNotes, paid_at: `${payDate}T${new Date().toTimeString().slice(0, 8)}` });
-      const newPaid   = (payInvoice.paid || 0) + amt;
+      await API.addPayment(payInvoice.id, { amount: amt, payment_mode: payMode, reference: payRef, notes: payNotes, paid_at: `${payDate}T${new Date().toTimeString().slice(0,8)}` });
+      const newPaid   = (payInvoice.paid||0) + amt;
       const newStatus = Math.abs(newPaid - payInvoice.amount) < 0.01 ? "Paid" : "Partially Paid";
       setInv(prev => prev.map(x => x.id === payInvoice.id ? { ...x, paid: newPaid, status: newStatus } : x));
+      loadGrandTotals();
       setPayMsg({ t: "ok", s: `${Rs(amt)} recorded!` });
       setTimeout(() => { setPaySheet(false); setPayMsg(null); }, 1200);
     } catch (e) { setPayMsg({ t: "err", s: e.message }); }
@@ -155,40 +174,82 @@ export default function BalanceSheet() {
 
   const deletePaymentEntry = async (pid) => {
     if (!window.confirm("Delete this payment?")) return;
-    try { await API.deletePayment(histInvoice.id, pid); setPayments(prev => prev.filter(p => p.id !== pid)); }
+    try { await API.deletePayment(histInvoice.id, pid); setPayments(prev => prev.filter(p => p.id !== pid)); loadGrandTotals(); }
     catch (e) { alert(e.message); }
   };
 
   const statusBadge = (inv) => {
-    if (inv.status === "Paid" || Math.abs((inv.paid || 0) - inv.amount) < 0.01) return <Badge color="green">Paid</Badge>;
-    if ((inv.paid || 0) > 0) return <Badge color="amber">Partial</Badge>;
+    if (inv.status === "Paid" || Math.abs((inv.paid||0) - inv.amount) < 0.01) return <Badge color="green">Paid</Badge>;
+    if ((inv.paid||0) > 0) return <Badge color="amber">Partial</Badge>;
     return <Badge color="red">Unpaid</Badge>;
   };
 
-  // CSV export
-  const exportVendorCSV = () => {
+  // CSV
+  const exportSummaryCSV = () => {
     const rows = [
-      ["Ref", "Vendor", "Type", "Description", "Debit (Dr)", "Credit (Cr)", "Status", "Date"],
-      ...vendorInvoices.map(i => [`INV-${String(i.id).padStart(4,"0")}`, i.vendor, "Invoice", i.desc||"", i.amount.toFixed(2), (i.paid||0).toFixed(2), i.status, fmtD(i.created_at)]),
-      ...vendorExpenses.map(e => [`EXP-${String(e.id).padStart(4,"0")}`, e.vendor||"—", "Expense", e.desc||"", e.amount.toFixed(2), "0.00", "Paid", fmtD(e.date)]),
-      [], ["", "", "", "TOTAL DEBIT", (totalInvoiced + vendorExpTotal).toFixed(2), totalPaid.toFixed(2), "", ""],
+      ["Category", "Amount (₹)"],
+      ["Total Invoices",    grandTotals.invoiceTotal.toFixed(2)],
+      ["Total Expenses",    grandTotals.expenseTotal.toFixed(2)],
+      ["Direct Labour",     grandTotals.labourTotal.toFixed(2)],
+      ["Grand Total Debit", grandTotals.grandTotal.toFixed(2)],
+      ["Total Paid",        grandTotals.paidTotal.toFixed(2)],
+      ["Outstanding",       grandTotals.outstanding.toFixed(2)],
     ];
-    exportCSV(rows, `ciel-homes-ledger-${new Date().toISOString().slice(0,10)}.csv`);
+    exportCSV(rows, `ciel-homes-summary-${new Date().toISOString().slice(0,10)}.csv`);
   };
 
-  const exportLabourCSV = () => {
-    const rows = [
-      ["Date", "Particulars", "Debit (Dr)", "Running Balance"],
-      ...labourLedger.map(e => [e.date, e.particulars, e.amount.toFixed(2), e.running_balance.toFixed(2)]),
-    ];
-    exportCSV(rows, `ciel-homes-labour-ledger-${new Date().toISOString().slice(0,10)}.csv`);
+  // Tab button component
+  const TabBtn = ({ id, label, icon }) => {
+    const active = view === id;
+    return (
+      <button onClick={() => setView(id)} style={{
+        padding: "8px 16px", border: `1.5px solid ${active ? tk.acc : tk.bdr}`,
+        borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: "pointer",
+        background: active ? tk.acc : "transparent", color: active ? "#fff" : tk.tx2,
+        display: "flex", alignItems: "center", gap: 6, transition: "all .15s",
+        boxShadow: active ? `0 2px 8px ${tk.acc}44` : "none",
+      }}>
+        {icon}{label}
+      </button>
+    );
   };
 
-  // ── Summary stat cards (3-col, no overflow on mobile) ──
-  const summaryStats = [
-    { label: "Inv. Payable", value: Rs(totalDue),          color: totalDue > 0.01 ? tk.red : tk.grn },
-    { label: "Expenses",     value: Rs(totalExpenses),     color: tk.amb },
-    { label: "Labour Cost",  value: Rs(directLabourTotal), color: tk.acc },
+  /* ── TOP 3 SUMMARY CARDS ─────────────────────────────────────
+     Mobile: stacked vertically (1 column)
+     Desktop: 3 columns
+  ────────────────────────────────────────────────────────────── */
+  const summaryCards = [
+    {
+      label:    "Total Expenditure",
+      sublabel: "Invoices + Expenses + Labour",
+      value:    Rs(grandTotals.grandTotal),
+      color:    "#1e3a5f",  // deep navy — total
+      bg:       "#eff6ff",
+      border:   "#bfdbfe",
+      breakdown: [
+        { l: `Invoices`,  v: Rs(grandTotals.invoiceTotal), c: C.debitInvoice },
+        { l: `Expenses`,  v: Rs(grandTotals.expenseTotal), c: C.debitExpense },
+        { l: `Labour`,    v: Rs(grandTotals.labourTotal),  c: C.debitLabour  },
+      ],
+    },
+    {
+      label:    "Amount Paid",
+      sublabel: "Payments made to date",
+      value:    Rs(grandTotals.paidTotal),
+      color:    C.credit,
+      bg:       "#f0fdf4",
+      border:   "#bbf7d0",
+      breakdown: [],
+    },
+    {
+      label:    "Outstanding Balance",
+      sublabel: "Remaining to be paid",
+      value:    Rs(grandTotals.outstanding),
+      color:    grandTotals.outstanding > 0.01 ? C.debitInvoice : C.credit,
+      bg:       grandTotals.outstanding > 0.01 ? "#fef2f2" : "#f0fdf4",
+      border:   grandTotals.outstanding > 0.01 ? "#fecaca" : "#bbf7d0",
+      breakdown: [],
+    },
   ];
 
   return (
@@ -196,330 +257,324 @@ export default function BalanceSheet() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 10, animation: "fadeUp .25s ease" }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px", color: ORANGE }}>Balance Sheet</div>
-          <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Vendor ledger · Expenses · Labour payments</div>
+          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Balance Sheet</div>
+          <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Financial overview — Ciel Homes</div>
         </div>
-        <Btn variant="secondary" small onClick={tab === "labour" ? exportLabourCSV : exportVendorCSV}>
-          <IDownload size={13} />Export CSV
-        </Btn>
+        <Btn variant="secondary" small onClick={exportSummaryCSV}><IDownload size={13} />Export CSV</Btn>
       </div>
 
-      {/* Summary mini cards — 3-col, minmax(0) prevents overflow */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: isDesktop ? 12 : 7, marginBottom: 14 }}>
-        {summaryStats.map(s => (
-          <div key={s.label} style={{
-            background: tk.surf, border: `1px solid ${tk.bdr}`, borderRadius: 12,
-            padding: isDesktop ? "14px 16px" : "10px 9px", boxShadow: tk.sh, minWidth: 0,
+      {/* ══════════════════════════════════════════════════════
+          TOP SUMMARY CARDS
+          Mobile: 1-column stack | Desktop: 3-column row
+      ══════════════════════════════════════════════════════ */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: isDesktop ? "repeat(3, 1fr)" : "1fr",   // KEY: 1-col on mobile
+        gap: isDesktop ? 14 : 10,
+        marginBottom: 18,
+      }}>
+        {summaryCards.map((card, i) => (
+          <div key={i} style={{
+            background: card.bg,
+            border: `1.5px solid ${card.border}`,
+            borderRadius: 14, padding: isDesktop ? "18px 20px" : "14px 16px",
+            animation: `fadeUp .3s ease ${i * 0.06}s both`,
           }}>
-            <div style={{ fontSize: isDesktop ? 17 : 13, fontWeight: 700, fontFamily: "'DM Mono',monospace", color: s.color, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {s.value}
+            {/* Main value */}
+            <div style={{ fontSize: isDesktop ? 26 : 22, fontWeight: 800, fontFamily: "'DM Mono',monospace", color: card.color, letterSpacing: "-.5px", marginBottom: 4 }}>
+              {totalsLoading ? "—" : card.value}
             </div>
-            <div style={{ fontSize: 10, color: tk.tx3, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", marginTop: 3 }}>
-              {s.label}
-            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>{card.label}</div>
+            <div style={{ fontSize: 11, color: "#6b7280", marginBottom: card.breakdown.length ? 10 : 0 }}>{card.sublabel}</div>
+
+            {/* Breakdown (only on first card) */}
+            {card.breakdown.length > 0 && (
+              <div style={{ borderTop: `1px solid ${card.border}`, paddingTop: 8 }}>
+                {card.breakdown.map(b => (
+                  <div key={b.l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: b.c, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: b.c, display: "inline-block" }} />
+                      {b.l}
+                    </span>
+                    <span style={{ fontSize: 11, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: b.c }}>{b.v}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Date filters */}
-      <Card delay={.08}>
-        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", gap: 6, background: `${ORANGE}14`, padding: 4, borderRadius: 10, flexWrap: "wrap" }}>
-            <TabBtn active={tab === "vendors"}  onClick={() => setTab("vendors")}>🏢 Vendor Ledger</TabBtn>
-            <TabBtn active={tab === "expenses"} onClick={() => setTab("expenses")}>🧾 All Expenses</TabBtn>
-            <TabBtn active={tab === "labour"}   onClick={() => setTab("labour")}>👷 Labour Payments</TabBtn>
-          </div>
-        </div>
-        <FormGrid cols={isDesktop ? "2fr 1fr 1fr" : "1fr 1fr"}>
-          {tab === "vendors" && (
-            <Field label="Vendor">
-              <Select value={selectedVendor} onChange={e => setSelectedVendor(e.target.value)}>
-                <option value="all">All Vendors</option>
-                {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </Select>
+      {/* ══════════════════════════════════════════════════════
+          VIEW TABS
+      ══════════════════════════════════════════════════════ */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+        <TabBtn id="summary" label="Vendor Summary" icon={<IBuilding size={13} />} />
+        <TabBtn id="vendor"  label="Vendor Ledger"  icon={<IFileText size={13} />} />
+        <TabBtn id="labour"  label="Labour Ledger"  icon={<IUsers size={13} />} />
+      </div>
+
+      {/* Date filters (shown for vendor + labour views) */}
+      {view !== "summary" && (
+        <Card>
+          <FormGrid cols={isDesktop ? "2fr 1fr 1fr auto" : "1fr 1fr"}>
+            {view === "vendor" && (
+              <Field label="Vendor">
+                <Select value={selectedVendor} onChange={e => setSelectedVendor(e.target.value)}>
+                  <option value="all">— Select vendor —</option>
+                  {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                </Select>
+              </Field>
+            )}
+            <Field label="From Date"><Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} /></Field>
+            <Field label="To Date">  <Input type="date" value={toDate}   onChange={e => setToDate(e.target.value)}   /></Field>
+            <Field label="&nbsp;">
+              <Btn variant="ghost" small onClick={() => { setFromDate(""); setToDate(""); setSelectedVendor("all"); }}>Clear</Btn>
             </Field>
-          )}
-          <Field label="From"><Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} /></Field>
-          <Field label="To">  <Input type="date" value={toDate}   onChange={e => setToDate(e.target.value)}   /></Field>
-        </FormGrid>
-        <Btn variant="ghost" small onClick={() => { setFromDate(""); setToDate(""); setSelectedVendor("all"); }}>Clear</Btn>
-      </Card>
+          </FormGrid>
+        </Card>
+      )}
 
-      {/* ══════════════════════════════════════
-          TAB: VENDOR LEDGER
-      ══════════════════════════════════════ */}
-      {tab === "vendors" && (
-        <>
-          {/* All-vendor summary */}
-          {selectedVendor === "all" && (
-            <Card delay={.12}>
-              <CardTitle icon={IBuilding}>Vendor-wise Summary</CardTitle>
-              {vendors.length === 0 ? <Empty icon={IBuilding} text="No vendors found." /> : (
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
-                    <thead><tr>
-                      {["Vendor","Invoices","Payable","Expenses","Balance"].map((h, i) => (
-                        <th key={h} style={{ textAlign: i > 1 ? "right" : i === 1 ? "center" : "left", padding: "10px 10px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: tk.tx3, background: tk.surf2, borderBottom: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{h}</th>
-                      ))}
-                    </tr></thead>
-                    <tbody>
-                      {vendors.map(v => {
-                        const vInv  = inv.filter(i => i.vendor === v.name);
-                        const vExp  = exp.filter(e => e.vendor === v.name);
-                        const inv_  = vInv.reduce((s, i) => s + i.amount, 0);
-                        const paid_ = vInv.reduce((s, i) => s + (i.paid || 0), 0);
-                        const exp_  = vExp.reduce((s, e) => s + e.amount, 0);
-                        const bal   = inv_ + exp_ - paid_;
-                        return (
-                          <tr key={v.id} style={{ cursor: "pointer" }} onClick={() => setSelectedVendor(String(v.id))}>
-                            <td style={{ padding: "11px 10px", borderBottom: `1px solid ${tk.bdr}` }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                <div style={{ width: 28, height: 28, borderRadius: 8, background: `${ORANGE}1a`, color: ORANGE, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{v.name.charAt(0)}</div>
-                                <div>
-                                  <div style={{ fontWeight: 600, fontSize: 13 }}>{v.name}</div>
-                                  {v.cat && <div style={{ fontSize: 10, color: tk.tx3 }}>{v.cat}</div>}
-                                </div>
-                              </div>
-                            </td>
-                            <td style={{ padding: "11px 10px", textAlign: "center", borderBottom: `1px solid ${tk.bdr}` }}>
-                              <span style={{ background: tk.accL, color: tk.acc, padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 700 }}>{vInv.length}</span>
-                            </td>
-                            <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 600, borderBottom: `1px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(inv_)}</td>
-                            <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", color: tk.amb, fontWeight: 600, borderBottom: `1px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(exp_)}</td>
-                            <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, borderBottom: `1px solid ${tk.bdr}`, color: bal > 0.01 ? tk.red : tk.grn, whiteSpace: "nowrap" }}>{Rs(bal)}</td>
-                          </tr>
-                        );
-                      })}
-                      <tr style={{ background: tk.surf2 }}>
-                        <td colSpan={2} style={{ padding: "11px 10px", fontWeight: 700, borderTop: `2px solid ${tk.bdr}` }}>Grand Total</td>
-                        <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(totalInvoiced)}</td>
-                        <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.amb, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(totalExpenses)}</td>
-                        <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: totalDue > 0.01 ? tk.red : tk.grn, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(totalDue)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Card>
+      {/* ══════════════════════════════════════════════════════
+          VIEW: VENDOR SUMMARY TABLE
+      ══════════════════════════════════════════════════════ */}
+      {view === "summary" && (
+        <Card>
+          <CardTitle icon={IBuilding}>Vendor-wise Summary — Invoices + Expenses</CardTitle>
+          {vendors.length === 0 ? <Empty icon={IBuilding} text="No vendors added yet." /> : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+                <thead>
+                  <tr style={{ background: "#f8fafc" }}>
+                    {["Vendor", "Invoiced", "Expenses", "Total Debit", "Paid", "Balance"].map((h, i) => (
+                      <th key={h} style={{ textAlign: i > 0 ? "right" : "left", padding: "10px 12px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: "#6b7280", borderBottom: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {vendorSummary.map(v => (
+                    <tr key={v.id} style={{ cursor: "pointer" }} onClick={() => { setSelectedVendor(String(v.id)); setView("vendor"); }}>
+                      <td style={{ padding: "11px 12px", borderBottom: `1px solid ${tk.bdr}` }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 8, background: "#e0f2fe", color: "#0369a1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{v.name.charAt(0)}</div>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: 13 }}>{v.name}</div>
+                            {v.cat && <div style={{ fontSize: 10, color: tk.tx3 }}>{v.cat}</div>}
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", color: C.debitInvoice, fontWeight: 600, whiteSpace: "nowrap" }}>{Rs(v.invTotal)}</td>
+                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", color: C.debitExpense, fontWeight: 600, whiteSpace: "nowrap" }}>{Rs(v.expTotal)}</td>
+                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>{Rs(v.debit)}</td>
+                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", color: C.credit, fontWeight: 600, whiteSpace: "nowrap" }}>{Rs(v.paid)}</td>
+                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: v.balance > 0.01 ? C.debitInvoice : C.credit, whiteSpace: "nowrap" }}>{Rs(v.balance)}</td>
+                    </tr>
+                  ))}
+                  {/* Totals row */}
+                  <tr style={{ background: "#f8fafc" }}>
+                    <td style={{ padding: "11px 12px", fontWeight: 700, fontSize: 13, borderTop: `2px solid ${tk.bdr}`, color: "#111827" }}>Total</td>
+                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.debitInvoice, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandTotals.invoiceTotal)}</td>
+                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.debitExpense, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandTotals.expenseTotal)}</td>
+                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#111827", borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandTotals.invoiceTotal + grandTotals.expenseTotal)}</td>
+                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.credit, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandTotals.paidTotal)}</td>
+                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: (grandTotals.invoiceTotal + grandTotals.expenseTotal - grandTotals.paidTotal) > 0.01 ? C.debitInvoice : C.credit, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandTotals.invoiceTotal + grandTotals.expenseTotal - grandTotals.paidTotal)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           )}
 
-          {/* Single vendor Dr/Cr ledger */}
-          {selectedVendor !== "all" && (() => {
-            const v = vendors.find(v => String(v.id) === String(selectedVendor));
-            let running = 0;
-            // Combine invoices + vendor expenses into ledger, payments as credit
-            const allEntries = [
-              ...vendorInvoices.map(i => ({ _type: "invoice", date: i.created_at || new Date().toISOString(), ...i })),
-              ...vendorExpenses.map(e => ({ _type: "expense", date: e.date + "T00:00:00", ...e })),
-            ].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            const grandDebit = totalInvoiced + vendorExpTotal;
-            return (
-              <Card delay={.12}>
-                <CardTitle icon={IFileText} action={
-                  <button onClick={() => setSelectedVendor("all")} style={{ background: "none", border: "none", cursor: "pointer", color: ORANGE, fontSize: 12, fontWeight: 600 }}>← All Vendors</button>
-                }>
-                  {v?.name || "Vendor"} — Account Ledger
-                </CardTitle>
-                {v && (
-                  <div style={{ display: "flex", gap: 16, marginBottom: 14, padding: "10px 14px", background: `${ORANGE}0d`, borderRadius: 10, border: `1px solid ${ORANGE}33`, flexWrap: "wrap" }}>
-                    <div><div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase" }}>Vendor</div><div style={{ fontWeight: 700 }}>{v.name}</div></div>
-                    {v.ph && <div><div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase" }}>Phone</div><div>{v.ph}</div></div>}
-                    <div style={{ marginLeft: "auto", textAlign: "right" }}>
-                      <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase" }}>Net Balance Due</div>
-                      <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 18, color: (grandDebit - totalPaid) > 0.01 ? tk.red : tk.grn }}>{Rs(grandDebit - totalPaid)}</div>
-                    </div>
-                  </div>
-                )}
-                {allEntries.length === 0 ? <Empty icon={IFileText} text="No transactions for this vendor." /> : (
-                  <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}>
-                      <thead><tr>
-                        {["Date","Particulars","Ref #","Debit (Dr)","Credit (Cr)","Balance","",""].map((h, i) => (
-                          <th key={i} style={{ textAlign: i > 2 ? "right" : "left", padding: "10px 10px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: tk.tx3, background: tk.surf2, borderBottom: `2px solid ${tk.bdr}`, whiteSpace: "nowrap", minWidth: i > 2 && i < 6 ? 110 : undefined }}>{h}</th>
-                        ))}
-                      </tr></thead>
-                      <tbody>
-                        <tr><td colSpan={8} style={{ padding: "7px 10px", fontSize: 11, color: tk.tx3, fontStyle: "italic", background: tk.surf2, borderBottom: `1px solid ${tk.bdr}` }}>Opening Balance — ₹0.00</td></tr>
-                        {allEntries.map((entry, idx) => {
-                          if (entry._type === "invoice") {
-                            running += entry.amount;
-                            const isPaid = entry.status === "Paid" || Math.abs((entry.paid || 0) - entry.amount) < 0.01;
-                            const rows = [
-                              <tr key={`inv-${entry.id}`} style={{ background: `${tk.redL}18` }}>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 12, color: tk.tx2, whiteSpace: "nowrap" }}>{fmtD(entry.date)}</td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, fontWeight: 600, maxWidth: 170, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entry.desc || "Invoice"}</td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 11, fontFamily: "'DM Mono',monospace", color: tk.tx2, whiteSpace: "nowrap" }}>INV-{String(entry.id).padStart(4,"0")}</td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.red, whiteSpace: "nowrap" }}>{Rs(entry.amount)}</td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", color: tk.tx3 }}>—</td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.red, whiteSpace: "nowrap" }}>{Rs(running)}</td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "center" }}>{statusBadge(entry)}</td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>
-                                  <div style={{ display: "flex", gap: 4 }}>
-                                    {!isPaid && <Btn variant="primary" small onClick={() => openPaySheet(entry)}><ICreditCard size={11} /> Pay</Btn>}
-                                    {(entry.paid || 0) > 0 && <Btn variant="ghost" small onClick={() => openHistory(entry)}>Hist</Btn>}
-                                  </div>
-                                </td>
-                              </tr>,
-                            ];
-                            if ((entry.paid || 0) > 0) {
-                              running -= entry.paid;
-                              rows.push(
-                                <tr key={`pmt-${entry.id}`} style={{ background: `${tk.grnL}18` }}>
-                                  <td style={{ padding: "8px 10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 12, color: tk.tx2 }}>{fmtD(entry.last_payment_at)}</td>
-                                  <td style={{ padding: "8px 10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 12, color: tk.tx2, fontStyle: "italic" }}>Payment — {entry.desc}</td>
-                                  <td style={{ padding: "8px 10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 11, fontFamily: "'DM Mono',monospace", color: tk.tx3 }}>PMT-{String(entry.id).padStart(4,"0")}</td>
-                                  <td style={{ padding: "8px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", color: tk.tx3 }}>—</td>
-                                  <td style={{ padding: "8px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.grn, whiteSpace: "nowrap" }}>{Rs(entry.paid)}</td>
-                                  <td style={{ padding: "8px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: running > 0.01 ? tk.amb : tk.grn, whiteSpace: "nowrap" }}>{Rs(Math.max(0, running))}</td>
-                                  <td colSpan={2} style={{ borderBottom: `1px solid ${tk.bdr}` }} />
-                                </tr>
-                              );
-                            }
-                            return rows;
-                          } else {
-                            // Expense row
-                            running += entry.amount;
-                            return (
-                              <tr key={`exp-${entry.id}`} style={{ background: `${tk.ambL}18` }}>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 12, color: tk.tx2, whiteSpace: "nowrap" }}>{fmtD(entry.date)}</td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, fontWeight: 500, maxWidth: 170, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {entry.description || entry.desc} <span style={{ fontSize: 10, color: tk.amb, background: tk.ambL, padding: "1px 6px", borderRadius: 8, marginLeft: 4 }}>Expense</span>
-                                </td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 11, fontFamily: "'DM Mono',monospace", color: tk.tx2 }}>EXP-{String(entry.id).padStart(4,"0")}</td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.amb, whiteSpace: "nowrap" }}>{Rs(entry.amount)}</td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", color: tk.tx3 }}>—</td>
-                                <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.red, whiteSpace: "nowrap" }}>{Rs(running)}</td>
-                                <td colSpan={2} style={{ borderBottom: `1px solid ${tk.bdr}` }} />
-                              </tr>
-                            );
-                          }
-                        })}
-                        {/* Closing */}
-                        <tr style={{ background: tk.surf2 }}>
-                          <td colSpan={3} style={{ padding: "11px 10px", fontWeight: 700, fontSize: 13, borderTop: `2px solid ${tk.bdr}` }}>Closing Balance</td>
-                          <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.red, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandDebit)}</td>
-                          <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.grn, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(totalPaid)}</td>
-                          <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: (grandDebit - totalPaid) > 0.01 ? tk.red : tk.grn, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandDebit - totalPaid)}</td>
-                          <td colSpan={2} style={{ borderTop: `2px solid ${tk.bdr}` }} />
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </Card>
-            );
-          })()}
-
-          {/* Outstanding quick list */}
+          {/* Outstanding list */}
           {(() => {
-            const unpaid = vendorInvoices.filter(i => i.status !== "Paid" && Math.abs((i.paid || 0) - i.amount) > 0.01);
+            const unpaid = inv.filter(i => i.status !== "Paid" && Math.abs((i.paid||0) - i.amount) > 0.01);
             if (!unpaid.length) return null;
             return (
-              <Card delay={.16}>
-                <CardTitle icon={IClock}>Outstanding ({unpaid.length})</CardTitle>
+              <div style={{ marginTop: 20 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.debitInvoice, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                  <IClock size={13} /> Outstanding invoices ({unpaid.length})
+                </div>
                 {unpaid.map(invoice => (
-                  <div key={invoice.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 0", borderBottom: `1px solid ${tk.bdr}`, flexWrap: "wrap" }}>
+                  <div key={invoice.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${tk.bdr}`, flexWrap: "wrap" }}>
                     <div style={{ flex: 1, minWidth: 100 }}>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{invoice.vendor}</div>
                       <div style={{ fontSize: 11, color: tk.tx2 }}>{invoice.desc}</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.red, fontSize: 14, whiteSpace: "nowrap" }}>{Rs(invoice.amount - (invoice.paid || 0))}</div>
+                      <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.debitInvoice, fontSize: 14, whiteSpace: "nowrap" }}>{Rs(invoice.amount - (invoice.paid||0))}</div>
                       <div style={{ fontSize: 10, color: tk.tx3 }}>of {Rs(invoice.amount)}</div>
                     </div>
                     {statusBadge(invoice)}
                     <Btn variant="primary" small onClick={() => openPaySheet(invoice)}><ICreditCard size={11} /> Pay</Btn>
                   </div>
                 ))}
-              </Card>
+              </div>
             );
           })()}
-        </>
+        </Card>
       )}
 
-      {/* ══════════════════════════════════════
-          TAB: ALL EXPENSES
-      ══════════════════════════════════════ */}
-      {tab === "expenses" && (
-        <Card delay={.12}>
-          <CardTitle icon={IReceipt}>
-            All Expenses
-            <span style={{ fontSize: 12, color: tk.amb, fontFamily: "'DM Mono',monospace", marginLeft: 8 }}>{Rs(totalExpenses)}</span>
+      {/* ══════════════════════════════════════════════════════
+          VIEW: VENDOR LEDGER (combined invoices + expenses)
+      ══════════════════════════════════════════════════════ */}
+      {view === "vendor" && (
+        <Card>
+          <CardTitle icon={IFileText}>
+            {selectedVendor === "all" ? "Select a vendor to view ledger" : (vendorLedger?.vendor?.name || "Vendor Ledger")}
           </CardTitle>
-          {exp.length === 0 ? <Empty icon={IReceipt} text="No expenses recorded yet." /> : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 460 }}>
-                <thead><tr>
-                  {["Date","Category","Description","Vendor","Amount"].map((h, i) => (
-                    <th key={h} style={{ textAlign: i === 4 ? "right" : "left", padding: "10px 10px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: tk.tx3, background: tk.surf2, borderBottom: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{h}</th>
-                  ))}
-                </tr></thead>
-                <tbody>
-                  {exp
-                    .filter(e => !fromDate || e.date >= fromDate)
-                    .filter(e => !toDate   || e.date <= toDate)
-                    .map(e => (
-                      <tr key={e.id}>
-                        <td style={{ padding: "10px", fontSize: 12, borderBottom: `1px solid ${tk.bdr}`, color: tk.tx2, whiteSpace: "nowrap" }}>{e.date}</td>
-                        <td style={{ padding: "10px", fontSize: 12, borderBottom: `1px solid ${tk.bdr}` }}><Badge color="blue">{e.category}</Badge></td>
-                        <td style={{ padding: "10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}`, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.desc}</td>
-                        <td style={{ padding: "10px", fontSize: 12, borderBottom: `1px solid ${tk.bdr}`, color: tk.tx2 }}>{e.vendor || "—"}</td>
-                        <td style={{ padding: "10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.amb, whiteSpace: "nowrap" }}>{Rs(e.amount)}</td>
-                      </tr>
-                    ))}
-                  <tr style={{ background: tk.surf2 }}>
-                    <td colSpan={4} style={{ padding: "11px 10px", fontWeight: 700, borderTop: `2px solid ${tk.bdr}` }}>Total Expenses</td>
-                    <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.amb, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(totalExpenses)}</td>
-                  </tr>
-                </tbody>
-              </table>
+
+          {selectedVendor === "all" ? (
+            <div style={{ padding: "20px 0", textAlign: "center", color: tk.tx3, fontSize: 13 }}>
+              Select a vendor from the dropdown above to view their complete Dr/Cr ledger.
             </div>
+          ) : ledgerLoading ? (
+            <div style={{ padding: "20px 0", textAlign: "center", color: tk.tx3 }}>Loading ledger…</div>
+          ) : !vendorLedger ? (
+            <Empty icon={IFileText} text="No data for this vendor." />
+          ) : (
+            <>
+              {/* Vendor meta + totals */}
+              <div style={{ display: "flex", gap: isDesktop ? 24 : 12, marginBottom: 16, padding: "12px 14px", background: "#f8fafc", borderRadius: 10, border: `1px solid ${tk.bdr}`, flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontSize: 10, color: "#6b7280", textTransform: "uppercase", letterSpacing: ".05em" }}>Vendor</div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>{vendorLedger.vendor.name}</div>
+                  {vendorLedger.vendor.phone && <div style={{ fontSize: 11, color: tk.tx3 }}>{vendorLedger.vendor.phone}</div>}
+                </div>
+                {[
+                  { l: "Total Debit",   v: Rs(vendorLedger.summary.total_debit), c: "#111827" },
+                  { l: "Total Paid",    v: Rs(vendorLedger.summary.total_paid),  c: C.credit  },
+                  { l: "Balance Due",   v: Rs(vendorLedger.summary.balance),     c: vendorLedger.summary.balance > 0.01 ? C.debitInvoice : C.credit },
+                ].map(s => (
+                  <div key={s.l}>
+                    <div style={{ fontSize: 10, color: "#6b7280", textTransform: "uppercase", letterSpacing: ".05em" }}>{s.l}</div>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 15, color: s.c, whiteSpace: "nowrap" }}>{s.v}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Colour legend */}
+              <div style={{ display: "flex", gap: 14, marginBottom: 12, flexWrap: "wrap" }}>
+                {[
+                  { c: C.debitInvoice, l: "Invoice (Dr)" },
+                  { c: C.debitExpense, l: "Expense (Dr)" },
+                  { c: C.credit,       l: "Payment (Cr)" },
+                ].map(x => (
+                  <div key={x.l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 3, background: x.c, display: "inline-block" }} />
+                    <span style={{ color: "#6b7280" }}>{x.l}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 620 }}>
+                  <thead>
+                    <tr style={{ background: "#f8fafc" }}>
+                      {["Date","Type","Particulars","Ref","Debit (Dr)","Credit (Cr)","Balance",""].map((h, i) => (
+                        <th key={i} style={{ textAlign: i > 3 ? "right" : "left", padding: "10px 10px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: "#6b7280", borderBottom: `2px solid ${tk.bdr}`, whiteSpace: "nowrap", minWidth: i > 3 && i < 7 ? 110 : undefined }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td colSpan={8} style={{ padding: "7px 10px", fontSize: 11, color: "#9ca3af", fontStyle: "italic", background: "#f9fafb", borderBottom: `1px solid ${tk.bdr}` }}>Opening Balance — ₹0.00</td></tr>
+
+                    {vendorLedger.entries.map((entry, idx) => {
+                      const isDebit   = entry.type === "debit";
+                      const dataColor = entry.source === "invoice" ? C.debitInvoice
+                                      : entry.source === "expense" ? C.debitExpense
+                                      : C.credit;
+                      const rowBg     = entry.source === "payment"
+                        ? "#f0fdf4"
+                        : entry.source === "expense" ? "#fffbeb" : "#fef2f2";
+
+                      return (
+                        <tr key={idx} style={{ background: rowBg }}>
+                          <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 11, color: "#6b7280", whiteSpace: "nowrap" }}>{fmtD(entry.date)}</td>
+                          <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}` }}><SourceBadge source={entry.source} /></td>
+                          <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 13, fontWeight: isDebit ? 600 : 400, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#111827" }}>{entry.particulars}</td>
+                          <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 11, fontFamily: "'DM Mono',monospace", color: "#9ca3af", whiteSpace: "nowrap" }}>{entry.ref}</td>
+                          <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: isDebit ? dataColor : "#d1d5db", whiteSpace: "nowrap" }}>{isDebit ? Rs(entry.amount) : "—"}</td>
+                          <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: !isDebit ? C.credit : "#d1d5db", whiteSpace: "nowrap" }}>{!isDebit ? Rs(entry.amount) : "—"}</td>
+                          <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: entry.running_balance > 0.01 ? C.debitInvoice : C.credit, whiteSpace: "nowrap" }}>{Rs(Math.max(0, entry.running_balance))}</td>
+                          <td style={{ padding: "10px 10px", borderBottom: `1px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>
+                            {entry.source === "invoice" && (() => {
+                              const matchInv = inv.find(i => i.id === entry.invoice_id);
+                              if (!matchInv) return null;
+                              const isPaid = matchInv.status === "Paid" || Math.abs((matchInv.paid||0) - matchInv.amount) < 0.01;
+                              return (
+                                <div style={{ display: "flex", gap: 4} }}>
+                                  {!isPaid && <Btn variant="primary" small onClick={() => openPaySheet(matchInv)}><ICreditCard size={11}/> Pay</Btn>}
+                                  {(matchInv.paid||0) > 0 && <Btn variant="ghost" small onClick={() => openHistory(matchInv)}>Hist</Btn>}
+                                </div>
+                              );
+                            })()}
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                    {/* Closing row */}
+                    <tr style={{ background: "#f8fafc" }}>
+                      <td colSpan={4} style={{ padding: "11px 10px", fontWeight: 700, fontSize: 13, borderTop: `2px solid ${tk.bdr}`, color: "#111827" }}>Closing Balance</td>
+                      <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.debitInvoice, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(vendorLedger.summary.total_debit)}</td>
+                      <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.credit, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(vendorLedger.summary.total_paid)}</td>
+                      <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: vendorLedger.summary.balance > 0.01 ? C.debitInvoice : C.credit, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(vendorLedger.summary.balance)}</td>
+                      <td style={{ borderTop: `2px solid ${tk.bdr}` }} />
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </Card>
       )}
 
-      {/* ══════════════════════════════════════
-          TAB: LABOUR PAYMENTS
-      ══════════════════════════════════════ */}
-      {tab === "labour" && (
-        <Card delay={.12}>
+      {/* ══════════════════════════════════════════════════════
+          VIEW: LABOUR LEDGER
+      ══════════════════════════════════════════════════════ */}
+      {view === "labour" && (
+        <Card>
           <CardTitle icon={IUsers}>
             Direct Labour Payments (Day-wise)
-            <span style={{ fontSize: 12, color: tk.acc, fontFamily: "'DM Mono',monospace", marginLeft: 8 }}>{Rs(directLabourTotal)}</span>
+            <span style={{ fontSize: 12, fontFamily: "'DM Mono',monospace", color: C.debitLabour, marginLeft: 8, fontWeight: 700 }}>
+              {Rs(grandTotals.labourTotal)}
+            </span>
           </CardTitle>
-          <div style={{ marginBottom: 10, fontSize: 12, color: tk.tx3 }}>
-            Each date shows the total wages paid to direct (non-subcontract) workers — treated as cash outflow.
+          <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>
+            Shows daily wage payments to direct workers. Each day is a debit entry against your cash.
           </div>
           {labourLoading ? (
-            <div style={{ textAlign: "center", padding: 24, color: tk.tx3 }}>Loading…</div>
+            <div style={{ padding: "20px 0", textAlign: "center", color: tk.tx3 }}>Loading…</div>
           ) : labourLedger.length === 0 ? (
-            <Empty icon={IUsers} text="No direct labour attendance recorded yet." />
+            <Empty icon={IUsers} text="No direct labour attendance recorded." />
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 400 }}>
-                <thead><tr>
-                  {["Date","Workers","Debit (Dr)","Running Total"].map((h, i) => (
-                    <th key={h} style={{ textAlign: i > 1 ? "right" : "left", padding: "10px 10px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: tk.tx3, background: tk.surf2, borderBottom: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{h}</th>
-                  ))}
-                </tr></thead>
+                <thead>
+                  <tr style={{ background: "#f8fafc" }}>
+                    {["Date","Workers","Day Total","Running Total"].map((h, i) => (
+                      <th key={h} style={{ textAlign: i > 1 ? "right" : "left", padding: "10px 10px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: "#6b7280", borderBottom: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
                 <tbody>
                   {labourLedger.map((entry, i) => (
-                    <tr key={i} style={{ background: i % 2 === 0 ? "transparent" : tk.surf2 }}>
-                      <td style={{ padding: "10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 12, color: tk.tx2, whiteSpace: "nowrap" }}>{entry.date}</td>
-                      <td style={{ padding: "10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 12 }}>
-                        <div style={{ fontSize: 13 }}>{entry.particulars}</div>
+                    <tr key={i} style={{ background: i % 2 === 0 ? "transparent" : "#f9fafb" }}>
+                      <td style={{ padding: "10px", borderBottom: `1px solid ${tk.bdr}`, fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>{entry.date}</td>
+                      <td style={{ padding: "10px", borderBottom: `1px solid ${tk.bdr}` }}>
+                        <div style={{ fontSize: 13, color: "#111827" }}>{entry.particulars}</div>
                         {entry.workers?.length > 0 && (
-                          <div style={{ fontSize: 10, color: tk.tx3, marginTop: 2 }}>{entry.workers.slice(0, 3).join(" · ")}{entry.workers.length > 3 ? ` +${entry.workers.length - 3} more` : ""}</div>
+                          <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>
+                            {entry.workers.slice(0, 2).join(" · ")}{entry.workers.length > 2 ? ` +${entry.workers.length - 2} more` : ""}
+                          </div>
                         )}
                       </td>
-                      <td style={{ padding: "10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.acc, whiteSpace: "nowrap" }}>{Rs(entry.amount)}</td>
-                      <td style={{ padding: "10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 600, color: tk.tx2, whiteSpace: "nowrap" }}>{Rs(entry.running_balance)}</td>
+                      <td style={{ padding: "10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.debitLabour, whiteSpace: "nowrap" }}>{Rs(entry.amount)}</td>
+                      <td style={{ padding: "10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 600, color: "#374151", whiteSpace: "nowrap" }}>{Rs(entry.running_balance)}</td>
                     </tr>
                   ))}
-                  <tr style={{ background: tk.surf2 }}>
-                    <td colSpan={2} style={{ padding: "11px 10px", fontWeight: 700, borderTop: `2px solid ${tk.bdr}` }}>Total Labour Paid</td>
-                    <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.acc, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(directLabourTotal)}</td>
+                  <tr style={{ background: "#f8fafc" }}>
+                    <td colSpan={2} style={{ padding: "11px 10px", fontWeight: 700, borderTop: `2px solid ${tk.bdr}`, color: "#111827" }}>Total Direct Labour</td>
+                    <td style={{ padding: "11px 10px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.debitLabour, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandTotals.labourTotal)}</td>
                     <td style={{ padding: "11px 10px", borderTop: `2px solid ${tk.bdr}` }} />
                   </tr>
                 </tbody>
@@ -529,18 +584,18 @@ export default function BalanceSheet() {
         </Card>
       )}
 
-      {/* Payment Sheet */}
+      {/* ── Pay Sheet ── */}
       <Sheet open={paySheet} onClose={() => setPaySheet(false)} title="Record Payment" icon={ICreditCard}
         footer={<><Btn variant="secondary" onClick={() => setPaySheet(false)} style={{ flex: 1 }}>Cancel</Btn><Btn variant="primary" onClick={submitPayment} disabled={paying} style={{ flex: 2 }}>{paying ? "Saving…" : "Confirm Payment"}</Btn></>}
       >
         {payInvoice && (
           <>
-            <div style={{ background: tk.surf2, borderRadius: 10, padding: "12px 14px", marginBottom: 14, border: `1px solid ${tk.bdr}` }}>
+            <div style={{ background: "#f8fafc", borderRadius: 10, padding: "12px 14px", marginBottom: 14, border: `1px solid ${tk.bdr}` }}>
               <div style={{ fontWeight: 700 }}>{payInvoice.vendor}</div>
               <div style={{ fontSize: 12, color: tk.tx2, marginBottom: 10 }}>{payInvoice.desc}</div>
               <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-                {[{l:"Total",v:Rs(payInvoice.amount),c:tk.tx},{l:"Paid",v:Rs(payInvoice.paid||0),c:tk.grn},{l:"Remaining",v:Rs(payInvoice.amount-(payInvoice.paid||0)),c:tk.red}].map(s=>(
-                  <div key={s.l}><div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase" }}>{s.l}</div><div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: s.c, whiteSpace: "nowrap" }}>{s.v}</div></div>
+                {[{l:"Total",v:Rs(payInvoice.amount),c:"#111827"},{l:"Paid",v:Rs(payInvoice.paid||0),c:C.credit},{l:"Remaining",v:Rs(payInvoice.amount-(payInvoice.paid||0)),c:C.debitInvoice}].map(s=>(
+                  <div key={s.l}><div style={{ fontSize: 10, color: "#6b7280", textTransform: "uppercase" }}>{s.l}</div><div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: s.c, whiteSpace: "nowrap" }}>{s.v}</div></div>
                 ))}
               </div>
             </div>
@@ -556,28 +611,28 @@ export default function BalanceSheet() {
         )}
       </Sheet>
 
-      {/* History Sheet */}
+      {/* ── History Sheet ── */}
       <Sheet open={histSheet} onClose={() => setHistSheet(false)} title="Payment History" icon={IFileText}>
         {histInvoice && (
           <>
-            <div style={{ background: tk.surf2, borderRadius: 10, padding: "11px 14px", marginBottom: 14, border: `1px solid ${tk.bdr}` }}>
+            <div style={{ background: "#f8fafc", borderRadius: 10, padding: "11px 14px", marginBottom: 14, border: `1px solid ${tk.bdr}` }}>
               <div style={{ fontWeight: 600 }}>{histInvoice.vendor} — {histInvoice.desc}</div>
-              <div style={{ fontSize: 12, color: tk.tx2, marginTop: 4 }}>Total: {Rs(histInvoice.amount)} · Paid: {Rs(histInvoice.paid||0)} · <span style={{ color: tk.red }}>Due: {Rs(histInvoice.amount-(histInvoice.paid||0))}</span></div>
+              <div style={{ fontSize: 12, color: tk.tx2, marginTop: 4 }}>
+                Total: {Rs(histInvoice.amount)} · Paid: <span style={{ color: C.credit }}>{Rs(histInvoice.paid||0)}</span> · Due: <span style={{ color: C.debitInvoice }}>{Rs(histInvoice.amount-(histInvoice.paid||0))}</span>
+              </div>
             </div>
             {histLoading ? <div style={{ textAlign: "center", padding: 24, color: tk.tx3 }}>Loading…</div>
               : payments.length === 0 ? <Empty icon={IFileText} text="No payments yet." />
               : payments.map(p => (
                 <div key={p.id} style={{ display: "flex", gap: 10, padding: "11px 0", borderBottom: `1px solid ${tk.bdr}`, alignItems: "flex-start" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: tk.grnL, color: tk.grn, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0 }}>₹</div>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "#f0fdf4", color: C.credit, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0 }}>₹</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontFamily: "'DM Mono',monospace" }}>{Rs(p.amount)}</div>
+                    <div style={{ fontWeight: 700, fontFamily: "'DM Mono',monospace", color: C.credit }}>{Rs(p.amount)}</div>
                     <div style={{ fontSize: 12, color: tk.tx2 }}>{p.payment_mode}{p.reference?` · ${p.reference}`:""}</div>
-                    <div style={{ fontSize: 11, color: tk.tx3 }}>{fmtDT(p.paid_at)}</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af" }}>{fmtDT(p.paid_at)}</div>
                     {p.notes && <div style={{ fontSize: 11, color: tk.tx2 }}>{p.notes}</div>}
                   </div>
-                  <button onClick={() => deletePaymentEntry(p.id)} style={{ background: "none", border: "none", cursor: "pointer", color: tk.tx3, padding: 4, borderRadius: 6, flexShrink: 0 }}>
-                    <ITrash size={13} />
-                  </button>
+                  <button onClick={() => deletePaymentEntry(p.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#d1d5db", padding: 4, borderRadius: 6, flexShrink: 0 }}><ITrash size={13}/></button>
                 </div>
               ))
             }
