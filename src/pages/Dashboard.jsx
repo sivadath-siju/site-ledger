@@ -1,83 +1,203 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useApp } from "../context/AppCtx";
-import { Card, CardTitle, StatCard, SummaryRow, ProgressBar, Alert, Empty } from "../components/Primitives";
-import { IRupee, IUsers, IListChecks, IPkgX, ITrending, IPackage, IActivity, IInbox, IUserCheck, IReceipt, IAlertTri } from "../icons/Icons";
+import * as API from "../api";
+import { Card, CardTitle, StatCard, SummaryRow, ProgressBar, Alert, Badge, Empty } from "../components/Primitives";
+import { IUsers, IListChecks, IPkgX, IAlertTri, IClipboard, IPackage, ICheckCirc } from "../icons/Icons";
 
 const today = () => new Date().toISOString().split("T")[0];
-const Rs = n => "₹" + Number(n||0).toLocaleString("en-IN");
+const Rs    = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
+
+const WEATHER_EMOJI = { "Clear": "☀️", "Partly Cloudy": "⛅", "Overcast": "☁️", "Light Rain": "🌧️", "Heavy Rain": "⛈️", "Extreme Heat": "🌡️" };
+const SAFETY_COLOR  = { "All Clear": "green", "Minor Concerns": "amber", "Work Stopped": "red" };
 
 export default function Dashboard() {
-  const { tk, mats, att, exp, tasks } = useApp();
-  const ta = att.filter(a => a.date === today());
-  const te = exp.filter(e => e.date === today());
-  const lc = ta.reduce((s, a) => s + a.total, 0);
-  const ec = te.reduce((s, e) => s + e.amount, 0);
+  const { tk, mats, att, tasks, workers } = useApp();
+
+  const [todayLog, setTodayLog]           = useState(null);
+  const [todayWorkers, setTodayWorkers]   = useState([]);
+  const [logLoading, setLogLoading]       = useState(true);
+
+  const todayStr = today();
+
+  // Active workers and today's log
+  useEffect(() => {
+    setLogLoading(true);
+    Promise.allSettled([
+      API.getDailyLog(todayStr),
+      API.getAttendance({ date: todayStr }),
+    ]).then(([logRes, attRes]) => {
+      if (logRes.status === "fulfilled") setTodayLog(logRes.value);
+      if (attRes.status === "fulfilled") setTodayWorkers(Array.isArray(attRes.value) ? attRes.value : []);
+    }).finally(() => setLogLoading(false));
+  }, [todayStr]);
+
   const lsc = mats.filter(m => m.stock <= m.min).length;
-  const pt = tasks.filter(t => t.status !== "Completed").length;
-  const totL = att.reduce((s, a) => s + a.total, 0);
-  const totE = exp.reduce((s, e) => s + e.amount, 0);
+  const pt  = tasks.filter(t => t.status !== "Completed").length;
+  const presentToday   = todayWorkers.filter(w => w.status === "present").length;
+  const halfToday      = todayWorkers.filter(w => w.status === "half").length;
+  const todayWageTotal = todayWorkers
+    .filter(w => !w.is_subcontract)
+    .reduce((s, w) => s + (w.total_wage || 0), 0);
 
   return (
     <div>
-      <div style={{ marginBottom:18, animation:"fadeUp .25s ease" }}>
-        <div style={{ fontSize:20, fontWeight:700, letterSpacing:"-.4px" }}>Dashboard</div>
-        <div style={{ fontSize:12, color:tk.tx2, marginTop:2 }}>{new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"short",year:"numeric"})}</div>
+      {/* Header */}
+      <div style={{ marginBottom: 18, animation: "fadeUp .25s ease" }}>
+        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Dashboard</div>
+        <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>
+          {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+        </div>
       </div>
 
       {lsc > 0 && (
-        <Alert type="warn"><IAlertTri size={14} /><span><strong>{lsc} material{lsc>1?"s":""}</strong> below minimum stock — reorder required</span></Alert>
+        <Alert type="warn">
+          <IAlertTri size={14} />
+          <span><strong>{lsc} material{lsc > 1 ? "s" : ""}</strong> below minimum stock — reorder required</span>
+        </Alert>
       )}
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
-        <StatCard icon={IRupee} value={Rs(lc+ec)} label="Spent Today" color="acc" delay={.04} />
-        <StatCard icon={IUsers} value={ta.length} label="Workers Today" color="grn" delay={.08} />
-        <StatCard icon={IListChecks} value={pt} label="Pending Tasks" color="amb" delay={.12} />
-        <StatCard icon={IPkgX} value={lsc} label="Low Stock" color="red" delay={.16} />
+      {/* Stat cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+        <StatCard icon={IUsers}     value={presentToday + halfToday} label="On Site Today" color="grn" delay={.04} />
+        <StatCard icon={IListChecks} value={pt}           label="Pending Tasks"  color="amb" delay={.08} />
+        <StatCard icon={IPkgX}      value={lsc}           label="Low Stock"      color="red" delay={.12} />
+        <StatCard icon={IUsers}     value={workers.filter(w => !w.is_subcontract).length} label="Direct Workers" color="acc" delay={.16} />
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:14 }}>
-        <Card delay={.1}>
-          <CardTitle icon={ITrending}>Overall Spend</CardTitle>
-          {[
-            {l:"Labour",  v:Rs(totL)},
-            {l:"Materials",v:Rs(exp.filter(e=>e.category==="Materials").reduce((s,e)=>s+e.amount,0))},
-            {l:"Equipment",v:Rs(exp.filter(e=>e.category==="Equipment Rental").reduce((s,e)=>s+e.amount,0))},
-            {l:"Other",   v:Rs(exp.filter(e=>!["Materials","Equipment Rental"].includes(e.category)).reduce((s,e)=>s+e.amount,0))},
-          ].map(r => <SummaryRow key={r.l} label={r.l} value={r.v} />)}
-          <SummaryRow label="Total" value={Rs(totL+totE)} bold />
-        </Card>
+      {/* Active Workers Today */}
+      <Card delay={.1}>
+        <CardTitle icon={IUsers}>
+          Workers on Site — {todayStr}
+          {todayWageTotal > 0 && (
+            <span style={{ fontSize: 12, fontWeight: 600, color: tk.grn, marginLeft: 8 }}>
+              {Rs(todayWageTotal)} wages
+            </span>
+          )}
+        </CardTitle>
 
-        <Card delay={.14}>
-          <CardTitle icon={IPackage}>Stock Levels</CardTitle>
-          {mats.map(m => (
-            <ProgressBar key={m.id} label={m.name} value={m.stock} max={m.min*3} />
-          ))}
-        </Card>
-      </div>
-
-      <Card delay={.18}>
-        <CardTitle icon={IActivity}>Recent Activity</CardTitle>
-        {att.length === 0 && exp.length === 0
-          ? <Empty icon={IInbox} text="No activity yet. Start entering data." />
-          : [...att.slice(0,2).map(a=>({...a,_k:"a"})),...exp.slice(0,3).map(e=>({...e,_k:"e"}))].slice(0,5).map((x, i) => {
-            const isA = x._k === "a";
-            return (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0", borderBottom: i < 4 ? `1px solid ${tk.bdr}` : "none" }}>
-                <div style={{ width:32, height:32, borderRadius:8, background: isA ? tk.grnL : tk.ambL, color: isA ? tk.grn : tk.amb, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                  {isA ? <IUserCheck size={14} /> : <IReceipt size={14} />}
-                </div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:13, fontWeight:500, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                    {isA ? `${x.name} - ${x.role} . ${x.hours}h` : `${x.category} - ${x.desc}`}
+        {logLoading ? (
+          <div style={{ padding: "12px 0", color: tk.tx3, fontSize: 13 }}>Loading…</div>
+        ) : todayWorkers.length === 0 ? (
+          <Empty icon={IUsers} text="No attendance marked today. Go to Labour & Attendance to mark workers." />
+        ) : (
+          <div>
+            {todayWorkers.map(w => {
+              const status = w.status === "present" ? "present" : w.status === "half" ? "half" : "absent";
+              return (
+                <div key={w.id || w.worker_id} style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "9px 0", borderBottom: `1px solid ${tk.bdr}`,
+                }}>
+                  {/* Avatar */}
+                  <div style={{
+                    width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
+                    background: w.is_subcontract ? tk.ambL : tk.accL,
+                    color: w.is_subcontract ? tk.amb : tk.acc,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontWeight: 700, fontSize: 13,
+                  }}>
+                    {(w.worker_name || w.name || "?").charAt(0).toUpperCase()}
                   </div>
-                  <div style={{ fontSize:11, color:tk.tx3, marginTop:1 }}>{x.date} . {x.by}</div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+                      {w.worker_name || w.name}
+                      {w.is_subcontract ? (
+                        <Badge color="amber">Sub</Badge>
+                      ) : null}
+                    </div>
+                    <div style={{ fontSize: 11, color: tk.tx3 }}>
+                      {w.worker_role || w.role} · {w.hours || 8}h
+                      {w.ot_hours > 0 ? ` + ${w.ot_hours}h OT` : ""}
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <Badge color={status === "present" ? "green" : status === "half" ? "amber" : "red"}>
+                      {status === "present" ? "Present" : status === "half" ? "Half" : "Absent"}
+                    </Badge>
+                    {!w.is_subcontract && w.total_wage > 0 && (
+                      <div style={{ fontSize: 12, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.tx, marginTop: 2 }}>
+                        {Rs(w.total_wage)}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <span style={{ fontFamily:"'DM Mono',monospace", fontWeight:700, fontSize:13, color: isA ? tk.tx : tk.acc }}>
-                  {isA ? Rs(x.total) : Rs(x.amount)}
-                </span>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      {/* Today's Site Log */}
+      <Card delay={.14}>
+        <CardTitle icon={IClipboard}>
+          Today's Site Log
+          {todayLog && (
+            <span style={{ marginLeft: 8, background: tk.grnL, color: tk.grn, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
+              ✓ Recorded
+            </span>
+          )}
+        </CardTitle>
+
+        {logLoading ? (
+          <div style={{ padding: "12px 0", color: tk.tx3, fontSize: 13 }}>Loading…</div>
+        ) : !todayLog ? (
+          <div style={{ padding: "16px 0", textAlign: "center" }}>
+            <div style={{ fontSize: 13, color: tk.tx3, marginBottom: 12 }}>
+              No site log recorded for today.
+            </div>
+            <div style={{ fontSize: 12, color: tk.tx3 }}>
+              Go to <strong style={{ color: tk.acc }}>Daily Workflow</strong> to add today's progress notes.
+            </div>
+          </div>
+        ) : (
+          <div>
+            {/* Meta row */}
+            <div style={{ display: "flex", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Weather</div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>
+                  {WEATHER_EMOJI[todayLog.weather] || "🌤️"} {todayLog.weather || "Not recorded"}
+                </div>
               </div>
-            );
-          })}
+              <div>
+                <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Safety</div>
+                <Badge color={SAFETY_COLOR[todayLog.safety] || "gray"}>{todayLog.safety || "All Clear"}</Badge>
+              </div>
+              {todayLog.workers_count != null && (
+                <div>
+                  <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Workers Logged</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>👷 {todayLog.workers_count}</div>
+                </div>
+              )}
+            </div>
+
+            {todayLog.notes ? (
+              <div style={{
+                background: tk.surf2, borderRadius: 10, padding: "11px 14px",
+                fontSize: 13, color: tk.tx, lineHeight: 1.65,
+                border: `1px solid ${tk.bdr}`, whiteSpace: "pre-wrap",
+              }}>
+                {todayLog.notes}
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: tk.tx3, fontStyle: "italic" }}>
+                No observations recorded.
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
+
+      {/* Stock levels */}
+      <Card delay={.18}>
+        <CardTitle icon={IPackage}>Stock Levels</CardTitle>
+        {mats.length === 0 ? (
+          <Empty icon={IPackage} text="No materials added yet." />
+        ) : (
+          mats.map(m => <ProgressBar key={m.id} label={m.name} value={m.stock} max={m.min * 3} />)
+        )}
       </Card>
     </div>
   );
