@@ -44,7 +44,7 @@ export default function Login({ onLogin }) {
     <div style={{
       minHeight: "100vh", display: "flex",
       alignItems: "center", justifyContent: "center",
-      background: "linear-gradient(135deg, #0a1628 0%, #1a2f56 50%, #0d1e3a 100%)",
+      background: "linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://cielhomes.in/Images/garden_lush.jpg') center/cover no-repeat",
       padding: 16,
     }}>
       {/* Background pattern */}
