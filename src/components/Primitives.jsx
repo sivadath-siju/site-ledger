@@ -153,7 +153,7 @@ export function Input({ value, onChange, type = "text", placeholder, autoComplet
   );
 }
 
-export function Select({ value, onChange, children }) {
+export function Select({ value, onChange, children, style }) {
   const { tk } = useApp();
   const [focused, setFocused] = useState(false);
   return (

@@ -501,7 +501,7 @@ export default function BalanceSheet() {
                               if (!matchInv) return null;
                               const isPaid = matchInv.status === "Paid" || Math.abs((matchInv.paid||0) - matchInv.amount) < 0.01;
                               return (
-                                <div style={{ display: "flex", gap: 4} }}>
+                                <div style={{ display: "flex", gap: 4 }}>
                                   {!isPaid && <Btn variant="primary" small onClick={() => openPaySheet(matchInv)}><ICreditCard size={11}/> Pay</Btn>}
                                   {(matchInv.paid||0) > 0 && <Btn variant="ghost" small onClick={() => openHistory(matchInv)}>Hist</Btn>}
                                 </div>
