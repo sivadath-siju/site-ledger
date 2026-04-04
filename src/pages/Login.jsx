@@ -53,11 +53,13 @@ export default function Login({ onLogin }) {
       <div style={{ width: "100%", maxWidth: 420, position: "relative" }}>
         {/* Card */}
         <div style={{
-          background: tk.surf, borderRadius: 22,
+          background: "rgba(164, 187, 145, 0.85)",
+          backdropFilter: "blur(12px)",
+          borderRadius: 22,
           padding: "40px 32px 32px",
           boxShadow: "0 32px 80px rgba(0,0,0,.5)",
           animation: "scaleIn .4s cubic-bezier(.34,1.56,.64,1)",
-          border: `1px solid ${tk.bdr}`,
+          border: "1px solid rgba(255,255,255,0.15)",
         }}>
           {/* Brand */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
@@ -97,7 +99,7 @@ export default function Login({ onLogin }) {
           </Btn>
 
           {/* Default credentials hint */}
-          <div style={{ marginTop: 20, padding: "12px 14px", background: tk.surf2, borderRadius: 12, border: `1px solid ${tk.bdr}`, fontSize: 12 }}>
+          <div style={{ marginTop: 20, padding: "12px 14px", background: tk.surf2, borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", fontSize: 12 }}>
             <div style={{ fontWeight: 700, color: tk.tx, marginBottom: 6 }}>Default credentials</div>
             {[
               { user: "admin",   pass: "admin123",   role: "Administrator" },
