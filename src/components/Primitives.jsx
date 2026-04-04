@@ -130,7 +130,7 @@ export function Field({ label, children }) {
   );
 }
 
-export function Input({ value, onChange, type = "text", placeholder, autoComplete, min, max, step }) {
+export function Input({ value, onChange, type = "text", placeholder, autoComplete, min, max, step, style }) {
   const { tk } = useApp();
   const [focused, setFocused] = useState(false);
   return (
@@ -147,7 +147,7 @@ export function Input({ value, onChange, type = "text", placeholder, autoComplet
         background: tk.surf2, outline: "none",
         boxShadow: focused ? `0 0 0 3px ${tk.accL}` : "none",
         transition: "border-color .15s, box-shadow .15s",
-        WebkitAppearance: "none",
+        WebkitAppearance: "none", ...style,
       }}
     />
   );
@@ -168,7 +168,7 @@ export function Select({ value, onChange, children }) {
         background: tk.surf2, outline: "none",
         boxShadow: focused ? `0 0 0 3px ${tk.accL}` : "none",
         transition: "border-color .15s, box-shadow .15s",
-        WebkitAppearance: "none", cursor: "pointer",
+        WebkitAppearance: "none", ...style, cursor: "pointer",
       }}
     >{children}</select>
   );

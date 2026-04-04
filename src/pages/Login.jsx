@@ -53,62 +53,64 @@ export default function Login({ onLogin }) {
       <div style={{ width: "100%", maxWidth: 420, position: "relative" }}>
         {/* Card */}
         <div style={{
-          background: tk.surf, borderRadius: 22,
+          background: "rgba(164, 187, 145, 0.65)",
+          backdropFilter: "blur(12px)",
+          borderRadius: 22,
           padding: "40px 32px 32px",
           boxShadow: "0 32px 80px rgba(0,0,0,.5)",
           animation: "scaleIn .4s cubic-bezier(.34,1.56,.64,1)",
-          border: `1px solid ${tk.bdr}`,
+          border: "1px solid rgba(255,255,255,0.15)",
         }}>
           {/* Brand */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
-            <div style={{ width: 46, height: 46, borderRadius: 14, background: tk.acc, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${tk.acc}55` }}>
+            <div style={{ width: 46, height: 46, borderRadius: 14, background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
               <IHome size={24} color="#fff" />
             </div>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-.3px", lineHeight: 1 }}>
+              <div style={{ fontSize: 22, color: "#0a1a0a", fontWeight: 800, letterSpacing: "-.3px", lineHeight: 1 }}>
                 Ciel Homes
               </div>
-              <div style={{ fontSize: 11, color: tk.tx3, fontWeight: 500, letterSpacing: ".04em" }}>
+              <div style={{ fontSize: 11, color: "#2d4a2d", fontWeight: 500, letterSpacing: ".04em" }}>
                 SITE MANAGEMENT SYSTEM
               </div>
             </div>
           </div>
 
-          <div style={{ fontSize: 13, color: tk.tx3, marginBottom: 28, marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: "#2d4a2d", marginBottom: 28, marginTop: 4 }}>
             Construction accounting &amp; site operations
           </div>
 
-          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Sign in</div>
-          <div style={{ fontSize: 13, color: tk.tx2, marginBottom: 20 }}>Enter your credentials to continue</div>
+          <div style={{ fontSize: 16, color: "#0a1a0a", fontWeight: 700, marginBottom: 4 }}>Sign in</div>
+          <div style={{ fontSize: 13, color: "#1a2e1a", marginBottom: 20 }}>Enter your credentials to continue</div>
 
           {err && <Alert type="err"><IXCircle size={14} />{err}</Alert>}
 
           <Field label="Username">
-            <Input value={u} onChange={e => setU(e.target.value)} placeholder="your.username" autoComplete="username" onKeyDown={handleKey} />
+            <Input style={{ background: "rgba(0,0,0,0.1)", border: "1.5px solid rgba(0,0,0,0.2)", color: "#0a1a0a" }} value={u} onChange={e => setU(e.target.value)} placeholder="your.username" autoComplete="username" onKeyDown={handleKey} />
           </Field>
           <div style={{ marginBottom: 22 }}>
             <Field label="Password">
-              <Input type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" autoComplete="current-password" onKeyDown={handleKey} />
+              <Input style={{ background: "rgba(0,0,0,0.1)", border: "1.5px solid rgba(0,0,0,0.2)", color: "#0a1a0a" }} type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" autoComplete="current-password" onKeyDown={handleKey} />
             </Field>
           </div>
 
-          <Btn fullWidth onClick={submit} disabled={loading}>
+          <Btn style={{ background: "#1a2e1a", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }} fullWidth onClick={submit} disabled={loading}>
             {loading ? "Signing in…" : "Sign In"}
           </Btn>
 
           {/* Default credentials hint */}
-          <div style={{ marginTop: 20, padding: "12px 14px", background: tk.surf2, borderRadius: 12, border: `1px solid ${tk.bdr}`, fontSize: 12 }}>
-            <div style={{ fontWeight: 700, color: tk.tx, marginBottom: 6 }}>Default credentials</div>
+          <div style={{ marginTop: 20, padding: "12px 14px", background: "rgba(0,0,0,0.05)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", fontSize: 12 }}>
+            <div style={{ fontWeight: 700, color: "#0a1a0a", marginBottom: 6 }}>Default credentials</div>
             {[
               { user: "admin",   pass: "admin123",   role: "Administrator" },
               { user: "manager", pass: "manager123", role: "Site Manager" },
               { user: "staff",   pass: "staff123",   role: "Data Entry" },
             ].map(c => (
               <div key={c.user} style={{ display: "flex", gap: 6, marginBottom: 3, alignItems: "center" }}>
-                <code style={{ background: tk.surf3, padding: "1px 6px", borderRadius: 4, fontSize: 11, color: tk.acc, fontWeight: 600 }}>{c.user}</code>
-                <span style={{ color: tk.tx3 }}>/</span>
-                <code style={{ background: tk.surf3, padding: "1px 6px", borderRadius: 4, fontSize: 11, color: tk.tx }}>{c.pass}</code>
-                <span style={{ color: tk.tx3, fontSize: 11, marginLeft: 2 }}>({c.role})</span>
+                <code style={{ background: "rgba(0,0,0,0.1)", padding: "1px 6px", borderRadius: 4, fontSize: 11, color: tk.acc, fontWeight: 600 }}>{c.user}</code>
+                <span style={{ color: "#2d4a2d" }}>/</span>
+                <code style={{ background: "rgba(0,0,0,0.1)", padding: "1px 6px", borderRadius: 4, fontSize: 11, color: "#0a1a0a" }}>{c.pass}</code>
+                <span style={{ color: "#2d4a2d", fontSize: 11, marginLeft: 2 }}>({c.role})</span>
               </div>
             ))}
           </div>
