@@ -86,15 +86,15 @@ export default function Login({ onLogin }) {
           {err && <Alert type="err"><IXCircle size={14} />{err}</Alert>}
 
           <Field label="Username">
-            <Input value={u} onChange={e => setU(e.target.value)} placeholder="your.username" autoComplete="username" onKeyDown={handleKey} />
+            <Input style={{ background: "rgba(0,0,0,0.1)", border: "1.5px solid rgba(0,0,0,0.2)", color: "#0a1a0a" }} value={u} onChange={e => setU(e.target.value)} placeholder="your.username" autoComplete="username" onKeyDown={handleKey} />
           </Field>
           <div style={{ marginBottom: 22 }}>
             <Field label="Password">
-              <Input type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" autoComplete="current-password" onKeyDown={handleKey} />
+              <Input style={{ background: "rgba(0,0,0,0.1)", border: "1.5px solid rgba(0,0,0,0.2)", color: "#0a1a0a" }} type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" autoComplete="current-password" onKeyDown={handleKey} />
             </Field>
           </div>
 
-          <Btn fullWidth onClick={submit} disabled={loading}>
+          <Btn style={{ background: "#1a2e1a", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }} fullWidth onClick={submit} disabled={loading}>
             {loading ? "Signing in…" : "Sign In"}
           </Btn>
 
