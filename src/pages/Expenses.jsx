@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
-import { Card, CardTitle, Btn, Alert, Field, Select, Input, FormGrid, TableWrap, Badge, Sheet, Empty } from "../components/Primitives";
-import { ITag, IPlus, ICheckCirc, IXCircle, IReceipt, ISave } from "../icons/Icons";
+import { Card, CardTitle, Btn, Alert, Field, Select, Input, FormGrid, TableWrap, Badge, Sheet, Empty, Divider } from "../components/Primitives";
+import { ITag, IPlus, ICheckCirc, IXCircle, IReceipt, ISave, IFileText } from "../icons/Icons";
+import BillUpload from "../components/BillUpload";
 
 const today = () => new Date().toISOString().split("T")[0];
 const Rs = n => "₹" + Number(n||0).toLocaleString("en-IN");
@@ -13,6 +14,11 @@ export default function Expenses() {
   useEffect(() => { API.getExpCats().then(r => setExpCatsRaw(r)).catch(()=>{}); }, []);
   const [tab, setTab] = useState("add");
   const [catOpen, setCatOpen] = useState(false);
+  
+  // Detail sheet
+  const [detOpen, setDetOpen] = useState(false);
+  const [detExp, setDetExp] = useState(null);
+
   const [cat, setCat] = useState(expCats[0]);
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
@@ -97,7 +103,7 @@ export default function Expenses() {
               <table style={{ width:"100%", borderCollapse:"collapse", minWidth:400 }}>
                 <thead><tr>{["Date","Category","Description","Amount"].map(h=><th key={h} style={{ textAlign:"left", padding:"9px 10px", fontSize:10, fontWeight:700, color:tk.tx3, textTransform:"uppercase", letterSpacing:".08em", borderBottom: `1px solid ${tk.bdr}`, background:tk.surf2 }}>{h}</th>)}</tr></thead>
                 <tbody>{exp.map(e=>(
-                  <tr key={e.id}>
+                  <tr key={e.id} onClick={() => { setDetExp(e); setDetOpen(true); }} style={{ cursor: "pointer" }}>
                     <td style={{ padding:"10px", fontSize:13, borderBottom: `1px solid ${tk.bdr}` }}>{e.date}</td>
                     <td style={{ padding:"10px", fontSize:13, borderBottom: `1px solid ${tk.bdr}` }}><Badge color="blue">{e.category}</Badge></td>
                     <td style={{ padding:"10px", fontSize:13, borderBottom: `1px solid ${tk.bdr}` }}>{e.desc}</td>
@@ -132,6 +138,39 @@ export default function Expenses() {
           ))}
         </div>
         <Field label="New Category Name"><Input value={newCat} onChange={e=>setNewCat(e.target.value)} placeholder="e.g. Legal Fees"/></Field>
+      </Sheet>
+
+      {/* ── Expense Detail Sheet ── */}
+      <Sheet open={detOpen} onClose={() => setDetOpen(false)} title="Expense Details" icon={IFileText}>
+        {detExp && (
+          <>
+            <div style={{ background: tk.surf2, borderRadius: 10, padding: "12px 14px", marginBottom: 14, border: `1px solid ${tk.bdr}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                <Badge color="blue">{detExp.category}</Badge>
+                <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'DM Mono',monospace" }}>{Rs(detExp.amount)}</div>
+              </div>
+              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{detExp.desc}</div>
+              <div style={{ fontSize: 12, color: tk.tx2 }}>
+                {detExp.date} · {detExp.paymentMode} {detExp.vendor ? `· ${detExp.vendor}` : ""}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", marginBottom: 8 }}>Receipt / Bill Scan</div>
+              <BillUpload
+                billPath={detExp.bill_path}
+                onUpload={async (file) => {
+                  const res = await API.uploadExpenseBill(detExp.id, file);
+                  setExp(prev => prev.map(e => e.id === detExp.id ? { ...e, bill_path: res.bill_path } : e));
+                  setDetExp(prev => ({ ...prev, bill_path: res.bill_path }));
+                  return res;
+                }}
+              />
+            </div>
+            
+            <Btn variant="secondary" fullWidth onClick={() => setDetOpen(false)}>Close</Btn>
+          </>
+        )}
       </Sheet>
     </div>
   );

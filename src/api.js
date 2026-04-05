@@ -15,6 +15,19 @@ async function request(path, options = {}) {
   return data;
 }
 
+// Special: multipart file upload (no Content-Type header — browser sets it with boundary)
+async function upload(path, formData) {
+  const token = getToken();
+  const res   = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: formData,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Upload failed: ${res.status}`);
+  return data;
+}
+
 const get  = p      => request(p);
 const post = (p, b) => request(p, { method: "POST",  body: b });
 const patch= (p, b) => request(p, { method: "PATCH", body: b });
@@ -45,9 +58,10 @@ export const getWorkerSummary        = ()      => get("/workers/summary");
 export const getWorkerCategoryTotals = ()      => get("/workers/category-totals");
 
 // ATTENDANCE
-export const getAttendance    = p  => get(`/workers/attendance?${new URLSearchParams(p)}`);
-export const recordAttendance = d  => post("/workers/attendance", d);
-export const deleteAttendance = id => del(`/workers/attendance/${id}`);
+export const getAttendance    = p        => get(`/workers/attendance?${new URLSearchParams(p)}`);
+export const recordAttendance = d        => post("/workers/attendance", d);
+export const patchAttendance  = (id, d)  => patch(`/workers/attendance/${id}`, d);  // ← NEW: edit today
+export const deleteAttendance = id       => del(`/workers/attendance/${id}`);
 
 // SUBCONTRACTORS
 export const getSubcontractors      = ()      => get("/subcontractors");
@@ -65,6 +79,21 @@ export const deleteExpense = id => del(`/expenses/${id}`);
 export const getExpCats    = () => get("/expenses/categories");
 export const addExpCat     = n  => post("/expenses/categories", { name: n });
 export const deleteExpCat  = id => del(`/expenses/categories/${id}`);
+
+// ── BILL UPLOAD ────────────────────────────────────────────
+// Pass a File object; the function wraps it in FormData
+export const uploadExpenseBill = (expenseId, file) => {
+  const fd = new FormData(); fd.append("bill", file);
+  return upload(`/expenses/${expenseId}/bill`, fd);
+};
+export const uploadInvoiceBill = (invoiceId, file) => {
+  const fd = new FormData(); fd.append("bill", file);
+  return upload(`/expenses/invoices/${invoiceId}/bill`, fd);
+};
+// Build URL for viewing a stored bill
+export const billUrl = filename =>
+  filename ? `${BASE.replace("/api", "")}/uploads/bills/${filename}` : null;
+// ──────────────────────────────────────────────────────────
 
 // VENDORS
 export const getVendors   = ()      => get("/expenses/vendors");
@@ -97,7 +126,7 @@ export const getAllDailyLogs = ()   => get("/tasks/logs/all");
 // REPORTS
 export const getReportSummary  = ()  => get("/reports/summary");
 export const getDailyReport    = d   => get(`/reports/daily?date=${d}`);
-export const getGrandTotals    = ()  => get("/reports/grand-totals");       // ← balance sheet header
+export const getGrandTotals    = ()  => get("/reports/grand-totals");
 export const getBalanceSheet   = p   => get(`/reports/balance-sheet?${new URLSearchParams(p)}`);
 export const getVendorLedger   = id  => get(`/reports/vendor-ledger/${id}`);
 export const getLabourLedger   = p   => get(`/reports/labour-ledger?${new URLSearchParams(p||{})}`);

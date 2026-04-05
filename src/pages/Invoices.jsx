@@ -6,6 +6,7 @@ import {
   FormGrid, TableWrap, Badge, Empty, Sheet, Divider,
 } from "../components/Primitives";
 import { IFilePlus, ICheckCirc, IXCircle, IClock, IFileText, ISave, ITrash } from "../icons/Icons";
+import BillUpload from "../components/BillUpload";
 
 const Rs = n => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 });
 const fmtDate = d => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
@@ -300,7 +301,7 @@ export default function Invoices() {
       </Sheet>
 
       {/* ── History Sheet ── */}
-      <Sheet open={histSheet} onClose={() => setHistSheet(false)} title="Payment History" icon={IFileText}>
+      <Sheet open={histSheet} onClose={() => setHistSheet(false)} title="Invoice Details & History" icon={IFileText}>
         {histInv && (
           <>
             <div style={{ background: tk.surf2, borderRadius: 10, padding: "11px 14px", marginBottom: 14, border: `1px solid ${tk.bdr}` }}>
@@ -310,6 +311,23 @@ export default function Invoices() {
                 <span style={{ color: tk.red }}>Due: {Rs(histInv.amount - (histInv.paid || 0))}</span>
               </div>
             </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", marginBottom: 8 }}>Invoice Bill / Document</div>
+              <BillUpload
+                billPath={histInv.bill_path}
+                onUpload={async (file) => {
+                  const res = await API.uploadInvoiceBill(histInv.id, file);
+                  setInv(prev => prev.map(i => i.id === histInv.id ? { ...i, bill_path: res.bill_path } : i));
+                  setHistInv(prev => ({ ...prev, bill_path: res.bill_path }));
+                  return res;
+                }}
+              />
+            </div>
+
+            <Divider />
+
+            <div style={{ fontSize: 11, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", marginBottom: 8, marginTop: 14 }}>Payment History</div>
             {histLoading ? (
               <div style={{ textAlign: "center", padding: 24, color: tk.tx3 }}>Loading...</div>
             ) : payments.length === 0 ? (
