@@ -1,72 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import "./CalendarPage.css";
-
-// ─────────────────────────────────────────────
-// MOCK DATA — replace fetchDayData() with your
-// real API call. Return null if no data for day.
-// ─────────────────────────────────────────────
-const PEOPLE_POOL = [
-  { id: 1, name: "Arjun Menon",  role: "Manager",  initials: "AM", color: "blue"   },
-  { id: 2, name: "Priya Nair",   role: "Cashier",  initials: "PN", color: "teal"   },
-  { id: 3, name: "Rahul Dev",    role: "Staff",    initials: "RD", color: "amber"  },
-  { id: 4, name: "Sunita Raj",   role: "Cook",     initials: "SR", color: "coral"  },
-  { id: 5, name: "Deepak KS",    role: "Delivery", initials: "DK", color: "purple" },
-  { id: 6, name: "Meera PV",     role: "Accounts", initials: "MP", color: "blue"   },
-  { id: 7, name: "Vishnu TR",    role: "Helper",   initials: "VT", color: "teal"   },
-];
-
-const EXP_CATS = [
-  "Groceries","Utilities","Wages","Supplies",
-  "Maintenance","Transport","Miscellaneous",
-];
-
-function seededRand(seed) {
-  let x = seed * 0.7182818 + 13;
-  return () => { x = Math.sin(x) * 10000; return x - Math.floor(x); };
-}
-
-function fetchDayData(year, month, day) {
-  // REPLACE THIS with: const res = await fetch(`/api/log?date=${year}-${month+1}-${day}`)
-  // Return null for days with no data, or an object matching this shape:
-  // { attendees: [{id,name,role,initials,color}], expenses: [{cat,amt}], logs: [{time,note}] }
-
-  const r = seededRand(year * 10000 + month * 100 + day);
-  if (day % 5 === 0 || r() < 0.15) return null;
-
-  const attCount = Math.floor(r() * 5) + 2;
-  const attendees = [];
-  const used = new Set();
-  for (let i = 0; i < attCount; i++) {
-    let idx;
-    do { idx = Math.floor(r() * PEOPLE_POOL.length); }
-    while (used.has(idx) && used.size < PEOPLE_POOL.length);
-    used.add(idx);
-    attendees.push(PEOPLE_POOL[idx]);
-  }
-
-  const numExp = Math.floor(r() * 4) + 2;
-  const expenses = [];
-  const usedCats = new Set();
-  for (let i = 0; i < numExp; i++) {
-    let cat;
-    do { cat = EXP_CATS[Math.floor(r() * EXP_CATS.length)]; }
-    while (usedCats.has(cat));
-    usedCats.add(cat);
-    expenses.push({ cat, amt: Math.round((r() * 4000 + 500) / 50) * 50 });
-  }
-
-  const logOptions = [
-    { time: "09:15 AM", note: "Morning briefing completed. Inventory checked." },
-    { time: "12:30 PM", note: `${attendees[0]?.name} handled peak hour service.` },
-    { time: "06:00 PM", note: "Day wrap-up. Accounts reconciled." },
-  ];
-
-  return {
-    attendees,
-    expenses,
-    logs: logOptions.slice(0, Math.floor(r() * 2) + 1),
-  };
-}
+import * as API from "../api";
+import { useApp } from "../context/AppCtx";
 
 // ─────────────────────────────────────────────
 // Helpers
@@ -79,19 +14,6 @@ const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 function fmt(n) {
   return "₹" + Number(n).toLocaleString("en-IN");
-}
-
-function buildMonthData(year, month) {
-  const days = new Date(year, month + 1, 0).getDate();
-  const data = {};
-  for (let d = 1; d <= days; d++) {
-    const raw = fetchDayData(year, month, d);
-    if (raw) {
-      const total = raw.expenses.reduce((s, e) => s + e.amt, 0);
-      data[d] = { ...raw, total };
-    }
-  }
-  return data;
 }
 
 // ─────────────────────────────────────────────
@@ -179,8 +101,8 @@ function DetailPanel({ year, month, day, data }) {
         <div className="detail-section__title">
           Present ({data.attendees.length})
         </div>
-        {data.attendees.map((p) => (
-          <div className="attendee-row" key={p.id}>
+        {data.attendees.map((p, idx) => (
+          <div className="attendee-row" key={idx}>
             <Avatar person={p} />
             <div>
               <div className="attendee-row__name">{p.name}</div>
@@ -205,13 +127,15 @@ function DetailPanel({ year, month, day, data }) {
       </div>
 
       <div className="detail-section">
-        <div className="detail-section__title">Daily log</div>
-        {data.logs.map((l, i) => (
+        <div className="detail-section__title">Daily Log</div>
+        {data.logs.length > 0 ? data.logs.map((l, i) => (
           <div className="log-entry" key={i}>
             <div className="log-entry__time">{l.time}</div>
             <div className="log-entry__note">{l.note}</div>
           </div>
-        ))}
+        )) : (
+          <div style={{ fontSize: 12, color: "#aaa" }}>No workflow logs for this day.</div>
+        )}
       </div>
     </div>
   );
@@ -221,12 +145,73 @@ function DetailPanel({ year, month, day, data }) {
 // Main page
 // ─────────────────────────────────────────────
 export default function CalendarPage() {
+  const { tk } = useApp();
   const today = new Date();
   const [year, setYear]       = useState(today.getFullYear());
   const [month, setMonth]     = useState(today.getMonth());
   const [selected, setSelected] = useState(null);
+  const [monthData, setMonthData] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  const monthData = useMemo(() => buildMonthData(year, month), [year, month]);
+  const loadMonthData = useCallback(async (y, m) => {
+    setLoading(true);
+    try {
+      const firstDay = new Date(y, m, 1);
+      const lastDay  = new Date(y, m + 1, 0);
+      
+      const fStr = firstDay.toISOString().split("T")[0];
+      const lStr = lastDay.toISOString().split("T")[0];
+
+      const [att, exp, logs] = await Promise.all([
+        API.getAttendance({ start: fStr, end: lStr }),
+        API.getExpenses({ start: fStr, end: lStr }),
+        API.getAllDailyLogs(),
+      ]);
+
+      const data = {};
+      const daysInMonth = lastDay.getDate();
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        
+        const dayAtt = att.filter(a => a.date === dateStr).map(a => ({
+          name: a.worker_name,
+          role: a.worker_role,
+          initials: a.worker_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2),
+          color: ["blue", "teal", "amber", "coral", "purple"][a.worker_id % 5]
+        }));
+
+        const dayExp = exp.filter(e => e.date === dateStr).map(e => ({
+          cat: e.category_name,
+          amt: e.amount
+        }));
+
+        const dayLog = logs.filter(l => l.date === dateStr).map(l => ({
+          time: "LOG",
+          note: l.content
+        }));
+
+        if (dayAtt.length > 0 || dayExp.length > 0 || dayLog.length > 0) {
+          data[d] = {
+            attendees: dayAtt,
+            expenses: dayExp,
+            logs: dayLog,
+            total: dayExp.reduce((sum, e) => sum + e.amt, 0)
+          };
+        }
+      }
+      setMonthData(data);
+    } catch (err) {
+      console.error("Calendar load error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMonthData(year, month);
+    setSelected(null);
+  }, [year, month, loadMonthData]);
 
   const metrics = useMemo(() => {
     let totalSpend = 0, totalPresence = 0, busyDay = null, busyCount = 0, activeDays = 0;
@@ -250,90 +235,81 @@ export default function CalendarPage() {
     };
   }, [monthData]);
 
-  const maxSpend = useMemo(
-    () => Math.max(...Object.values(monthData).filter(Boolean).map((d) => d.total), 1),
-    [monthData]
-  );
+  const maxSpend = useMemo(() => {
+    const spends = Object.values(monthData).map((d) => d.total);
+    return spends.length ? Math.max(...spends) : 0;
+  }, [monthData]);
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const daysInMonth     = new Date(year, month + 1, 0).getDate();
+  const calendarDays    = [];
+  for (let i = 0; i < firstDayOfMonth; i++) calendarDays.push(null);
+  for (let i = 1; i <= daysInMonth; i++)    calendarDays.push(i);
 
-  function prevMonth() {
-    setSelected(null);
-    if (month === 0) { setYear(y => y - 1); setMonth(11); }
-    else setMonth(m => m - 1);
-  }
-  function nextMonth() {
-    setSelected(null);
-    if (month === 11) { setYear(y => y + 1); setMonth(0); }
-    else setMonth(m => m + 1);
-  }
+  const prevMonth = () => {
+    if (month === 0) { setYear(year - 1); setMonth(11); }
+    else setMonth(month - 1);
+  };
+  const nextMonth = () => {
+    if (month === 11) { setYear(year + 1); setMonth(0); }
+    else setMonth(month + 1);
+  };
 
   return (
     <div className="cal-page">
-
-      {/* Header */}
-      <div className="cal-page__header">
+      <header className="cal-page__header">
         <h2 className="cal-page__title">Calendar Log</h2>
         <div className="cal-nav">
-          <button className="cal-nav__btn" onClick={prevMonth}>&#8592;</button>
-          <span className="cal-nav__label">{MONTHS[month]} {year}</span>
-          <button className="cal-nav__btn" onClick={nextMonth}>&#8594;</button>
+          <button className="cal-nav__btn" onClick={prevMonth}>&lt;</button>
+          <div className="cal-nav__label">{MONTHS[month]} {year}</div>
+          <button className="cal-nav__btn" onClick={nextMonth}>&gt;</button>
         </div>
-      </div>
+      </header>
 
-      {/* Metrics */}
       <div className="cal-metrics">
         <MetricCard
-          label="Total spend"
+          label="Total Spend"
           value={fmt(metrics.totalSpend)}
-          sub={MONTHS[month]}
+          sub={`${metrics.activeDays} active days`}
         />
         <MetricCard
-          label="Avg daily spend"
+          label="Daily Average"
           value={fmt(metrics.avgSpend)}
-          sub={`Over ${metrics.activeDays} active days`}
         />
         <MetricCard
-          label="Total attendance"
+          label="Peak Labour"
+          value={metrics.busyCount}
+          sub={metrics.busyDay ? `Day ${metrics.busyDay}` : "N/A"}
+        />
+        <MetricCard
+          label="Total Presence"
           value={metrics.totalPresence}
-          sub="Person-days this month"
-        />
-        <MetricCard
-          label="Busiest day"
-          value={metrics.busyDay ? `${MONTHS[month].slice(0,3)} ${metrics.busyDay}` : "—"}
-          sub={metrics.busyDay ? `${metrics.busyCount} people present` : ""}
+          sub="Man-days this month"
         />
       </div>
 
-      {/* Calendar + Panel */}
       <div className="cal-body">
         <div className="cal-grid-wrap">
-          {/* Day headers */}
           <div className="cal-dow-row">
-            {DAYS.map(d => <div key={d} className="cal-dow">{d}</div>)}
+            {DAYS.map((d) => <div key={d} className="cal-dow">{d}</div>)}
           </div>
-
-          {/* Grid */}
-          <div className="cal-grid">
-            {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={`e-${i}`} className="day-cell day-cell--blank" />
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const d = i + 1;
+          <div className="cal-grid" style={{ opacity: loading ? 0.5 : 1, transition: "opacity 0.2s" }}>
+            {calendarDays.map((day, idx) => {
+              if (day === null) return <div key={`blank-${idx}`} className="day-cell day-cell--blank" />;
               const isToday =
-                today.getFullYear() === year &&
+                today.getDate() === day &&
                 today.getMonth() === month &&
-                today.getDate() === d;
+                today.getFullYear() === year;
+
               return (
                 <DayCell
-                  key={d}
-                  day={d}
-                  data={monthData[d]}
+                  key={day}
+                  day={day}
+                  data={monthData[day]}
                   isToday={isToday}
-                  isSelected={selected === d}
+                  isSelected={selected === day}
                   maxSpend={maxSpend}
-                  onClick={() => setSelected(d === selected ? null : d)}
+                  onClick={() => setSelected(day)}
                 />
               );
             })}
