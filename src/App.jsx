@@ -15,6 +15,7 @@ import Reports      from "./pages/Reports";
 import BalanceSheet from "./pages/BalanceSheet";
 import Workflow     from "./pages/Workflow";
 import Settings     from "./pages/Settings";
+import CalendarPage from "./pages/CalendarPage";
 
 const DESKTOP = 768;
 
@@ -26,7 +27,7 @@ const PAGE_LABELS = {
   dashboard: "Dashboard", materials: "Materials", attendance: "Labour & Attendance",
   expenses: "Expenses", tasks: "Task Tracker", invoices: "Invoices & Payables",
   vendors: "Vendors", reports: "Reports", balancesheet: "Balance Sheet",
-  workflow: "Daily Workflow", settings: "Settings",
+  workflow: "Daily Workflow", settings: "Settings", calendar: "Calendar Log",
 };
 
 export default function App() {
@@ -112,6 +113,7 @@ export default function App() {
       case "balancesheet": return hasFinance ? <BalanceSheet /> : <Dashboard />;
       case "workflow":     return <Workflow />;
       case "settings":     return <Settings />;
+      case "calendar":     return <CalendarPage />;
       default:             return <Dashboard />;
     }
   };

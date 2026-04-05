@@ -1,6 +1,9 @@
 import React from "react";
 import { useApp } from "../context/AppCtx";
-import { ILayoutDash, IClipboard, IPackage, IUsers, ICheckSq, IReceipt, IFileText, IBuilding, IPieChart, ISettings, IX, IMenu } from "../icons/Icons";
+import {
+  ILayoutDash, IClipboard, IPackage, IUsers, ICheckSq,
+  IReceipt, IFileText, IBuilding, IPieChart, ISettings, IX, IMenu, ICalendar,
+} from "../icons/Icons";
 
 const ORANGE   = "#c75a00";
 const ORANGE_L = "#fff0e6";
@@ -36,6 +39,7 @@ const NAV_SECTIONS = [
   ]},
   { section: "Analytics", items: [
     { id: "reports",      label: "Reports",             Icon: IPieChart   },
+    { id: "calendar",     label: "Calendar Log",        Icon: ICalendar   },
   ]},
   { section: "Account", items: [
     { id: "settings",     label: "Settings",            Icon: ISettings   },

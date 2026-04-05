@@ -1,0 +1,382 @@
+/* ================================================
+   CalendarPage.css
+   Drop alongside CalendarPage.jsx
+   ================================================ */
+
+/* Page layout */
+.cal-page {
+  padding: 1.5rem;
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Header */
+.cal-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.cal-page__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111;
+  margin: 0;
+}
+
+/* Month nav */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cal-nav__btn {
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  transition: background 0.15s;
+}
+.cal-nav__btn:hover { background: #f4f4f4; }
+.cal-nav__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+  min-width: 130px;
+  text-align: center;
+}
+
+/* Metrics row */
+.cal-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.cal-metric {
+  background: #f7f7f5;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+}
+.cal-metric__label {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.cal-metric__value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #111;
+  line-height: 1.2;
+}
+.cal-metric__sub {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 3px;
+}
+
+/* Calendar + detail layout */
+.cal-body {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.cal-grid-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Day-of-week headers */
+.cal-dow-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.cal-dow {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #aaa;
+  padding: 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Calendar grid */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+/* Day cells */
+.day-cell {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 8px;
+  cursor: pointer;
+  min-height: 78px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s;
+}
+.day-cell:hover { border-color: #bbb; }
+.day-cell--blank {
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+.day-cell--empty-data { cursor: default; }
+.day-cell--empty-data:hover { border-color: #eee; }
+.day-cell--mid  { background: rgba(24, 95, 165, 0.04); }
+.day-cell--high { background: rgba(24, 95, 165, 0.09); }
+.day-cell--selected {
+  border-color: #185FA5 !important;
+  border-width: 1.5px;
+}
+
+/* Day number */
+.day-cell__num {
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  line-height: 1;
+}
+.day-cell__num--today {
+  background: #185FA5;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+/* Day content */
+.day-cell__spend {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111;
+  line-height: 1;
+}
+.day-cell__att {
+  font-size: 10px;
+  color: #aaa;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: auto;
+}
+.day-cell__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #1D9E75;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.day-cell__none {
+  font-size: 12px;
+  color: #ddd;
+  margin-top: auto;
+}
+
+/* Detail panel */
+.detail-panel {
+  width: 280px;
+  flex-shrink: 0;
+  border: 1px solid #e8e8e8;
+  border-radius: 14px;
+  background: #fff;
+  padding: 1rem 1.1rem;
+  min-height: 440px;
+  box-sizing: border-box;
+}
+.detail-panel__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #bbb;
+  font-size: 13px;
+  text-align: center;
+  padding: 1rem;
+  line-height: 1.5;
+}
+.detail-panel__date {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Detail sections */
+.detail-section {
+  margin-bottom: 16px;
+}
+.detail-section__title {
+  font-size: 10px;
+  color: #bbb;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* Attendees */
+.attendee-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+.attendee-row__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111;
+  line-height: 1.2;
+}
+.attendee-row__role {
+  font-size: 11px;
+  color: #aaa;
+}
+
+/* Avatars */
+.cal-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cal-avatar--blue   { background: #B5D4F4; color: #0C447C; }
+.cal-avatar--teal   { background: #9FE1CB; color: #085041; }
+.cal-avatar--amber  { background: #FAC775; color: #633806; }
+.cal-avatar--coral  { background: #F5C4B3; color: #712B13; }
+.cal-avatar--purple { background: #CECBF6; color: #3C3489; }
+
+/* Expenses */
+.expense-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #f4f4f4;
+  font-size: 13px;
+}
+.expense-row:last-child { border-bottom: none; }
+.expense-row__cat { color: #666; }
+.expense-row__amt { font-weight: 600; color: #111; }
+.expense-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  border-top: 1px solid #e8e8e8;
+  margin-top: 4px;
+}
+
+/* Daily log */
+.log-entry {
+  padding: 6px 0;
+  border-bottom: 1px solid #f4f4f4;
+}
+.log-entry:last-child { border-bottom: none; }
+.log-entry__time {
+  font-size: 10px;
+  color: #bbb;
+  font-weight: 600;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.log-entry__note {
+  font-size: 12px;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .cal-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cal-body {
+    flex-direction: column;
+  }
+  .detail-panel {
+    width: 100%;
+  }
+  .cal-page {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .cal-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+  .day-cell {
+    min-height: 58px;
+    padding: 5px 5px;
+  }
+  .day-cell__spend {
+    font-size: 11px;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .cal-page__title { color: #f0f0f0; }
+  .cal-nav__btn { border-color: #333; color: #ccc; }
+  .cal-nav__btn:hover { background: #222; }
+  .cal-nav__label { color: #f0f0f0; }
+  .cal-metric { background: #1a1a1a; }
+  .cal-metric__label { color: #888; }
+  .cal-metric__value { color: #f0f0f0; }
+  .cal-metric__sub { color: #555; }
+  .cal-dow { color: #555; }
+  .day-cell { background: #111; border-color: #222; }
+  .day-cell:hover { border-color: #444; }
+  .day-cell--mid  { background: rgba(53, 138, 221, 0.08); }
+  .day-cell--high { background: rgba(53, 138, 221, 0.16); }
+  .day-cell__num { color: #666; }
+  .day-cell__spend { color: #eee; }
+  .day-cell__att { color: #555; }
+  .day-cell__none { color: #333; }
+  .detail-panel { background: #111; border-color: #222; }
+  .detail-panel__date { color: #f0f0f0; border-bottom-color: #222; }
+  .detail-panel__empty { color: #444; }
+  .detail-section__title { color: #555; }
+  .attendee-row__name { color: #eee; }
+  .attendee-row__role { color: #555; }
+  .expense-row { border-bottom-color: #1e1e1e; }
+  .expense-row__cat { color: #888; }
+  .expense-row__amt { color: #eee; }
+  .expense-total { color: #eee; border-top-color: #222; }
+  .log-entry { border-bottom-color: #1e1e1e; }
+  .log-entry__time { color: #555; }
+  .log-entry__note { color: #888; }
+}

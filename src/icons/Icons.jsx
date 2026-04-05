@@ -41,6 +41,7 @@ const I = (name) => ({ size=16, color="currentColor", style={} } = {}) => {
     "database":       <><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>,
     "check":          <><polyline points="20 6 9 17 4 12"/></>,
     "pkg-x":          <><path d="M12.89 1.45l8 4A2 2 0 0122 7.24v9.53a2 2 0 01-1.11 1.79l-8 4a2 2 0 01-1.79 0l-8-4A2 2 0 012 16.77V7.24a2 2 0 011.11-1.79l8-4a2 2 0 011.78 0z"/><line x1="9.5" y1="12.5" x2="14.5" y2="12.5"/></>,
+    "calendar":       <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
     "list-checks":    <><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></>,
     "hard-hat2":      <><path d="M2 18a1 1 0 001 1h18a1 1 0 001-1v-2a1 1 0 00-1-1H3a1 1 0 00-1 1v2z"/><path d="M10 10V5a1 1 0 011-1h2a1 1 0 011 1v5"/><path d="M4 15v-3a8 8 0 0116 0v3"/></>,
   };
@@ -58,7 +59,7 @@ export const Icons = {};
  "building","pie-chart","cpu","settings","menu","x","plus","save","trash","download","log-out",
  "moon","sun","alert-tri","activity","trending-up","indian-rupee","check-circle","x-circle",
  "clock","inbox","user-plus","user-check","tag","file-plus","file-spread","edit","arrows",
- "database","check","pkg-x","list-checks","hard-hat2"].forEach(n => {
+ "database","check","pkg-x","calendar","list-checks","hard-hat2"].forEach(n => {
   Icons[n] = ({ size=16, color="currentColor", style={} }) => I(n)({ size, color, style });
 });
 
@@ -101,4 +102,5 @@ export const IArrows     = Icons["arrows"];
 export const IDatabase   = Icons["database"];
 export const ICheck      = Icons["check"];
 export const IPkgX       = Icons["pkg-x"];
+export const ICalendar   = Icons["calendar"];
 export const IListChecks = Icons["list-checks"];
