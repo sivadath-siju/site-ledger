@@ -1,5 +1,5 @@
 /* ================================================
-   CalendarPage.css - Dynamic Theme Support
+   CalendarPage.css - Full Layout & Dynamic Theme
    ================================================ */
 
 .cal-page {
@@ -13,6 +13,14 @@
   transition: background-color 0.25s, color 0.25s;
 }
 
+.cal-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 10px;
+}
 .cal-page__title {
   font-size: 20px;
   font-weight: 700;
@@ -20,6 +28,11 @@
   margin: 0;
 }
 
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .cal-nav__btn {
   background: var(--cal-surf);
   border: 1px solid var(--cal-bdr);
@@ -40,6 +53,12 @@
   text-align: center;
 }
 
+.cal-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
 .cal-metric {
   background: var(--cal-surf);
   border: 1px solid var(--cal-bdr);
@@ -72,7 +91,17 @@
   gap: 16px;
   align-items: flex-start;
 }
+.cal-grid-wrap {
+  flex: 1;
+  min-width: 0;
+}
 
+.cal-dow-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 6px;
+}
 .cal-dow {
   text-align: center;
   font-size: 11px;
@@ -171,7 +200,6 @@
   padding: 1rem 1.1rem;
   min-height: 460px;
   box-sizing: border-box;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
 }
 .detail-panel__empty {
   display: flex;
@@ -193,6 +221,9 @@
   border-bottom: 2px solid var(--cal-bg);
 }
 
+.detail-section {
+  margin-bottom: 16px;
+}
 .detail-section__title {
   font-size: 10px;
   color: var(--cal-tx3);
@@ -202,17 +233,80 @@
   margin-bottom: 10px;
 }
 
-.attendee-row__name { font-size: 13px; font-weight: 600; color: var(--cal-tx); line-height: 1.2; }
-.attendee-row__role { font-size: 11px; color: var(--cal-tx3); }
+.attendee-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+.attendee-row__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cal-tx);
+  line-height: 1.2;
+}
+.attendee-row__role {
+  font-size: 11px;
+  color: var(--cal-tx3);
+}
 
-.expense-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--cal-bg); font-size: 13px; }
+.cal-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+/* Re-applying original colors */
+.cal-avatar--blue   { background: #B5D4F4; color: #0C447C; }
+.cal-avatar--teal   { background: #9FE1CB; color: #085041; }
+.cal-avatar--amber  { background: #FAC775; color: #633806; }
+.cal-avatar--coral  { background: #F5C4B3; color: #712B13; }
+.cal-avatar--purple { background: #CECBF6; color: #3C3489; }
+
+.expense-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--cal-bg);
+  font-size: 13px;
+}
 .expense-row__cat { color: var(--cal-tx2); font-weight: 500; }
 .expense-row__amt { font-weight: 700; color: var(--cal-tx); }
-.expense-total { display: flex; justify-content: space-between; padding: 8px 0 0; font-size: 14px; font-weight: 800; color: var(--cal-tx); border-top: 2px solid var(--cal-bdr); margin-top: 4px; }
+.expense-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--cal-tx);
+  border-top: 2px solid var(--cal-bdr);
+  margin-top: 4px;
+}
 
-.log-entry { padding: 8px 0; border-bottom: 1px solid var(--cal-bg); }
-.log-entry__time { font-size: 10px; color: var(--cal-tx3); font-weight: 700; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
-.log-entry__note { font-size: 12px; color: var(--cal-tx2); line-height: 1.5; font-weight: 500; }
+.log-entry {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--cal-bg);
+}
+.log-entry__time {
+  font-size: 10px;
+  color: var(--cal-tx3);
+  font-weight: 700;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.log-entry__note {
+  font-size: 12px;
+  color: var(--cal-tx2);
+  line-height: 1.5;
+  font-weight: 500;
+}
 
 @media (max-width: 800px) {
   .cal-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
