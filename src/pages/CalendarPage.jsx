@@ -255,26 +255,8 @@ export default function CalendarPage() {
     else setMonth(month + 1);
   };
 
-  const isDark = tk.bg === "#0d0f18"; // Simple check for dark theme
-  const calStyle = {
-    "--cal-bg": tk.bg,
-    "--cal-surf": tk.surf,
-    "--cal-tx": tk.tx,
-    "--cal-tx2": tk.tx2,
-    "--cal-tx3": tk.tx3,
-    "--cal-bdr": tk.bdr,
-    "--cal-acc": tk.acc,
-    "--cal-acc-alpha": `${tk.acc}18`,
-    "--cal-grn": tk.grn,
-    // Dynamic Heatmap colors
-    "--cal-heat-mid": isDark ? "rgba(77, 128, 238, 0.1)" : "#f0f7ff",
-    "--cal-heat-mid-bdr": isDark ? "rgba(77, 128, 238, 0.2)" : "#c2dfff",
-    "--cal-heat-high": isDark ? "rgba(77, 128, 238, 0.25)" : "#e1f0ff",
-    "--cal-heat-high-bdr": isDark ? "rgba(77, 128, 238, 0.4)" : "#b3d7ff",
-  };
-
   return (
-    <div className="cal-page" style={calStyle}>
+    <div className="cal-page">
       <header className="cal-page__header">
         <h2 className="cal-page__title">Calendar Log</h2>
         <div className="cal-nav">
