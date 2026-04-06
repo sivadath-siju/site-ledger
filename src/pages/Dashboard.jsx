@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
-import { Card, CardTitle, StatCard, SummaryRow, ProgressBar, Alert, Badge, Empty } from "../components/Primitives";
-import { IUsers, IListChecks, IPkgX, IAlertTri, IClipboard, IPackage, ICheckCirc } from "../icons/Icons";
+import { Card, CardTitle, SummaryRow, ProgressBar, Alert, Badge, Empty } from "../components/Primitives";
+import { IUsers, IListChecks, IPkgX, IAlertTri, IClipboard, IPackage, IActivity, IInbox, IUserCheck, IReceipt } from "../icons/Icons";
 
 const today = () => new Date().toISOString().split("T")[0];
 const Rs    = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
@@ -10,16 +10,63 @@ const Rs    = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
 const WEATHER_EMOJI = { "Clear": "☀️", "Partly Cloudy": "⛅", "Overcast": "☁️", "Light Rain": "🌧️", "Heavy Rain": "⛈️", "Extreme Heat": "🌡️" };
 const SAFETY_COLOR  = { "All Clear": "green", "Minor Concerns": "amber", "Work Stopped": "red" };
 
-export default function Dashboard() {
-  const { tk, mats, att, tasks, workers } = useApp();
+// Clickable stat card — navigates to a page on click
+function ClickStatCard({ icon: Icon, value, label, color, delay = 0, onClick, tk }) {
+  const [hovered, setHovered] = useState(false);
 
-  const [todayLog, setTodayLog]           = useState(null);
-  const [todayWorkers, setTodayWorkers]   = useState([]);
-  const [logLoading, setLogLoading]       = useState(true);
+  const colors = {
+    acc: { bg: tk.accL,  text: tk.acc  },
+    grn: { bg: tk.grnL,  text: tk.grn  },
+    amb: { bg: tk.ambL,  text: tk.amb  },
+    red: { bg: tk.redL,  text: tk.red  },
+  };
+  const c = colors[color] || colors.acc;
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: tk.surf,
+        border: `1px solid ${hovered ? c.text : tk.bdr}`,
+        borderRadius: 14,
+        padding: "14px 16px",
+        textAlign: "left",
+        cursor: "pointer",
+        boxShadow: hovered ? `0 4px 16px ${c.text}22` : tk.sh,
+        transform: hovered ? "translateY(-2px)" : "translateY(0)",
+        transition: "all .18s ease",
+        animation: `fadeUp .3s ease ${delay}s both`,
+        width: "100%",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: c.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon size={16} color={c.text} />
+        </div>
+        {/* Arrow on hover */}
+        <div style={{ fontSize: 14, color: c.text, opacity: hovered ? 1 : 0, transition: "opacity .15s" }}>→</div>
+      </div>
+      <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono',monospace", color: tk.tx, letterSpacing: "-.3px", lineHeight: 1 }}>
+        {value}
+      </div>
+      <div style={{ fontSize: 11, color: tk.tx3, fontWeight: 600, marginTop: 4, textTransform: "uppercase", letterSpacing: ".04em" }}>
+        {label}
+      </div>
+    </button>
+  );
+}
+
+export default function Dashboard() {
+  const { tk, mats, att, tasks, workers, setPage } = useApp();
+
+  const [todayLog, setTodayLog]         = useState(null);
+  const [todayWorkers, setTodayWorkers] = useState([]);
+  const [logLoading, setLogLoading]     = useState(true);
 
   const todayStr = today();
 
-  // Active workers and today's log
   useEffect(() => {
     setLogLoading(true);
     Promise.allSettled([
@@ -33,11 +80,17 @@ export default function Dashboard() {
 
   const lsc = mats.filter(m => m.stock <= m.min).length;
   const pt  = tasks.filter(t => t.status !== "Completed").length;
-  const presentToday   = todayWorkers.filter(w => w.status === "present").length;
-  const halfToday      = todayWorkers.filter(w => w.status === "half").length;
-  const todayWageTotal = todayWorkers
-    .filter(w => !w.is_subcontract)
-    .reduce((s, w) => s + (w.total_wage || 0), 0);
+  const presentToday = todayWorkers.filter(w => w.status === "present").length;
+  const halfToday    = todayWorkers.filter(w => w.status === "half").length;
+  const directWages  = todayWorkers.filter(w => !w.is_subcontract).reduce((s, w) => s + (w.total_wage || 0), 0);
+
+  // Stat cards — each navigates to a relevant page
+  const statCards = [
+    { icon: IUsers,     value: presentToday + halfToday, label: "On Site Today", color: "grn", page: "attendance", delay: .04 },
+    { icon: IListChecks,value: pt,                       label: "Pending Tasks",  color: "amb", page: "tasks",      delay: .08 },
+    { icon: IPkgX,      value: lsc,                      label: "Low Stock",      color: "red", page: "materials",  delay: .12 },
+    { icon: IUsers,     value: workers.filter(w => !w.is_subcontract).length, label: "Direct Workers", color: "acc", page: "attendance", delay: .16 },
+  ];
 
   return (
     <div>
@@ -56,80 +109,71 @@ export default function Dashboard() {
         </Alert>
       )}
 
-      {/* Stat cards */}
+      {/* Clickable stat cards */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-        <StatCard icon={IUsers}     value={presentToday + halfToday} label="On Site Today" color="grn" delay={.04} />
-        <StatCard icon={IListChecks} value={pt}           label="Pending Tasks"  color="amb" delay={.08} />
-        <StatCard icon={IPkgX}      value={lsc}           label="Low Stock"      color="red" delay={.12} />
-        <StatCard icon={IUsers}     value={workers.filter(w => !w.is_subcontract).length} label="Direct Workers" color="acc" delay={.16} />
+        {statCards.map(card => (
+          <ClickStatCard
+            key={card.label}
+            tk={tk}
+            icon={card.icon}
+            value={card.value}
+            label={card.label}
+            color={card.color}
+            delay={card.delay}
+            onClick={() => setPage(card.page)}
+          />
+        ))}
       </div>
 
-      {/* Active Workers Today */}
+      {/* Today's workers on site */}
       <Card delay={.1}>
         <CardTitle icon={IUsers}>
-          Workers on Site — {todayStr}
-          {todayWageTotal > 0 && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: tk.grn, marginLeft: 8 }}>
-              {Rs(todayWageTotal)} wages
+          Workers on Site — Today
+          {directWages > 0 && (
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#15803d", marginLeft: 8 }}>
+              {Rs(directWages)} wages
             </span>
           )}
         </CardTitle>
-
         {logLoading ? (
           <div style={{ padding: "12px 0", color: tk.tx3, fontSize: 13 }}>Loading…</div>
         ) : todayWorkers.length === 0 ? (
           <Empty icon={IUsers} text="No attendance marked today. Go to Labour & Attendance to mark workers." />
         ) : (
-          <div>
-            {todayWorkers.map(w => {
-              const status = w.status === "present" ? "present" : w.status === "half" ? "half" : "absent";
-              return (
-                <div key={w.id || w.worker_id} style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "9px 0", borderBottom: `1px solid ${tk.bdr}`,
-                }}>
-                  {/* Avatar */}
-                  <div style={{
-                    width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
-                    background: w.is_subcontract ? tk.ambL : tk.accL,
-                    color: w.is_subcontract ? tk.amb : tk.acc,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontWeight: 700, fontSize: 13,
-                  }}>
-                    {(w.worker_name || w.name || "?").charAt(0).toUpperCase()}
+          todayWorkers.map(w => {
+            const status = w.status || "present";
+            return (
+              <div key={w.id || w.worker_id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${tk.bdr}` }}>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, background: w.is_subcontract ? tk.ambL : tk.accL, color: w.is_subcontract ? tk.amb : tk.acc, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13 }}>
+                  {(w.worker_name || w.name || "?").charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+                    {w.worker_name || w.name}
+                    {w.is_subcontract ? <Badge color="amber">Sub</Badge> : null}
                   </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-                      {w.worker_name || w.name}
-                      {w.is_subcontract ? (
-                        <Badge color="amber">Sub</Badge>
-                      ) : null}
-                    </div>
-                    <div style={{ fontSize: 11, color: tk.tx3 }}>
-                      {w.worker_role || w.role} · {w.hours || 8}h
-                      {w.ot_hours > 0 ? ` + ${w.ot_hours}h OT` : ""}
-                    </div>
-                  </div>
-
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <Badge color={status === "present" ? "green" : status === "half" ? "amber" : "red"}>
-                      {status === "present" ? "Present" : status === "half" ? "Half" : "Absent"}
-                    </Badge>
-                    {!w.is_subcontract && w.total_wage > 0 && (
-                      <div style={{ fontSize: 12, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.tx, marginTop: 2 }}>
-                        {Rs(w.total_wage)}
-                      </div>
-                    )}
+                  <div style={{ fontSize: 11, color: tk.tx3 }}>
+                    {w.worker_role || w.role} · {w.hours || 8}h
+                    {w.ot_hours > 0 ? ` + ${w.ot_hours}h OT` : ""}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <Badge color={status === "present" ? "green" : status === "half" ? "amber" : "red"}>
+                    {status === "present" ? "Present" : status === "half" ? "Half" : "Absent"}
+                  </Badge>
+                  {!w.is_subcontract && w.total_wage > 0 && (
+                    <div style={{ fontSize: 12, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.tx, marginTop: 2 }}>
+                      {Rs(w.total_wage)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
         )}
       </Card>
 
-      {/* Today's Site Log */}
+      {/* Today's site log */}
       <Card delay={.14}>
         <CardTitle icon={IClipboard}>
           Today's Site Log
@@ -139,21 +183,17 @@ export default function Dashboard() {
             </span>
           )}
         </CardTitle>
-
         {logLoading ? (
           <div style={{ padding: "12px 0", color: tk.tx3, fontSize: 13 }}>Loading…</div>
         ) : !todayLog ? (
           <div style={{ padding: "16px 0", textAlign: "center" }}>
-            <div style={{ fontSize: 13, color: tk.tx3, marginBottom: 12 }}>
-              No site log recorded for today.
-            </div>
+            <div style={{ fontSize: 13, color: tk.tx3, marginBottom: 8 }}>No site log recorded for today.</div>
             <div style={{ fontSize: 12, color: tk.tx3 }}>
               Go to <strong style={{ color: tk.acc }}>Daily Workflow</strong> to add today's progress notes.
             </div>
           </div>
         ) : (
           <div>
-            {/* Meta row */}
             <div style={{ display: "flex", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
               <div>
                 <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Weather</div>
@@ -165,26 +205,13 @@ export default function Dashboard() {
                 <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Safety</div>
                 <Badge color={SAFETY_COLOR[todayLog.safety] || "gray"}>{todayLog.safety || "All Clear"}</Badge>
               </div>
-              {todayLog.workers_count != null && (
-                <div>
-                  <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Workers Logged</div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>👷 {todayLog.workers_count}</div>
-                </div>
-              )}
             </div>
-
             {todayLog.notes ? (
-              <div style={{
-                background: tk.surf2, borderRadius: 10, padding: "11px 14px",
-                fontSize: 13, color: tk.tx, lineHeight: 1.65,
-                border: `1px solid ${tk.bdr}`, whiteSpace: "pre-wrap",
-              }}>
+              <div style={{ background: tk.surf2, borderRadius: 10, padding: "11px 14px", fontSize: 13, color: tk.tx, lineHeight: 1.65, border: `1px solid ${tk.bdr}`, whiteSpace: "pre-wrap" }}>
                 {todayLog.notes}
               </div>
             ) : (
-              <div style={{ fontSize: 13, color: tk.tx3, fontStyle: "italic" }}>
-                No observations recorded.
-              </div>
+              <div style={{ fontSize: 13, color: tk.tx3, fontStyle: "italic" }}>No observations recorded.</div>
             )}
           </div>
         )}

@@ -1,151 +1,150 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
 import {
   Card, CardTitle, Btn, Alert, Field, Select, Input,
-  FormGrid, TableWrap, Badge, Empty, Sheet, Divider,
+  FormGrid, TableWrap, Badge, Empty, Sheet,
 } from "../components/Primitives";
 import { IFilePlus, ICheckCirc, IXCircle, IClock, IFileText, ISave, ITrash } from "../icons/Icons";
-import BillUpload from "../components/BillUpload";
 
-const Rs = n => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 });
-const fmtDate = d => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
-const fmtDateTime = d => d ? new Date(d).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+const Rs = n => "₹" + Number(n || 0).toLocaleString("en-IN");
+const BASE_URL = (process.env.REACT_APP_API_URL || "http://localhost:5001/api").replace("/api", "");
 
-const PAYMENT_MODES = ["Cash", "UPI", "Bank Transfer", "Cheque", "NEFT/RTGS", "Card"];
-
-const ICreditCard = ({ size = 14, color = "currentColor" }) => (
+// ── Inline icons ──────────────────────────────────────
+const IUpload = ({ size = 14, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
     fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+  </svg>
+);
+const IEye = ({ size = 13, color = "currentColor" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+    fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+const IFile = ({ size = 14, color = "currentColor" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+    fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
   </svg>
 );
 
+// ── Bill upload widget (inline, no external file) ──────
+function BillUploadWidget({ invoiceId, existingPath, onUploaded, tk }) {
+  const inputRef   = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [billPath,  setBillPath]  = useState(existingPath || null);
+  const [error,     setError]     = useState(null);
+
+  const viewUrl = billPath ? `${BASE_URL}/uploads/bills/${billPath}` : null;
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null); setUploading(true);
+    try {
+      const res = await API.uploadInvoiceBill(invoiceId, file);
+      setBillPath(res.bill_path);
+      onUploaded?.(res.bill_path);
+    } catch (err) {
+      setError(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      {billPath ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", background: "#f0fdf4", borderRadius: 10, border: "1px solid #bbf7d0", marginBottom: 8 }}>
+          <IFile size={16} color="#15803d" />
+          <span style={{ fontSize: 11, color: "#15803d", fontWeight: 600, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Bill attached</span>
+          <a href={viewUrl} target="_blank" rel="noopener noreferrer"
+            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.acc, fontWeight: 600, textDecoration: "none", padding: "4px 8px", background: tk.accL, borderRadius: 6, whiteSpace: "nowrap" }}>
+            <IEye size={12} color={tk.acc} /> View
+          </a>
+        </div>
+      ) : null}
+
+      <label style={{
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+        padding: "9px 14px", border: `1.5px dashed ${error ? tk.red : tk.bdr}`,
+        borderRadius: 10, cursor: "pointer", background: tk.surf2, fontSize: 12, color: tk.tx3,
+        fontWeight: 600, transition: "border-color .15s",
+      }}>
+        <IUpload size={13} color={uploading ? tk.acc : tk.tx3} />
+        {uploading ? "Uploading…" : billPath ? "Replace bill" : "Attach bill / receipt"}
+        <span style={{ fontSize: 10, color: tk.tx3, fontWeight: 400 }}>(PDF or image)</span>
+        {error && <span style={{ color: tk.red, fontSize: 11 }}> — {error}</span>}
+        <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.webp,.pdf"
+          onChange={handleFile} style={{ display: "none" }} disabled={uploading} />
+      </label>
+    </div>
+  );
+}
+
 export default function Invoices() {
   const { tk, inv, setInv, vendors } = useApp();
-  const [vId, setVId]       = useState(null);
+
+  const [vId,    setVId]    = useState(null);
   const [amount, setAmount] = useState("");
-  const [desc, setDesc]     = useState("");
-  const [due, setDue]       = useState("");
+  const [desc,   setDesc]   = useState("");
+  const [due,    setDue]    = useState("");
   const [status, setStatus] = useState("Unpaid");
-  const [msg, setMsg]       = useState(null);
-  const [filter, setFilter] = useState("All");
+  const [msg,    setMsg]    = useState(null);
+  const [adding, setAdding] = useState(false);
 
-  useEffect(() => { if (vendors.length && !vId) setVId(vendors[0]?.id); }, [vendors, vId]);
+  // Upload sheet — open on an existing invoice
+  const [uploadSheet, setUploadSheet] = useState(false);
+  const [activeInv,   setActiveInv]   = useState(null);
 
-  // Payment sheet
-  const [paySheet, setPaySheet] = useState(false);
-  const [payInv, setPayInv]     = useState(null);
-  const [payAmt, setPayAmt]     = useState("");
-  const [payMode, setPayMode]   = useState("Cash");
-  const [payRef, setPayRef]     = useState("");
-  const [payNotes, setPayNotes] = useState("");
-  const [payDate, setPayDate]   = useState(new Date().toISOString().split("T")[0]);
-  const [payMsg, setPayMsg]     = useState(null);
-  const [paying, setPaying]     = useState(false);
+  useEffect(() => {
+    if (vendors.length && !vId) setVId(vendors[0].id);
+  }, [vendors]);
 
-  // History sheet
-  const [histSheet, setHistSheet]   = useState(false);
-  const [histInv, setHistInv]       = useState(null);
-  const [payments, setPayments]     = useState([]);
-  const [histLoading, setHistLoading] = useState(false);
+  const unpaid = inv.filter(i => i.status === "Unpaid").reduce((s, i) => s + i.amount, 0);
 
-  const unpaidCount = inv.filter(i => i.status !== "Paid").length;
-  const unpaidTotal = inv.filter(i => i.status !== "Paid").reduce((s, i) => s + i.amount - (i.paid || 0), 0);
-
-  const filtered = filter === "All" ? inv
-    : filter === "Paid"    ? inv.filter(i => i.status === "Paid")
-    : filter === "Unpaid"  ? inv.filter(i => i.status === "Unpaid")
-    : inv.filter(i => i.status === "Partially Paid");
-
-  // ── Add invoice ──────────────────────────────
   const submit = async () => {
-    const v = vendors.find(x => x.id === vId);
     if (!amount || !desc) return setMsg({ t: "err", s: "Amount and description required." });
+    if (!vId)             return setMsg({ t: "err", s: "Select a vendor." });
+    const v = vendors.find(x => x.id === vId);
+    setAdding(true);
     try {
-      const res = await API.addInvoice({
-        vendor_id: vId, description: desc,
-        amount: parseFloat(amount), due_date: due || null, status,
-      });
-      setInv(prev => [{
-        id: res.id || Date.now(), vendor: v?.name || "",
-        desc, amount: parseFloat(amount), due, status, paid: 0,
-      }, ...prev]);
+      const res = await API.addInvoice({ vendor_id: vId, description: desc, amount: parseFloat(amount), due_date: due || null, status });
+      setInv(prev => [{ id: res.id || Date.now(), vendor: v?.name || "", desc, amount: parseFloat(amount), due, status, paid: 0, bill_path: null }, ...prev]);
       setMsg({ t: "ok", s: "Invoice added." });
       setAmount(""); setDesc(""); setDue(""); setStatus("Unpaid");
       setTimeout(() => setMsg(null), 2000);
     } catch (e) { setMsg({ t: "err", s: e.message }); }
+    finally { setAdding(false); }
   };
 
-  // ── Open pay sheet ───────────────────────────
-  const openPay = (invoice) => {
-    setPayInv(invoice);
-    setPayAmt((invoice.amount - (invoice.paid || 0)).toFixed(2));
-    setPayMode("Cash"); setPayRef(""); setPayNotes("");
-    setPayDate(new Date().toISOString().split("T")[0]);
-    setPayMsg(null);
-    setPaySheet(true);
-  };
-
-  const submitPayment = async () => {
-    const amt = parseFloat(payAmt);
-    if (!amt || amt <= 0) return setPayMsg({ t: "err", s: "Enter a valid amount." });
-    const remaining = payInv.amount - (payInv.paid || 0);
-    if (amt > remaining + 0.01) return setPayMsg({ t: "err", s: `Max payable: ${Rs(remaining)}` });
-    setPaying(true);
+  const markPaid = async (invoice) => {
     try {
-      await API.addPayment(payInv.id, {
-        amount: amt, payment_mode: payMode, reference: payRef, notes: payNotes,
-        paid_at: `${payDate}T${new Date().toTimeString().slice(0, 8)}`,
-      });
-      const newPaid   = (payInv.paid || 0) + amt;
-      const newStatus = Math.abs(newPaid - payInv.amount) < 0.01 ? "Paid" : "Partially Paid";
-      setInv(prev => prev.map(x => x.id === payInv.id ? { ...x, paid: newPaid, status: newStatus } : x));
-      setPayMsg({ t: "ok", s: `Payment of ${Rs(amt)} recorded!` });
-      setTimeout(() => { setPaySheet(false); setPayMsg(null); }, 1200);
-    } catch (e) { setPayMsg({ t: "err", s: e.message }); }
-    finally { setPaying(false); }
-  };
-
-  // ── Open history sheet ───────────────────────
-  const openHistory = async (invoice) => {
-    setHistInv(invoice);
-    setHistSheet(true);
-    setHistLoading(true);
-    try {
-      const data = await API.getPayments(invoice.id);
-      setPayments(Array.isArray(data) ? data : data.payments || []);
-    } catch { setPayments([]); }
-    finally { setHistLoading(false); }
-  };
-
-  const deletePayment = async (pid) => {
-    if (!window.confirm("Delete this payment?")) return;
-    try {
-      await API.deletePayment(histInv.id, pid);
-      setPayments(prev => prev.filter(p => p.id !== pid));
+      await API.updateInvoice(invoice.id, { status: "Paid" });
+      setInv(prev => prev.map(x => x.id === invoice.id ? { ...x, status: "Paid" } : x));
     } catch (e) { alert(e.message); }
   };
 
-  const statusBadge = (inv) => {
-    if (inv.status === "Paid" || Math.abs((inv.paid || 0) - inv.amount) < 0.01)
-      return <Badge color="green">Paid</Badge>;
-    if ((inv.paid || 0) > 0)
-      return <Badge color="amber">Partial</Badge>;
-    return <Badge color="red">Unpaid</Badge>;
+  const openUploadSheet = (invoice) => {
+    setActiveInv(invoice);
+    setUploadSheet(true);
   };
 
   return (
     <div>
       <div style={{ marginBottom: 18, animation: "fadeUp .25s ease" }}>
-        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Invoices &amp; Payables</div>
-        <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Supplier invoices and payment tracking</div>
+        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Invoices & Payables</div>
+        <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Supplier invoices and outstanding payments</div>
       </div>
 
-      {unpaidTotal > 0 && (
+      {unpaid > 0 && (
         <Alert type="warn">
           <IClock size={14} />
-          <span>Outstanding: <strong>{Rs(unpaidTotal)}</strong> across {unpaidCount} invoice{unpaidCount !== 1 ? "s" : ""}</span>
+          <span>Outstanding: <strong>{Rs(unpaid)}</strong> across {inv.filter(i => i.status === "Unpaid").length} invoices</span>
         </Alert>
       )}
 
@@ -160,194 +159,127 @@ export default function Invoices() {
             </Select>
           </Field>
           <Field label="Amount (₹)">
-            <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" step="0.01" />
+            <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
           </Field>
         </FormGrid>
         <Field label="Description">
           <Input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Work or supply covered" />
         </Field>
         <FormGrid>
-          <Field label="Due Date"><Input type="date" value={due} onChange={e => setDue(e.target.value)} /></Field>
+          <Field label="Due Date">
+            <Input type="date" value={due} onChange={e => setDue(e.target.value)} />
+          </Field>
           <Field label="Status">
             <Select value={status} onChange={e => setStatus(e.target.value)}>
               <option>Unpaid</option><option>Paid</option><option>Partially Paid</option>
             </Select>
           </Field>
         </FormGrid>
-        <Btn onClick={submit} fullWidth><ISave size={14} />Add Invoice</Btn>
+        <Btn onClick={submit} disabled={adding}>
+          <ISave size={14} />{adding ? "Adding…" : "Add Invoice"}
+        </Btn>
       </Card>
 
       {/* Invoice list */}
       <Card delay={.1}>
-        <CardTitle
-          icon={IFileText}
-          action={
-            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-              {["All", "Unpaid", "Partially Paid", "Paid"].map(f => (
-                <Btn key={f} variant={filter === f ? "primary" : "secondary"} small onClick={() => setFilter(f)}>{f}</Btn>
-              ))}
-            </div>
-          }
-        >Invoice Register</CardTitle>
+        <CardTitle icon={IFileText}>Invoice Register</CardTitle>
+        {inv.length === 0 ? <Empty icon={IFileText} text="No invoices yet." /> : (
+          <div>
+            {inv.map(invoice => (
+              <div key={invoice.id} style={{
+                padding: "13px 0", borderBottom: `1px solid ${tk.bdr}`,
+                display: "flex", flexDirection: "column", gap: 6,
+              }}>
+                {/* Top row */}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: tk.tx }}>{invoice.vendor}</div>
+                    <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>{invoice.desc}</div>
+                    {invoice.due && (
+                      <div style={{ fontSize: 11, color: tk.tx3, marginTop: 2 }}>Due: {invoice.due}</div>
+                    )}
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 800, fontSize: 15, color: tk.tx }}>
+                      {Rs(invoice.amount)}
+                    </div>
+                    {(invoice.paid || 0) > 0 && (
+                      <div style={{ fontSize: 11, color: "#15803d" }}>Paid: {Rs(invoice.paid)}</div>
+                    )}
+                  </div>
+                </div>
 
-        {filtered.length === 0 ? <Empty icon={IFileText} text="No invoices found." /> : (
-          <TableWrap>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 460 }}>
-              <thead>
-                <tr>
-                  {["Vendor", "Description", "Invoice", "Paid", "Due", "Status", ""].map(h => (
-                    <th key={h} style={{
-                      textAlign: h === "Invoice" || h === "Paid" || h === "Due" ? "right" : "left",
-                      padding: "9px 10px", fontSize: 10, fontWeight: 700,
-                      color: tk.tx3, textTransform: "uppercase", letterSpacing: ".08em",
-                      borderBottom: `1.5px solid ${tk.bdr}`, background: tk.surf2,
-                      whiteSpace: "nowrap",
-                    }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(i => {
-                  const remaining = i.amount - (i.paid || 0);
-                  const isPaid    = Math.abs(remaining) < 0.01;
-                  return (
-                    <tr key={i.id}>
-                      <td style={{ padding: "10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}`, fontWeight: 600 }}>{i.vendor}</td>
-                      <td style={{ padding: "10px", fontSize: 12, borderBottom: `1px solid ${tk.bdr}`, color: tk.tx2, maxWidth: 140 }}>
-                        <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i.desc}</div>
-                      </td>
-                      <td style={{ padding: "10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", fontWeight: 700, textAlign: "right" }}>
-                        {Rs(i.amount)}
-                      </td>
-                      <td style={{ padding: "10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", textAlign: "right", color: tk.grn }}>
-                        {(i.paid || 0) > 0 ? Rs(i.paid) : <span style={{ color: tk.tx3 }}>—</span>}
-                      </td>
-                      <td style={{ padding: "10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", textAlign: "right", color: !isPaid && remaining > 0 ? tk.red : tk.grn }}>
-                        {isPaid ? <span style={{ color: tk.grn }}>✓</span> : Rs(remaining)}
-                      </td>
-                      <td style={{ padding: "10px", borderBottom: `1px solid ${tk.bdr}` }}>
-                        {statusBadge(i)}
-                      </td>
-                      <td style={{ padding: "10px", borderBottom: `1px solid ${tk.bdr}` }}>
-                        <div style={{ display: "flex", gap: 4 }}>
-                          {!isPaid && (
-                            <Btn variant="primary" small onClick={() => openPay(i)}>
-                              <ICreditCard size={11} /> Pay
-                            </Btn>
-                          )}
-                          {(i.paid || 0) > 0 && (
-                            <Btn variant="ghost" small onClick={() => openHistory(i)}>Hist</Btn>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </TableWrap>
+                {/* Bottom row — status + actions */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <Badge color={invoice.status === "Paid" ? "green" : invoice.status === "Unpaid" ? "red" : "amber"}>
+                    {invoice.status}
+                  </Badge>
+
+                  {/* ── BILL UPLOAD BUTTON ── */}
+                  {invoice.bill_path ? (
+                    <a
+                      href={`${BASE_URL}/uploads/bills/${invoice.bill_path}`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#15803d", fontWeight: 600, textDecoration: "none", padding: "3px 8px", background: "#f0fdf4", borderRadius: 6, border: "1px solid #bbf7d0" }}>
+                      <IEye size={11} color="#15803d" /> View Bill
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => openUploadSheet(invoice)}
+                      style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.tx3, fontWeight: 600, cursor: "pointer", padding: "3px 8px", background: tk.surf2, border: `1px solid ${tk.bdr}`, borderRadius: 6 }}>
+                      <IUpload size={11} color={tk.tx3} /> Attach Bill
+                    </button>
+                  )}
+
+                  {invoice.status !== "Paid" && (
+                    <Btn variant="secondary" small onClick={() => markPaid(invoice)} style={{ marginLeft: "auto" }}>
+                      Mark Paid
+                    </Btn>
+                  )}
+                  {invoice.bill_path && (
+                    <button
+                      onClick={() => openUploadSheet(invoice)}
+                      style={{ fontSize: 11, color: tk.tx3, cursor: "pointer", background: "none", border: "none", textDecoration: "underline" }}>
+                      Replace
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </Card>
 
-      {/* ── Pay Sheet ── */}
+      {/* Bill upload sheet */}
       <Sheet
-        open={paySheet}
-        onClose={() => setPaySheet(false)}
-        title="Record Payment"
-        icon={ICreditCard}
-        footer={
-          <>
-            <Btn variant="secondary" onClick={() => setPaySheet(false)} style={{ flex: 1 }}>Cancel</Btn>
-            <Btn variant="primary" onClick={submitPayment} disabled={paying} style={{ flex: 2 }}>
-              {paying ? "Saving..." : "Confirm Payment"}
-            </Btn>
-          </>
-        }
+        open={uploadSheet}
+        onClose={() => setUploadSheet(false)}
+        title="Attach Bill / Receipt"
+        icon={IUpload}
+        footer={<Btn variant="secondary" onClick={() => setUploadSheet(false)} style={{ width: "100%" }}>Close</Btn>}
       >
-        {payInv && (
+        {activeInv && (
           <>
-            <div style={{ background: tk.surf2, borderRadius: 10, padding: "12px 14px", marginBottom: 14, border: `1px solid ${tk.bdr}` }}>
-              <div style={{ fontWeight: 700 }}>{payInv.vendor}</div>
-              <div style={{ fontSize: 12, color: tk.tx2, marginBottom: 8 }}>{payInv.desc}</div>
-              <div style={{ display: "flex", gap: 16 }}>
-                <div><div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase" }}>Total</div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700 }}>{Rs(payInv.amount)}</div></div>
-                <div><div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase" }}>Paid</div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.grn }}>{Rs(payInv.paid || 0)}</div></div>
-                <div><div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase" }}>Remaining</div>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.red }}>{Rs(payInv.amount - (payInv.paid || 0))}</div></div>
-              </div>
-            </div>
-            {payMsg && <Alert type={payMsg.t}>{payMsg.t === "ok" ? <ICheckCirc size={14} /> : <IXCircle size={14} />}{payMsg.s}</Alert>}
-            <Field label="Payment Amount (₹)">
-              <Input type="number" value={payAmt} onChange={e => setPayAmt(e.target.value)} placeholder="Enter amount" step="0.01" min="0.01" />
-            </Field>
-            <FormGrid>
-              <Field label="Date"><Input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} /></Field>
-              <Field label="Payment Mode">
-                <Select value={payMode} onChange={e => setPayMode(e.target.value)}>
-                  {PAYMENT_MODES.map(m => <option key={m}>{m}</option>)}
-                </Select>
-              </Field>
-            </FormGrid>
-            <Field label="Reference / UTR / Cheque No">
-              <Input value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Optional" />
-            </Field>
-            <Field label="Notes">
-              <Input value={payNotes} onChange={e => setPayNotes(e.target.value)} placeholder="Optional" />
-            </Field>
-          </>
-        )}
-      </Sheet>
-
-      {/* ── History Sheet ── */}
-      <Sheet open={histSheet} onClose={() => setHistSheet(false)} title="Invoice Details & History" icon={IFileText}>
-        {histInv && (
-          <>
-            <div style={{ background: tk.surf2, borderRadius: 10, padding: "11px 14px", marginBottom: 14, border: `1px solid ${tk.bdr}` }}>
-              <div style={{ fontWeight: 600 }}>{histInv.vendor} — {histInv.desc}</div>
-              <div style={{ fontSize: 12, color: tk.tx2 }}>
-                Total: {Rs(histInv.amount)} &nbsp;·&nbsp; Paid: {Rs(histInv.paid || 0)} &nbsp;·&nbsp;
-                <span style={{ color: tk.red }}>Due: {Rs(histInv.amount - (histInv.paid || 0))}</span>
-              </div>
+            <div style={{ background: tk.surf2, borderRadius: 10, padding: "11px 14px", marginBottom: 16, border: `1px solid ${tk.bdr}` }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>{activeInv.vendor}</div>
+              <div style={{ fontSize: 12, color: tk.tx2 }}>{activeInv.desc}</div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 16, color: tk.tx, marginTop: 4 }}>{Rs(activeInv.amount)}</div>
             </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", marginBottom: 8 }}>Invoice Bill / Document</div>
-              <BillUpload
-                billPath={histInv.bill_path}
-                onUpload={async (file) => {
-                  const res = await API.uploadInvoiceBill(histInv.id, file);
-                  setInv(prev => prev.map(i => i.id === histInv.id ? { ...i, bill_path: res.bill_path } : i));
-                  setHistInv(prev => ({ ...prev, bill_path: res.bill_path }));
-                  return res;
-                }}
-              />
+            <BillUploadWidget
+              tk={tk}
+              invoiceId={activeInv.id}
+              existingPath={activeInv.bill_path}
+              onUploaded={(path) => {
+                setInv(prev => prev.map(x => x.id === activeInv.id ? { ...x, bill_path: path } : x));
+                setActiveInv(prev => ({ ...prev, bill_path: path }));
+              }}
+            />
+
+            <div style={{ marginTop: 14, padding: "10px 12px", background: tk.surf2, borderRadius: 8, fontSize: 11, color: tk.tx3, lineHeight: 1.6 }}>
+              ℹ️ Accepted formats: JPEG, PNG, WebP, PDF · Max 10 MB<br />
+              The file is stored on the server and accessible from any device.
             </div>
-
-            <Divider />
-
-            <div style={{ fontSize: 11, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", marginBottom: 8, marginTop: 14 }}>Payment History</div>
-            {histLoading ? (
-              <div style={{ textAlign: "center", padding: 24, color: tk.tx3 }}>Loading...</div>
-            ) : payments.length === 0 ? (
-              <Empty icon={IFileText} text="No payments yet." />
-            ) : (
-              payments.map(p => (
-                <div key={p.id} style={{ display: "flex", gap: 10, padding: "11px 0", borderBottom: `1px solid ${tk.bdr}`, alignItems: "flex-start" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: tk.grnL, color: tk.grn, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, flexShrink: 0 }}>₹</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontFamily: "'DM Mono',monospace" }}>{Rs(p.amount)}</div>
-                    <div style={{ fontSize: 12, color: tk.tx2 }}>{p.payment_mode}{p.reference ? ` · ${p.reference}` : ""}</div>
-                    <div style={{ fontSize: 11, color: tk.tx3 }}>{fmtDateTime(p.paid_at)}</div>
-                    {p.notes && <div style={{ fontSize: 11, color: tk.tx2, marginTop: 2 }}>{p.notes}</div>}
-                  </div>
-                  <button onClick={() => deletePayment(p.id)} style={{ background: "none", border: "none", cursor: "pointer", color: tk.tx3, padding: 4, borderRadius: 6 }}>
-                    <ITrash size={13} />
-                  </button>
-                </div>
-              ))
-            )}
           </>
         )}
       </Sheet>

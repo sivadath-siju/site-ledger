@@ -91,7 +91,11 @@ export default function Attendance() {
 
   // Add worker
   const addWorker = async () => {
-    if (!nw.name.trim()) return;
+    if (!nw.name.trim()) return alert("Worker name is required.");
+    // ── Require subcontractor selection for subcontract workers ──
+    if (nw.is_subcontract && !nw.subcontractor_id) {
+      return alert("Please select a subcontractor for this subcontract worker.\nClick 'Manage Subcontractors' to add one first if needed.");
+    }
     try {
       const res = await API.addWorker({ name: nw.name, role: nw.role, labour_category: nw.labour_category, is_subcontract: nw.is_subcontract ? 1 : 0, subcontractor_id: nw.subcontractor_id ? parseInt(nw.subcontractor_id) : null, daily_rate: parseFloat(nw.rate) || 500, phone: nw.phone });
       setWorkers(prev => [...prev, { ...res, rate: res.daily_rate || 500, is_subcontract: res.is_subcontract || 0, labour_category: res.labour_category || nw.labour_category }]);
@@ -369,7 +373,19 @@ export default function Attendance() {
           ADD WORKER SHEET
       ═════════════════════════════════════════════ */}
       <Sheet open={addOpen} onClose={() => setAddOpen(false)} title="Add Worker" icon={IUserPlus}
-        footer={<><Btn variant="secondary" onClick={() => setAddOpen(false)} style={{ flex: 1 }}>Cancel</Btn><Btn variant="primary" onClick={addWorker} style={{ flex: 2 }}><ISave size={14} />Add Worker</Btn></>}
+        footer={
+          <>
+            <Btn variant="secondary" onClick={() => setAddOpen(false)} style={{ flex: 1 }}>Cancel</Btn>
+            <Btn
+              variant="primary"
+              onClick={addWorker}
+              disabled={nw.is_subcontract && !nw.subcontractor_id}
+              style={{ flex: 2 }}
+            >
+              <ISave size={14} />Add Worker
+            </Btn>
+          </>
+        }
       >
         <Field label="Full Name"><Input value={nw.name} onChange={e => setNw(p => ({ ...p, name: e.target.value }))} placeholder="Worker's full name" autoComplete="off" /></Field>
         <FormGrid>
@@ -382,18 +398,40 @@ export default function Attendance() {
         </FormGrid>
         <Divider />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <div><div style={{ fontSize: 13, fontWeight: 600 }}>Subcontract Worker</div><div style={{ fontSize: 11, color: tk.tx3 }}>Wage tracked for reference only</div></div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>Subcontract Worker</div>
+            <div style={{ fontSize: 11, color: tk.tx3 }}>Wage tracked for reference only</div>
+          </div>
           <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-            <input type="checkbox" checked={nw.is_subcontract} onChange={e => setNw(p => ({ ...p, is_subcontract: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#92400e", cursor: "pointer" }} />
+            <input
+              type="checkbox"
+              checked={nw.is_subcontract}
+              onChange={e => setNw(p => ({ ...p, is_subcontract: e.target.checked, subcontractor_id: "" }))}
+              style={{ width: 18, height: 18, accentColor: "#92400e", cursor: "pointer" }}
+            />
             <span style={{ fontSize: 12, color: tk.tx2 }}>Mark as subcontract</span>
           </label>
         </div>
         {nw.is_subcontract && (
-          <Field label="Assign to Subcontractor">
-            <Select value={nw.subcontractor_id} onChange={e => setNw(p => ({ ...p, subcontractor_id: e.target.value }))}>
-              <option value="">— Select subcontractor —</option>
+          <Field label="Subcontractor *">
+            <Select
+              value={nw.subcontractor_id}
+              onChange={e => setNw(p => ({ ...p, subcontractor_id: e.target.value }))}
+              style={{ borderColor: !nw.subcontractor_id ? "#b91c1c" : undefined, outline: !nw.subcontractor_id ? "2px solid #fecaca" : undefined }}
+            >
+              <option value="">— Select a subcontractor (required) —</option>
               {subcontractors.map(s => <option key={s.id} value={s.id}>{s.name} ({s.type})</option>)}
             </Select>
+            {!nw.subcontractor_id && (
+              <div style={{ fontSize: 11, color: "#b91c1c", marginTop: 5, fontWeight: 600 }}>
+                ⚠ Subcontractor selection is required for subcontract workers.
+              </div>
+            )}
+            {!nw.subcontractor_id && subcontractors.length === 0 && (
+              <div style={{ fontSize: 11, color: "#92400e", marginTop: 4, padding: "6px 10px", background: "#fffbeb", borderRadius: 7, border: "1px solid #fde68a" }}>
+                No subcontractors yet. Close this and click "Manage Subcontractors" to add one first.
+              </div>
+            )}
           </Field>
         )}
       </Sheet>
