@@ -9,7 +9,7 @@ import { ITag, IPlus, ICheckCirc, IXCircle, IReceipt, ISave } from "../icons/Ico
 
 const today = () => new Date().toISOString().split("T")[0];
 const Rs    = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
-const BASE_URL = (process.env.REACT_APP_API_URL || "http://localhost:5001/api").replace("/api", "");
+const BASE_URL = (process.env.REACT_APP_API_URL || "http://localhost:5001/api");
 
 // ── Inline icons ──────────────────────────────────────
 const IUpload = ({ size = 14, color = "currentColor" }) => (

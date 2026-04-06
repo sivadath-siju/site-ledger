@@ -8,7 +8,7 @@ import {
 import { IFilePlus, ICheckCirc, IXCircle, IClock, IFileText, ISave, ITrash } from "../icons/Icons";
 
 const Rs = n => "₹" + Number(n || 0).toLocaleString("en-IN");
-const BASE_URL = (process.env.REACT_APP_API_URL || "http://localhost:5001/api").replace("/api", "");
+const BASE_URL = (process.env.REACT_APP_API_URL || "http://localhost:5001/api");
 
 // ── Inline icons ──────────────────────────────────────
 const IUpload = ({ size = 14, color = "currentColor" }) => (

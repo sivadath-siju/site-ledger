@@ -92,7 +92,7 @@ export const uploadInvoiceBill = (invoiceId, file) => {
 };
 // Build URL for viewing a stored bill
 export const billUrl = filename =>
-  filename ? `${BASE.replace("/api", "")}/uploads/bills/${filename}` : null;
+  filename ? `${BASE}/uploads/bills/${filename}` : null;
 // ──────────────────────────────────────────────────────────
 
 // VENDORS
