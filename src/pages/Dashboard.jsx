@@ -1,14 +1,72 @@
 import React, { useState, useEffect } from "react";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
-import { Card, CardTitle, SummaryRow, ProgressBar, Alert, Badge, Empty } from "../components/Primitives";
-import { IUsers, IListChecks, IPkgX, IAlertTri, IClipboard, IPackage, IActivity, IInbox, IUserCheck, IReceipt } from "../icons/Icons";
+import { Card, CardTitle, ProgressBar, Alert, Badge, Empty } from "../components/Primitives";
+import { IUsers, IListChecks, IPkgX, IAlertTri, IClipboard, IPackage, IActivity } from "../icons/Icons";
 
 const today = () => new Date().toISOString().split("T")[0];
 const Rs    = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
 
 const WEATHER_EMOJI = { "Clear": "☀️", "Partly Cloudy": "⛅", "Overcast": "☁️", "Light Rain": "🌧️", "Heavy Rain": "⛈️", "Extreme Heat": "🌡️" };
 const SAFETY_COLOR  = { "All Clear": "green", "Minor Concerns": "amber", "Work Stopped": "red" };
+
+function PhotoLightbox({ photo, onClose }) {
+  const url = API.photoUrl(photo);
+
+  useEffect(() => {
+    const onKey = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  if (!url) return null;
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ maxWidth: "min(92vw, 960px)", maxHeight: "88vh", display: "flex", flexDirection: "column", gap: 10 }}>
+        <img src={url} alt={photo.caption || "Site photo"} style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain", borderRadius: 14, display: "block" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, color: "#f3f4f6" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>{photo.caption || "Site Photo"}</div>
+            <div style={{ fontSize: 12, color: "#d1d5db" }}>{photo.uploader ? `Uploaded by ${photo.uploader}` : "Today's site photo"}</div>
+          </div>
+          <button onClick={onClose} style={{ border: "none", borderRadius: 999, padding: "8px 12px", background: "rgba(255,255,255,.12)", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DashboardPhotoCard({ photo, onOpen, tk }) {
+  const url = API.photoUrl(photo);
+
+  return (
+    <button
+      onClick={() => onOpen(photo)}
+      style={{ padding: 0, border: `1px solid ${tk.bdr}`, borderRadius: 16, overflow: "hidden", background: tk.surf2, cursor: "pointer", boxShadow: tk.sh, textAlign: "left" }}
+    >
+      <div style={{ aspectRatio: "16/10", background: tk.surf2 }}>
+        {url ? (
+          <img src={url} alt={photo.caption || "Site photo"} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="lazy" />
+        ) : (
+          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: tk.tx3, fontSize: 12 }}>
+            Image unavailable
+          </div>
+        )}
+      </div>
+      <div style={{ padding: 12 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: tk.tx, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          {photo.caption || "Site Progress Photo"}
+        </div>
+        <div style={{ fontSize: 11, color: tk.tx3 }}>
+          {photo.uploader ? `By ${photo.uploader}` : "Today"}{photo.logged_at ? ` • ${new Date(photo.logged_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}` : ""}
+        </div>
+      </div>
+    </button>
+  );
+}
 
 // Clickable stat card — navigates to a page on click
 function ClickStatCard({ icon: Icon, value, label, color, delay = 0, onClick, tk }) {
@@ -59,11 +117,14 @@ function ClickStatCard({ icon: Icon, value, label, color, delay = 0, onClick, tk
 }
 
 export default function Dashboard() {
-  const { tk, mats, att, tasks, workers, setPage } = useApp();
+  const { tk, mats, tasks, workers, setPage } = useApp();
 
   const [todayLog, setTodayLog]         = useState(null);
   const [todayWorkers, setTodayWorkers] = useState([]);
+  const [todayPhotos, setTodayPhotos]   = useState([]);
   const [logLoading, setLogLoading]     = useState(true);
+  const [photosLoading, setPhotosLoading] = useState(true);
+  const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
   const todayStr = today();
 
@@ -76,6 +137,14 @@ export default function Dashboard() {
       if (logRes.status === "fulfilled") setTodayLog(logRes.value);
       if (attRes.status === "fulfilled") setTodayWorkers(Array.isArray(attRes.value) ? attRes.value : []);
     }).finally(() => setLogLoading(false));
+  }, [todayStr]);
+
+  useEffect(() => {
+    setPhotosLoading(true);
+    API.getSitePhotos(todayStr)
+      .then(res => setTodayPhotos(Array.isArray(res) ? res : []))
+      .catch(() => setTodayPhotos([]))
+      .finally(() => setPhotosLoading(false));
   }, [todayStr]);
 
   const lsc = mats.filter(m => m.stock <= m.min).length;
@@ -94,6 +163,8 @@ export default function Dashboard() {
 
   return (
     <div>
+      {lightboxPhoto && <PhotoLightbox photo={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />}
+
       {/* Header */}
       <div style={{ marginBottom: 18, animation: "fadeUp .25s ease" }}>
         <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Dashboard</div>
@@ -217,8 +288,30 @@ export default function Dashboard() {
         )}
       </Card>
 
-      {/* Stock levels */}
       <Card delay={.18}>
+        <CardTitle icon={IActivity}>
+          Site Photos
+          <span style={{ fontSize: 11, fontWeight: 500, color: tk.tx3, marginLeft: 8 }}>
+            {todayPhotos.length === 0 ? "No photos today" : `${todayPhotos.length} photo${todayPhotos.length > 1 ? "s" : ""} from today`}
+          </span>
+        </CardTitle>
+        {photosLoading ? (
+          <div style={{ padding: "12px 0", color: tk.tx3, fontSize: 13 }}>Loadingâ€¦</div>
+        ) : todayPhotos.length === 0 ? (
+          <div style={{ padding: "18px 0", textAlign: "center", color: tk.tx3, fontSize: 13 }}>
+            No site photos uploaded for today yet.
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            {todayPhotos.map(photo => (
+              <DashboardPhotoCard key={photo.id} photo={photo} onOpen={setLightboxPhoto} tk={tk} />
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Stock levels */}
+      <Card delay={.22}>
         <CardTitle icon={IPackage}>Stock Levels</CardTitle>
         {mats.length === 0 ? (
           <Empty icon={IPackage} text="No materials added yet." />
