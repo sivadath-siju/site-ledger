@@ -56,7 +56,7 @@ function Lightbox({ url, caption, onClose }) {
 
 // Individual photo thumbnail
 function PhotoCard({ photo, onDelete, onOpen, tk }) {
-  const url = API.photoUrl(photo.file_path);
+  const url = API.photoUrl(photo.filename);
   return (
     <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", background: tk.surf2, border: `1px solid ${tk.bdr}`, aspectRatio: "4/3" }}>
       <img src={url} alt={photo.caption || "Site"} onClick={() => onOpen(photo)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", cursor: "pointer" }} loading="lazy" />
@@ -178,7 +178,7 @@ export default function Workflow() {
     catch (e) { alert(e.message); }
   };
 
-  const openLightbox = photo => setLightbox({ url: API.photoUrl(photo.file_path), caption: photo.caption });
+  const openLightbox = photo => setLightbox({ url: API.photoUrl(photo.filename), caption: photo.caption });
 
   return (
     <div>
