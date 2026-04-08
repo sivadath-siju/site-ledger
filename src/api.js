@@ -1,5 +1,5 @@
 const BASE = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
-export const BASE_URL = BASE.replace("/api", "");
+export const BASE_URL = BASE.replace("/api", "").replace(/\/$/, "");
 export const getToken   = () => localStorage.getItem("sl_token");
 export const setToken   = t  => localStorage.setItem("sl_token", t);
 export const clearToken = () => localStorage.removeItem("sl_token");
@@ -82,8 +82,11 @@ export const getSitePhotos=  date       =>get(`/tasks/photos?date=${date}`);
 export const uploadSitePhoto=(date,f,cap)=>{const fd=new FormData();fd.append("photo",f);fd.append("date",date);if(cap)fd.append("caption",cap);return upload("/tasks/photos",fd);};
 export const deleteSitePhoto=id=>del(`/tasks/photos/${id}`);
 export const photoUrl = (p) => {
-  const fn = typeof p === "string" ? p : (p?.filename || p?.file_path);
-  return fn ? `${BASE_URL}/uploads/daily_logs/${fn}` : null;
+  if (!p) return null;
+  if (typeof p === "string") return `${BASE_URL}/uploads/daily_logs/${p}`;
+  const fn = p.filename || p.file_path;
+  const path = p.url || (fn ? `/uploads/daily_logs/${fn}` : null);
+  return path ? `${BASE_URL}${path}` : null;
 };
 // REPORTS — all accept optional {from,to} params
 export const getReportSummary= ()      =>get("/reports/summary");
