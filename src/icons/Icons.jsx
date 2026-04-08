@@ -44,6 +44,7 @@ const I = (name) => ({ size=16, color="currentColor", style={} } = {}) => {
     "calendar":       <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
     "list-checks":    <><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></>,
     "hard-hat2":      <><path d="M2 18a1 1 0 001 1h18a1 1 0 001-1v-2a1 1 0 00-1-1H3a1 1 0 00-1 1v2z"/><path d="M10 10V5a1 1 0 011-1h2a1 1 0 011 1v5"/><path d="M4 15v-3a8 8 0 0116 0v3"/></>,
+    "filter":         <><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>,
   };
   const d = paths[name] || paths["check"];
   return (
@@ -59,7 +60,7 @@ export const Icons = {};
  "building","pie-chart","cpu","settings","menu","x","plus","save","trash","download","log-out",
  "moon","sun","alert-tri","activity","trending-up","indian-rupee","check-circle","x-circle",
  "clock","inbox","user-plus","user-check","tag","file-plus","file-spread","edit","arrows",
- "database","check","pkg-x","calendar","list-checks","hard-hat2"].forEach(n => {
+ "database","check","pkg-x","calendar","list-checks","hard-hat2","filter"].forEach(n => {
   Icons[n] = ({ size=16, color="currentColor", style={} }) => I(n)({ size, color, style });
 });
 
@@ -104,3 +105,4 @@ export const ICheck      = Icons["check"];
 export const IPkgX       = Icons["pkg-x"];
 export const ICalendar   = Icons["calendar"];
 export const IListChecks = Icons["list-checks"];
+export const IFilter     = Icons["filter"];
