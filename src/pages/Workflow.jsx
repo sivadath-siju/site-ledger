@@ -5,6 +5,62 @@ import { Card, CardTitle, Btn, Alert, Field, FormGrid, Badge } from "../componen
 import { IEdit, ISave, ICheckCirc, ICheckSq } from "../icons/Icons";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
+const MAX_PHOTO_DIMENSION = 1600;
+const PHOTO_QUALITY = 0.78;
+const MAX_ORIGINAL_SIZE_MB = 1.5;
+
+const fmtFileSize = bytes => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+};
+
+const loadImage = file => new Promise((resolve, reject) => {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    resolve(img);
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    reject(new Error("Could not read image"));
+  };
+  img.src = url;
+});
+
+const canvasToBlob = (canvas, type, quality) => new Promise((resolve, reject) => {
+  canvas.toBlob(blob => {
+    if (blob) resolve(blob);
+    else reject(new Error("Could not compress image"));
+  }, type, quality);
+});
+
+async function compressImage(file) {
+  if (!file?.type?.startsWith("image/")) return file;
+  if (file.size <= MAX_ORIGINAL_SIZE_MB * 1024 * 1024) return file;
+
+  const img = await loadImage(file);
+  const scale = Math.min(1, MAX_PHOTO_DIMENSION / Math.max(img.width, img.height));
+  const width = Math.max(1, Math.round(img.width * scale));
+  const height = Math.max(1, Math.round(img.height * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not process image");
+  ctx.drawImage(img, 0, 0, width, height);
+
+  const outputType = file.type === "image/png" ? "image/jpeg" : (file.type === "image/webp" ? "image/webp" : "image/jpeg");
+  const blob = await canvasToBlob(canvas, outputType, PHOTO_QUALITY);
+  if (blob.size >= file.size) return file;
+
+  const ext = outputType === "image/webp" ? "webp" : "jpg";
+  const baseName = file.name.replace(/\.[^.]+$/, "");
+  return new File([blob], `${baseName}.${ext}`, { type: outputType, lastModified: Date.now() });
+}
 
 const ICamera = ({ size = 16, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
@@ -81,20 +137,37 @@ function PhotoUpload({ date, onUploaded, tk }) {
   const [pending,   setPending]   = useState(null); // File object
   const [caption,   setCaption]   = useState("");
   const [uploading, setUploading] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [error,     setError]     = useState(null);
 
-  const handlePick = e => {
+  const handlePick = async e => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setPending(file); setError(null);
+    setPreparing(true);
+    setError(null);
     if (inputRef.current) inputRef.current.value = "";
+    try {
+      const compressed = await compressImage(file);
+      setPending({
+        file: compressed,
+        originalSize: file.size,
+        compressedSize: compressed.size,
+        name: compressed.name,
+        wasCompressed: compressed.size < file.size,
+      });
+    } catch (err) {
+      setPending(null);
+      setError(err.message || "Could not prepare image");
+    } finally {
+      setPreparing(false);
+    }
   };
 
   const doUpload = async () => {
     if (!pending) return;
     setUploading(true); setError(null);
     try {
-      const res = await API.uploadSitePhoto(date, pending, caption.trim() || null);
+      const res = await API.uploadSitePhoto(date, pending.file, caption.trim() || null);
       onUploaded(res);
       setPending(null); setCaption("");
     } catch (err) { setError(err.message || "Upload failed"); }
@@ -110,6 +183,9 @@ function PhotoUpload({ date, onUploaded, tk }) {
         <div style={{ fontSize: 12, color: tk.acc, fontWeight: 600, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
           <ICamera size={13} color={tk.acc} />
           {pending.name}
+        </div>
+        <div style={{ fontSize: 11, color: tk.tx2, marginBottom: 8 }}>
+          {pending.wasCompressed ? `Compressed ${fmtFileSize(pending.originalSize)} to ${fmtFileSize(pending.compressedSize)}` : `Size: ${fmtFileSize(pending.compressedSize)}`}
         </div>
         {error && <div style={{ fontSize: 11, color: "#b91c1c", marginBottom: 8, fontWeight: 600 }}>{error}</div>}
         <Field label="Caption (optional — e.g. 'Foundation pour, Block A')">
@@ -140,8 +216,8 @@ function PhotoUpload({ date, onUploaded, tk }) {
       cursor: "pointer", background: tk.surf2, color: tk.tx3, transition: "border-color .15s",
     }}>
       <IUpload size={22} color={tk.tx3} />
-      <div style={{ fontSize: 13, fontWeight: 600, color: tk.tx2 }}>Add site photo</div>
-      <div style={{ fontSize: 10, color: tk.tx3 }}>JPEG, PNG, WebP · max 20 MB</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: tk.tx2 }}>{preparing ? "Preparing photo..." : "Add site photo"}</div>
+      <div style={{ fontSize: 10, color: tk.tx3 }}>JPEG, PNG, WebP, auto-compressed before upload</div>
       <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handlePick} style={{ display: "none" }} />
     </label>
   );
