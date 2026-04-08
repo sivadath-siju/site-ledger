@@ -78,9 +78,9 @@ export const getDailyLog=   date=>get(`/tasks/logs?date=${date}`);
 export const saveDailyLog=  d   =>put("/tasks/logs",d);
 export const getAllDailyLogs=()  =>get("/tasks/logs/all");
 // SITE PHOTOS
-export const getSitePhotos=  date       =>get(`/tasks/logs/photos?date=${date}`);
-export const uploadSitePhoto=(date,f,cap)=>{const fd=new FormData();fd.append("photo",f);fd.append("date",date);if(cap)fd.append("caption",cap);return upload("/tasks/logs/photos",fd);};
-export const deleteSitePhoto=id=>del(`/tasks/logs/photos/${id}`);
+export const getSitePhotos=  date       =>get(`/tasks/photos?date=${date}`);
+export const uploadSitePhoto=(date,f,cap)=>{const fd=new FormData();fd.append("photo",f);fd.append("date",date);if(cap)fd.append("caption",cap);return upload("/tasks/photos",fd);};
+export const deleteSitePhoto=id=>del(`/tasks/photos/${id}`);
 export const photoUrl=fn=>fn?`${BASE_URL}/uploads/photos/${fn}`:null;
 // REPORTS — all accept optional {from,to} params
 export const getReportSummary= ()      =>get("/reports/summary");
