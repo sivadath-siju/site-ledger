@@ -1,395 +1,271 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
-import {
-  Card, CardTitle, Btn, Alert, Field, Textarea,
-  FormGrid, Select, Badge, Empty,
-} from "../components/Primitives";
-import { IEdit, ISave, ICheckCirc, IXCircle, ICheckSq, IClock } from "../icons/Icons";
+import { Card, CardTitle, Btn, Alert, Field, FormGrid, Badge } from "../components/Primitives";
+import { IEdit, ISave, ICheckCirc, ICheckSq } from "../icons/Icons";
 
-const todayStr   = () => new Date().toISOString().split("T")[0];
-const fmtDate    = d  => new Date(d + "T00:00:00").toLocaleDateString("en-IN", { weekday: "long",  day: "numeric", month: "short", year: "numeric" });
-const fmtDateSh  = d  => new Date(d + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-const fmtTime    = d  => d ? new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : null;
+const todayStr = () => new Date().toISOString().split("T")[0];
 
-const WEATHER_EMOJI = { "Clear": "☀️", "Partly Cloudy": "⛅", "Overcast": "☁️", "Light Rain": "🌧️", "Heavy Rain": "⛈️", "Extreme Heat": "🌡️" };
-const SAFETY_COLOR  = { "All Clear": "green", "Minor Concerns": "amber", "Work Stopped": "red" };
-
-// Chevron icon
-const IChevron = ({ down, size = 14, color = "currentColor" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
-    fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-    style={{ transition: "transform .2s", transform: down ? "rotate(180deg)" : "rotate(0deg)" }}>
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-);
-
-// Calendar icon
-const ICalendar = ({ size = 14, color = "currentColor" }) => (
+const ICamera = ({ size = 16, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
     fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" />
-    <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
-    <line x1="3" y1="10" x2="21" y2="10" />
+    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+    <circle cx="12" cy="13" r="4"/>
   </svg>
 );
+const IUpload = ({ size = 18, color = "currentColor" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+    fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+  </svg>
+);
+const IX = ({ size = 11, color = "currentColor" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+    fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+const IExpand = ({ size = 12, color = "currentColor" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+    fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+    <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+  </svg>
+);
+
+// Lightbox overlay
+function Lightbox({ url, caption, onClose }) {
+  useEffect(() => {
+    const fn = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, [onClose]);
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.88)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ position: "relative", maxWidth: "min(90vw, 800px)", maxHeight: "85vh", display: "flex", flexDirection: "column", gap: 8 }}>
+        <img src={url} alt={caption || "Site photo"} style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain", borderRadius: 12, display: "block" }} />
+        {caption && <div style={{ color: "#e5e7eb", fontSize: 13, textAlign: "center", fontWeight: 500 }}>{caption}</div>}
+        <button onClick={onClose} style={{ position: "absolute", top: -12, right: -12, width: 28, height: 28, borderRadius: "50%", background: "#374151", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <IX size={13} color="#fff" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Individual photo thumbnail
+function PhotoCard({ photo, onDelete, onOpen, tk }) {
+  const url = API.photoUrl(photo.file_path);
+  return (
+    <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", background: tk.surf2, border: `1px solid ${tk.bdr}`, aspectRatio: "4/3" }}>
+      <img src={url} alt={photo.caption || "Site"} onClick={() => onOpen(photo)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", cursor: "pointer" }} loading="lazy" />
+      {photo.caption && (
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,.65)", color: "#fff", fontSize: 10, padding: "4px 7px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {photo.caption}
+        </div>
+      )}
+      <button onClick={() => onOpen(photo)} style={{ position: "absolute", top: 5, left: 5, width: 22, height: 22, borderRadius: 6, background: "rgba(0,0,0,.5)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <IExpand size={11} color="#fff" />
+      </button>
+      <button onClick={() => onDelete(photo.id)} style={{ position: "absolute", top: 5, right: 5, width: 22, height: 22, borderRadius: 6, background: "rgba(185,28,28,.8)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <IX size={11} color="#fff" />
+      </button>
+    </div>
+  );
+}
+
+// Upload zone — pick file → enter caption → upload
+function PhotoUpload({ date, onUploaded, tk }) {
+  const inputRef = useRef(null);
+  const [pending,   setPending]   = useState(null); // File object
+  const [caption,   setCaption]   = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [error,     setError]     = useState(null);
+
+  const handlePick = e => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPending(file); setError(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const doUpload = async () => {
+    if (!pending) return;
+    setUploading(true); setError(null);
+    try {
+      const res = await API.uploadSitePhoto(date, pending, caption.trim() || null);
+      onUploaded(res);
+      setPending(null); setCaption("");
+    } catch (err) { setError(err.message || "Upload failed"); }
+    finally { setUploading(false); }
+  };
+
+  const cancel = () => { setPending(null); setCaption(""); setError(null); };
+
+  // After picking file — show caption input
+  if (pending) {
+    return (
+      <div style={{ border: `1.5px solid ${tk.acc}`, borderRadius: 12, padding: 14, background: tk.accL }}>
+        <div style={{ fontSize: 12, color: tk.acc, fontWeight: 600, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+          <ICamera size={13} color={tk.acc} />
+          {pending.name}
+        </div>
+        {error && <div style={{ fontSize: 11, color: "#b91c1c", marginBottom: 8, fontWeight: 600 }}>{error}</div>}
+        <Field label="Caption (optional — e.g. 'Foundation pour, Block A')">
+          <input
+            value={caption}
+            onChange={e => setCaption(e.target.value)}
+            placeholder="Describe what's in the photo"
+            autoFocus
+            onKeyDown={e => { if (e.key === "Enter") doUpload(); if (e.key === "Escape") cancel(); }}
+            style={{ width: "100%", padding: "9px 12px", border: `1.5px solid ${tk.bdr}`, borderRadius: 9, fontSize: 13, fontFamily: "'DM Sans',sans-serif", background: tk.surf, color: tk.tx, boxSizing: "border-box" }}
+          />
+        </Field>
+        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <button onClick={cancel} style={{ flex: 1, padding: 9, border: `1px solid ${tk.bdr}`, borderRadius: 9, background: "transparent", cursor: "pointer", fontSize: 13, color: tk.tx2, fontFamily: "'DM Sans',sans-serif" }}>Cancel</button>
+          <button onClick={doUpload} disabled={uploading} style={{ flex: 2, padding: 9, border: "none", borderRadius: 9, background: tk.acc, color: "#fff", cursor: uploading ? "default" : "pointer", fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", opacity: uploading ? .7 : 1 }}>
+            {uploading ? "Uploading…" : "Upload Photo"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <label style={{
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      gap: 7, padding: "20px 12px",
+      border: `2px dashed ${tk.bdr}`, borderRadius: 12,
+      cursor: "pointer", background: tk.surf2, color: tk.tx3, transition: "border-color .15s",
+    }}>
+      <IUpload size={22} color={tk.tx3} />
+      <div style={{ fontSize: 13, fontWeight: 600, color: tk.tx2 }}>Add site photo</div>
+      <div style={{ fontSize: 10, color: tk.tx3 }}>JPEG, PNG, WebP · max 20 MB</div>
+      <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handlePick} style={{ display: "none" }} />
+    </label>
+  );
+}
 
 export default function Workflow() {
   const { tk, tasks, setTasks } = useApp();
+  const date = todayStr();
 
-  // ── Today's log state ──────────────────────────
-  const [log,      setLog]      = useState("");
-  const [weather,  setWeather]  = useState("Clear");
-  const [safety,   setSafety]   = useState("All Clear");
-  const [workers,  setWorkers]  = useState("");
-  const [msg,      setMsg]      = useState(null);
-  const [saving,   setSaving]   = useState(false);
-  const [existing, setExisting] = useState(false);
+  const [log,     setLog]     = useState("");
+  const [weather, setWeather] = useState("Clear");
+  const [safety,  setSafety]  = useState("All Clear");
+  const [saved,   setSaved]   = useState(false);
 
-  // ── History state ─────────────────────────────
-  const [history,      setHistory]      = useState([]);
-  const [histLoading,  setHistLoading]  = useState(false);
-  const [expandedDate, setExpandedDate] = useState(null);   // which past log is open
+  const [photos,       setPhotos]       = useState([]);
+  const [photoLoading, setPhotoLoading] = useState(true);
+  const [lightbox,     setLightbox]     = useState(null);
 
-  // ── Load today's log + history on mount ────────
   useEffect(() => {
-    // Load today
-    API.getDailyLog(todayStr())
-      .then(data => {
-        if (data && data.id) {
-          setLog(data.notes || "");
-          setWeather(data.weather || "Clear");
-          setSafety(data.safety || "All Clear");
-          setWorkers(data.workers_count != null ? String(data.workers_count) : "");
-          setExisting(true);
-        }
-      })
-      .catch(() => {});  // no log yet today — fine
+    API.getDailyLog(date).then(l => { setLog(l.notes || ""); setWeather(l.weather || "Clear"); setSafety(l.safety || "All Clear"); }).catch(() => {});
+    setPhotoLoading(true);
+    API.getSitePhotos(date).then(d => setPhotos(Array.isArray(d) ? d : [])).catch(() => setPhotos([])).finally(() => setPhotoLoading(false));
+  }, [date]);
 
-    // Load history
-    loadHistory();
-  }, []);
-
-  const loadHistory = () => {
-    setHistLoading(true);
-    API.getAllDailyLogs()
-      .then(data => {
-        // Filter out today from history list (today is shown in the form above)
-        const past = (Array.isArray(data) ? data : []).filter(l => l.date !== todayStr());
-        setHistory(past);
-      })
-      .catch(() => setHistory([]))
-      .finally(() => setHistLoading(false));
-  };
-
-  // ── Save / upsert today's log ──────────────────
   const save = async () => {
-    setSaving(true);
-    setMsg(null);
-    try {
-      await API.saveDailyLog({
-        date:          todayStr(),
-        notes:         log,
-        weather,
-        safety,
-        workers_count: workers !== "" ? parseInt(workers) : null,
-        saved_at:      new Date().toISOString(),
-      });
-      setMsg({ t: "ok", s: existing ? "Log updated for today." : "Log saved for today." });
-      setExisting(true);
-      // Refresh history so today's new entry shows if user scrolls down
-      loadHistory();
-      setTimeout(() => setMsg(null), 2500);
-    } catch (e) {
-      setMsg({ t: "err", s: e.message });
-    } finally {
-      setSaving(false);
-    }
+    try { await API.saveDailyLog({ date, notes: log, weather, safety, saved_at: new Date().toISOString() }); }
+    catch {}
+    setSaved(true); setTimeout(() => setSaved(false), 2500);
   };
 
-  const pendingTasks = tasks.filter(t => t.status !== "Completed");
-  const doneTasks    = tasks.filter(t => t.status === "Completed");
+  const onPhotoDelete = async (id) => {
+    if (!window.confirm("Delete this photo? This cannot be undone.")) return;
+    try { await API.deleteSitePhoto(id); setPhotos(prev => prev.filter(p => p.id !== id)); }
+    catch (e) { alert(e.message); }
+  };
+
+  const openLightbox = photo => setLightbox({ url: API.photoUrl(photo.file_path), caption: photo.caption });
 
   return (
     <div>
-      {/* ── Page header ── */}
+      {lightbox && <Lightbox url={lightbox.url} caption={lightbox.caption} onClose={() => setLightbox(null)} />}
+
       <div style={{ marginBottom: 18, animation: "fadeUp .25s ease" }}>
         <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Daily Workflow</div>
-        <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2, display: "flex", alignItems: "center", gap: 8 }}>
-          {fmtDate(todayStr())}
-          {existing && (
-            <span style={{ background: tk.grnL, color: tk.grn, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
-              ✓ Saved
-            </span>
-          )}
-        </div>
+        <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Site log for {date}</div>
       </div>
 
-      {msg && (
-        <Alert type={msg.t}>
-          {msg.t === "ok" ? <ICheckCirc size={14} /> : <IXCircle size={14} />}
-          {msg.s}
-        </Alert>
-      )}
+      {saved && <Alert type="ok"><ICheckCirc size={14} />Log saved successfully.</Alert>}
 
-      {/* ── Today's log form ── */}
+      {/* Progress notes */}
       <Card delay={.05}>
-        <CardTitle icon={IEdit}>
-          {existing ? "Today's Site Log" : "New Daily Log"}
-        </CardTitle>
-
-        <Field label="Site Observations / Summary">
-          <Textarea
+        <CardTitle icon={IEdit}>Progress Notes</CardTitle>
+        <Field label="Observations / Summary">
+          <textarea
             value={log}
             onChange={e => setLog(e.target.value)}
-            placeholder="Work completed, issues encountered, materials used, progress notes..."
-            rows={5}
+            placeholder="Work completed today, issues encountered, materials used..."
+            rows={4}
+            style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${tk.bdr}`, borderRadius: 10, fontSize: 13, fontFamily: "'DM Sans',sans-serif", background: tk.surf2, color: tk.tx, resize: "vertical", lineHeight: 1.65, boxSizing: "border-box" }}
           />
         </Field>
         <FormGrid>
           <Field label="Weather">
-            <Select value={weather} onChange={e => setWeather(e.target.value)}>
-              {["Clear", "Partly Cloudy", "Overcast", "Light Rain", "Heavy Rain", "Extreme Heat"].map(w => (
-                <option key={w}>{w}</option>
-              ))}
-            </Select>
+            <select value={weather} onChange={e => setWeather(e.target.value)}
+              style={{ width: "100%", padding: "9px 10px", border: `1.5px solid ${tk.bdr}`, borderRadius: 10, fontSize: 13, background: tk.surf2, color: tk.tx, fontFamily: "'DM Sans',sans-serif" }}>
+              {["Clear","Partly Cloudy","Overcast","Light Rain","Heavy Rain","Extreme Heat"].map(w => <option key={w}>{w}</option>)}
+            </select>
           </Field>
           <Field label="Safety Status">
-            <Select value={safety} onChange={e => setSafety(e.target.value)}>
-              {["All Clear", "Minor Concerns", "Work Stopped"].map(s => (
-                <option key={s}>{s}</option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Workers on Site">
-            <input
-              type="number" value={workers}
-              onChange={e => setWorkers(e.target.value)}
-              placeholder="Count" min="0"
-              style={{
-                width: "100%", border: `1.5px solid ${tk.bdr}`,
-                borderRadius: 10, padding: "10px 12px",
-                fontSize: 14, color: tk.tx, background: tk.surf2,
-                outline: "none", WebkitAppearance: "none",
-                fontFamily: "'DM Sans',sans-serif",
-              }}
-            />
+            <select value={safety} onChange={e => setSafety(e.target.value)}
+              style={{ width: "100%", padding: "9px 10px", border: `1.5px solid ${tk.bdr}`, borderRadius: 10, fontSize: 13, background: tk.surf2, color: tk.tx, fontFamily: "'DM Sans',sans-serif" }}>
+              {["All Clear","Minor Concerns","Work Stopped"].map(s => <option key={s}>{s}</option>)}
+            </select>
           </Field>
         </FormGrid>
-
-        <Btn onClick={save} disabled={saving} fullWidth>
-          <ISave size={14} />
-          {saving ? "Saving..." : existing ? "Update Log" : "Save Log"}
-        </Btn>
-        <div style={{ fontSize: 11, color: tk.tx3, marginTop: 8, textAlign: "center" }}>
-          One log per day — saving again updates today's entry. Timestamp recorded automatically.
-        </div>
+        <Btn onClick={save}><ISave size={14} />Save Log</Btn>
       </Card>
 
-      {/* ── Task checklist ── */}
-      <Card delay={.1}>
-        <CardTitle icon={ICheckSq}>
-          Task Checklist
-          <span style={{ fontSize: 11, fontWeight: 500, color: tk.tx3, marginLeft: 8 }}>
-            {doneTasks.length}/{tasks.length} done
+      {/* ══════════════════════ SITE PHOTO LOG ══════════════════════ */}
+      <Card delay={.09}>
+        <CardTitle icon={ICamera}>
+          Site Photo Log
+          <span style={{ fontSize: 11, fontWeight: 400, color: tk.tx3, marginLeft: 8 }}>
+            {photos.length === 0 ? "No photos yet" : `${photos.length} photo${photos.length !== 1 ? "s" : ""}`}
           </span>
         </CardTitle>
 
-        {tasks.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "20px 0", color: tk.tx3, fontSize: 13 }}>
-            No tasks yet — add them in Task Tracker.
-          </div>
+        {photoLoading ? (
+          <div style={{ padding: "20px 0", color: tk.tx3, fontSize: 13, textAlign: "center" }}>Loading photos…</div>
         ) : (
           <>
-            {pendingTasks.length > 0 && (
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: tk.tx3, marginBottom: 4 }}>
-                  Pending ({pendingTasks.length})
-                </div>
-                {pendingTasks.map(t => (
-                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${tk.bdr}` }}>
-                    <input type="checkbox" checked={false}
-                      onChange={async () => {
-                        try { await API.updateTask(t.id, { status: "Completed" }); } catch {}
-                        setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: "Completed" } : x));
-                      }}
-                      style={{ width: 17, height: 17, accentColor: tk.acc, cursor: "pointer", flexShrink: 0 }}
-                    />
-                    <label style={{ fontSize: 13, flex: 1, cursor: "pointer" }}>{t.title}</label>
-                    <Badge color={t.pri === "High" ? "red" : t.pri === "Medium" ? "amber" : "gray"}>{t.pri}</Badge>
-                  </div>
+            {photos.length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 8, marginBottom: 12 }}>
+                {photos.map(p => (
+                  <PhotoCard key={p.id} photo={p} onDelete={onPhotoDelete} onOpen={openLightbox} tk={tk} />
                 ))}
               </div>
             )}
-            {doneTasks.length > 0 && (
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: tk.grn, marginBottom: 4 }}>
-                  Completed ({doneTasks.length})
-                </div>
-                {doneTasks.map(t => (
-                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${tk.bdr}`, opacity: .6 }}>
-                    <input type="checkbox" checked={true}
-                      onChange={async () => {
-                        try { await API.updateTask(t.id, { status: "Pending" }); } catch {}
-                        setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: "Pending" } : x));
-                      }}
-                      style={{ width: 17, height: 17, accentColor: tk.acc, cursor: "pointer", flexShrink: 0 }}
-                    />
-                    <label style={{ fontSize: 13, flex: 1, textDecoration: "line-through", color: tk.tx3 }}>{t.title}</label>
-                    <Badge color="green">Done</Badge>
-                  </div>
-                ))}
-              </div>
-            )}
+            <PhotoUpload date={date} onUploaded={p => setPhotos(prev => [...prev, p])} tk={tk} />
+            <div style={{ marginTop: 10, fontSize: 11, color: tk.tx3 }}>
+              Photos are attached to today's log and stored on the server permanently. Click any photo to expand.
+            </div>
           </>
         )}
       </Card>
 
-      {/* ══════════════════════════════════════════════
-          LOG HISTORY — past daily logs, newest first
-      ══════════════════════════════════════════════ */}
-      <Card delay={.15}>
-        <CardTitle icon={ICalendar}>
-          Log History
-          {history.length > 0 && (
-            <span style={{ fontSize: 11, fontWeight: 500, color: tk.tx3, marginLeft: 8 }}>
-              {history.length} past {history.length === 1 ? "entry" : "entries"}
-            </span>
-          )}
-        </CardTitle>
-
-        {histLoading ? (
-          <div style={{ textAlign: "center", padding: "24px 0", color: tk.tx3, fontSize: 13 }}>
-            Loading logs...
+      {/* Task checklist */}
+      <Card delay={.13}>
+        <CardTitle icon={ICheckSq}>Task Checklist</CardTitle>
+        {tasks.length === 0 ? (
+          <div style={{ padding: "14px 0", color: tk.tx3, fontSize: 13, textAlign: "center" }}>No tasks yet. Add them from the Task Tracker page.</div>
+        ) : tasks.map(t => (
+          <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${tk.bdr}` }}>
+            <input type="checkbox" checked={t.status === "Completed"} onChange={async e => {
+              const s = e.target.checked ? "Completed" : "Pending";
+              try { await API.updateTask(t.id, { status: s }); } catch {}
+              setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: s } : x));
+            }} style={{ width: 17, height: 17, accentColor: tk.acc, cursor: "pointer" }} />
+            <label style={{ fontSize: 13, flex: 1, textDecoration: t.status === "Completed" ? "line-through" : "none", color: t.status === "Completed" ? tk.tx3 : tk.tx }}>
+              {t.title}
+            </label>
+            <Badge color={t.pri === "High" ? "red" : t.pri === "Medium" ? "amber" : "gray"}>{t.pri}</Badge>
           </div>
-        ) : history.length === 0 ? (
-          <Empty icon={ICalendar} text="No past logs yet. Logs will appear here after you save them." />
-        ) : (
-          history.map((entry, idx) => {
-            const isOpen    = expandedDate === entry.date;
-            const savedTime = fmtTime(entry.saved_at || entry.updated_at);
-            const safetyColor = SAFETY_COLOR[entry.safety] || "gray";
-            const weatherEmoji = WEATHER_EMOJI[entry.weather] || "🌤️";
-
-            return (
-              <div
-                key={entry.date}
-                style={{
-                  borderBottom: idx < history.length - 1 ? `1px solid ${tk.bdr}` : "none",
-                  animation: `fadeUp .3s ease ${idx * 0.03}s both`,
-                }}
-              >
-                {/* ── Collapsed row (always visible) ── */}
-                <button
-                  onClick={() => setExpandedDate(isOpen ? null : entry.date)}
-                  style={{
-                    width: "100%", background: "none", border: "none",
-                    cursor: "pointer", textAlign: "left", padding: "12px 0",
-                    display: "flex", alignItems: "center", gap: 10,
-                  }}
-                >
-                  {/* Date badge */}
-                  <div style={{
-                    minWidth: 46, textAlign: "center", flexShrink: 0,
-                    background: isOpen ? tk.accL : tk.surf2,
-                    borderRadius: 10, padding: "6px 8px",
-                    border: `1px solid ${isOpen ? tk.acc + "44" : tk.bdr}`,
-                    transition: "background .15s",
-                  }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1, color: isOpen ? tk.acc : tk.tx }}>
-                      {new Date(entry.date + "T00:00:00").getDate()}
-                    </div>
-                    <div style={{ fontSize: 9, fontWeight: 600, color: isOpen ? tk.acc : tk.tx3, textTransform: "uppercase" }}>
-                      {new Date(entry.date + "T00:00:00").toLocaleDateString("en-IN", { month: "short" })}
-                    </div>
-                  </div>
-
-                  {/* Summary */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: 600, fontSize: 13, color: tk.tx }}>
-                        {fmtDateSh(entry.date)}
-                      </span>
-                      <span style={{ fontSize: 12 }}>{weatherEmoji}</span>
-                      <Badge color={safetyColor}>{entry.safety || "All Clear"}</Badge>
-                      {entry.workers_count != null && (
-                        <span style={{ fontSize: 11, color: tk.tx3 }}>
-                          👷 {entry.workers_count}
-                        </span>
-                      )}
-                    </div>
-                    {/* Notes preview when collapsed */}
-                    {!isOpen && entry.notes && (
-                      <div style={{
-                        fontSize: 12, color: tk.tx2, marginTop: 2,
-                        overflow: "hidden", textOverflow: "ellipsis",
-                        whiteSpace: "nowrap", maxWidth: "100%",
-                      }}>
-                        {entry.notes}
-                      </div>
-                    )}
-                    {!isOpen && !entry.notes && (
-                      <div style={{ fontSize: 12, color: tk.tx3, marginTop: 2, fontStyle: "italic" }}>
-                        No notes recorded
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Chevron */}
-                  <IChevron down={isOpen} size={16} color={tk.tx3} />
-                </button>
-
-                {/* ── Expanded content ── */}
-                {isOpen && (
-                  <div style={{
-                    padding: "0 0 16px 56px",   // indent to align with text
-                    animation: "fadeUp .2s ease",
-                  }}>
-                    {/* Meta row */}
-                    <div style={{ display: "flex", gap: 20, marginBottom: 12, flexWrap: "wrap" }}>
-                      <div>
-                        <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Weather</div>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{weatherEmoji} {entry.weather || "Not recorded"}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Safety</div>
-                        <div style={{ fontSize: 13 }}><Badge color={safetyColor}>{entry.safety || "All Clear"}</Badge></div>
-                      </div>
-                      {entry.workers_count != null && (
-                        <div>
-                          <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Workers</div>
-                          <div style={{ fontSize: 13, fontWeight: 600 }}>👷 {entry.workers_count} on site</div>
-                        </div>
-                      )}
-                      {savedTime && (
-                        <div>
-                          <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Saved at</div>
-                          <div style={{ fontSize: 13, color: tk.tx2 }}>{savedTime}</div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Notes */}
-                    {entry.notes ? (
-                      <div style={{
-                        background: tk.surf2, borderRadius: 10,
-                        padding: "12px 14px", fontSize: 13, color: tk.tx,
-                        border: `1px solid ${tk.bdr}`,
-                        lineHeight: 1.65, whiteSpace: "pre-wrap",
-                      }}>
-                        {entry.notes}
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: 13, color: tk.tx3, fontStyle: "italic" }}>
-                        No observations recorded for this day.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
+        ))}
       </Card>
     </div>
   );
