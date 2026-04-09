@@ -5,7 +5,7 @@ import {
   Card, CardTitle, Btn, Alert, Field, Select, Input,
   FormGrid, TableWrap, Badge, Sheet, Empty, Divider,
 } from "../components/Primitives";
-import { IUserPlus, IClipboard, ICheckCirc, IXCircle, IUsers, IFileText, ISave, ITag, IPlus, ITrash } from "../icons/Icons";
+import { IUserPlus, IClipboard, ICheckCirc, IXCircle, IUsers, IFileText, ISave, ITag, IPlus, ITrash, IFilter } from "../icons/Icons";
 
 const today = () => new Date().toISOString().split("T")[0];
 const Rs    = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
@@ -48,6 +48,9 @@ export default function Attendance() {
   // Register filters
   const [filterCat, setFilterCat] = useState("All");
   const [showSub,   setShowSub]   = useState(true);
+  const [from,      setFrom]      = useState("");
+  const [to,        setTo]        = useState("");
+  const [showFilter,setShowFilter]= useState(false);
 
   // New worker sheet
   const [nw, setNw] = useState({ name: "", role: "Mason", labour_category: "Masonry", is_subcontract: false, subcontractor_id: "", rate: "500", phone: "" });
@@ -132,8 +135,11 @@ export default function Attendance() {
   const filteredAtt = att.filter(a => {
     if (!showSub && a.isSubcontract) return false;
     if (filterCat !== "All" && a.labour_category !== filterCat) return false;
+    if (from && a.date < from) return false;
+    if (to && a.date > to) return false;
     return true;
   });
+  const hasDateFilter = from || to;
 
   const catTotals = {};
   directAtt.forEach(a => { const c = a.labour_category || a.role || "General"; catTotals[c] = (catTotals[c] || 0) + (a.total || 0); });
@@ -152,10 +158,41 @@ export default function Attendance() {
           <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Daily wages and attendance register</div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Btn variant={showFilter ? "primary" : "secondary"} small onClick={() => setShowFilter(f => !f)}><IFilter size={13} />{hasDateFilter ? "Filter On" : "Date Filter"}</Btn>
           <Btn variant="secondary" small onClick={() => setSubSheet(true)}><IUsers size={13} />Manage Subcontractors</Btn>
           <Btn variant="primary" small onClick={() => setAddOpen(true)}><IUserPlus size={13} />Add Worker</Btn>
         </div>
       </div>
+
+      {showFilter && (
+        <Card delay={0}>
+          <div style={{ fontSize: 12, color: tk.tx2, marginBottom: 10, fontWeight: 600 }}>
+            Date Range - leave blank to show all attendance
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <Field label="From Date" style={{ flex: 1, minWidth: 130 }}>
+              <Input type="date" value={from} onChange={e => setFrom(e.target.value)} />
+            </Field>
+            <Field label="To Date" style={{ flex: 1, minWidth: 130 }}>
+              <Input type="date" value={to} onChange={e => setTo(e.target.value)} />
+            </Field>
+            <div style={{ paddingBottom: 2, display: "flex", gap: 6 }}>
+              {[
+                { l: "This month", fn: () => { const n = new Date(); setFrom(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-01`); setTo(new Date().toISOString().split("T")[0]); } },
+                { l: "This year",  fn: () => { setFrom(`${new Date().getFullYear()}-01-01`); setTo(new Date().toISOString().split("T")[0]); } },
+                { l: "Clear",      fn: () => { setFrom(""); setTo(""); } },
+              ].map(b => (
+                <Btn key={b.l} variant="ghost" small onClick={b.fn}>{b.l}</Btn>
+              ))}
+            </div>
+          </div>
+          {hasDateFilter && (
+            <div style={{ fontSize: 11, color: tk.tx3, marginTop: 6 }}>
+              Showing attendance from <strong>{from}</strong> to <strong>{to || "today"}</strong>.
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Mark attendance */}
       <Card delay={.05}>
@@ -231,7 +268,7 @@ export default function Attendance() {
       </Card>
 
       {/* Attendance register */}
-      {att.length > 0 && (
+      {false && att.length > 0 && (
         <Card delay={.15}>
           <CardTitle icon={IFileText} action={<span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'DM Mono',monospace", color: tk.grn }}>{Rs(totLab)} direct</span>}>
             Attendance Register
@@ -372,6 +409,58 @@ export default function Attendance() {
       {/* ═════════════════════════════════════════════
           ADD WORKER SHEET
       ═════════════════════════════════════════════ */}
+      {/* Attendance register */}
+      {att.length > 0 && (
+        <Card delay={.22}>
+          <CardTitle icon={IFileText} action={<span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'DM Mono',monospace", color: tk.grn }}>{Rs(totLab)} direct</span>}>
+            Attendance Register
+          </CardTitle>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+            <Select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ maxWidth: 160, padding: "6px 10px", fontSize: 12, border: `1.5px solid ${tk.bdr}`, borderRadius: 8, background: tk.surf2, color: tk.tx }}>
+              <option value="All">All Categories</option>
+              {allCats.map(c => <option key={c}>{c}</option>)}
+            </Select>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: tk.tx2, cursor: "pointer" }}>
+              <input type="checkbox" checked={showSub} onChange={e => setShowSub(e.target.checked)} style={{ accentColor: tk.acc }} />
+              Show subcontract
+            </label>
+          </div>
+          <TableWrap>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+              <thead>
+                <tr>
+                  {["Date","Name","Category","Status","Hrs","Wage","Note"].map(h => (
+                    <th key={h} style={{ textAlign: h === "Wage" ? "right" : "left", padding: "9px 10px", fontSize: 10, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".08em", borderBottom: `1.5px solid ${tk.bdr}`, background: tk.surf2, whiteSpace: "nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAtt.map(a => (
+                  <tr key={a.id} style={{ background: a.isSubcontract ? "#fffbeb" : "transparent" }}>
+                    <td style={{ padding: "10px", fontSize: 12, borderBottom: `1px solid ${tk.bdr}` }}>{a.date}</td>
+                    <td style={{ padding: "10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}`, fontWeight: 600 }}>
+                      {a.name}{a.isSubcontract && <span style={{ fontSize: 9, color: "#92400e", marginLeft: 4 }}>sub</span>}
+                    </td>
+                    <td style={{ padding: "10px", fontSize: 12, borderBottom: `1px solid ${tk.bdr}` }}><Badge>{a.labour_category || a.role}</Badge></td>
+                    <td style={{ padding: "10px", fontSize: 12, borderBottom: `1px solid ${tk.bdr}` }}>
+                      <Badge color={a.present === "1" || a.status === "present" ? "green" : a.present === "half" || a.status === "half" ? "amber" : "red"}>
+                        {a.present === "1" || a.status === "present" ? "Present" : a.present === "half" || a.status === "half" ? "Half" : "Absent"}
+                      </Badge>
+                    </td>
+                    <td style={{ padding: "10px", fontSize: 12, borderBottom: `1px solid ${tk.bdr}` }}>{a.hours}h{a.ot > 0 ? `+${a.ot}` : ""}</td>
+                    <td style={{ padding: "10px", borderBottom: `1px solid ${tk.bdr}`, textAlign: "right" }}>
+                      <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 13, color: a.isSubcontract ? "#92400e" : tk.tx }}>{Rs(a.total || 0)}</div>
+                      {a.isSubcontract && <div style={{ fontSize: 9, color: "#9ca3af" }}>ref only</div>}
+                    </td>
+                    <td style={{ padding: "10px", fontSize: 11, borderBottom: `1px solid ${tk.bdr}`, color: tk.tx3, maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.note || "â€”"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableWrap>
+        </Card>
+      )}
+
       <Sheet open={addOpen} onClose={() => setAddOpen(false)} title="Add Worker" icon={IUserPlus}
         footer={
           <>
