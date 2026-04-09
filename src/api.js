@@ -72,8 +72,14 @@ export const billUrl=fn=>fn?`${BASE_URL}/uploads/bills/${fn}`:null;
 export const openBillFile = (filename) => {
   const url = billUrl(filename);
   if (!url || typeof window === "undefined") return;
-  const popup = window.open(url, "_blank", "noopener,noreferrer");
-  if (!popup) window.location.assign(url);
+  const popup = window.open(url, "_blank");
+  if (popup) {
+    try {
+      popup.opener = null;
+    } catch {}
+    return;
+  }
+  window.location.assign(url);
 };
 export const getVendors=   ()     =>get("/expenses/vendors");
 export const addVendor=    d      =>post("/expenses/vendors",d);
