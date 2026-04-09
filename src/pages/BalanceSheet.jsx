@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
 import { Card, CardTitle, Btn, Alert, Field, Select, Input, FormGrid, Sheet, Badge, Empty } from "../components/Primitives";
-import { IFileText, ICheckCirc, IXCircle, IBuilding, IClock, ITrash, IUsers, IReceipt, IDownload, IFilter } from "../icons/Icons";
+import { IFileText, ICheckCirc, IXCircle, IBuilding, IClock, ITrash, IUsers, IReceipt } from "../icons/Icons";
 
 const C = {
   debitInvoice: "#b91c1c",
@@ -28,6 +28,18 @@ const ICreditCard = ({ size = 14, color = "currentColor" }) => (
     <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
   </svg>
 );
+const IDownload = ({ size = 13, color = "currentColor" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+    fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+);
+const IFilter = ({ size = 13, color = "currentColor" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+    fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+  </svg>
+);
 
 function SourceBadge({ source }) {
   const cfg = { invoice: { bg:"#fef2f2", c:C.debitInvoice, l:"INV" }, expense: { bg:"#fffbeb", c:C.debitExpense, l:"EXP" }, payment: { bg:"#f0fdf4", c:C.credit, l:"PMT" }, labour: { bg:"#eff6ff", c:C.debitLabour, l:"LAB" } };
@@ -46,7 +58,7 @@ export default function BalanceSheet() {
   // ── Date range filter — default is all-time (empty strings) ──
   const [from,       setFrom]       = useState("");
   const [to,         setTo]         = useState("");
-  const [showFilter, setShowFilter] = useState(true); // shown by default so user can see/use it
+  const [showFilter, setShowFilter] = useState(false); // shown by default so user can see/use it
 
   // Grand totals from backend (respects from/to)
   const [grandTotals,    setGrandTotals]    = useState({ invoiceTotal: 0, expenseTotal: 0, labourTotal: 0, grandTotal: 0, paidTotal: 0, outstanding: 0 });
