@@ -75,10 +75,12 @@ export default function BillUpload({ billPath, onUpload, compact = false }) {
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
         {localPath ? (
-          <a href={viewUrl} target="_blank" rel="noopener noreferrer"
-            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.acc, fontWeight: 600, textDecoration: "none" }}>
+          <button
+            type="button"
+            onClick={() => API.openBillFile(localPath)}
+            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.acc, fontWeight: 600, textDecoration: "none", background: "none", border: "none", padding: 0, cursor: "pointer" }}>
             <IEye size={12} color={tk.acc} /> View bill
-          </a>
+          </button>
         ) : (
           <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.tx3, cursor: "pointer", fontWeight: 600 }}>
             <IUpload size={11} color={tk.tx3} />
@@ -110,10 +112,12 @@ export default function BillUpload({ billPath, onUpload, compact = false }) {
             </div>
             <div style={{ fontSize: 10, color: tk.tx3 }}>Bill attached</div>
           </div>
-          <a href={viewUrl} target="_blank" rel="noopener noreferrer"
-            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: tk.acc, fontWeight: 600, textDecoration: "none", background: tk.accL, padding: "5px 10px", borderRadius: 7, whiteSpace: "nowrap" }}>
+          <button
+            type="button"
+            onClick={() => API.openBillFile(localPath)}
+            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: tk.acc, fontWeight: 600, textDecoration: "none", background: tk.accL, padding: "5px 10px", borderRadius: 7, whiteSpace: "nowrap", border: "none", cursor: "pointer" }}>
             <IEye size={13} color={tk.acc} /> Open
-          </a>
+          </button>
         </div>
       )}
 

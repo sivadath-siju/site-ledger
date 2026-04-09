@@ -9,8 +9,6 @@ import { ITag, IPlus, ICheckCirc, IXCircle, IReceipt, ISave, IFilter } from "../
 
 const today   = () => new Date().toISOString().split("T")[0];
 const Rs      = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
-const BASE_URL = (process.env.REACT_APP_API_URL || "http://localhost:5001/api").replace("/api", "");
-
 const IUpload = ({ size = 13, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
     fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -43,8 +41,6 @@ function BillWidget({ expenseId, existingPath, onUploaded, tk }) {
   const [uploading, setUploading] = useState(false);
   const [billPath,  setBillPath]  = useState(existingPath || null);
   const [error,     setError]     = useState(null);
-  const viewUrl = billPath ? `${BASE_URL}/uploads/bills/${billPath}` : null;
-
   const handleFile = async e => {
     const file = e.target.files?.[0]; if (!file) return;
     setError(null); setUploading(true);
@@ -61,10 +57,12 @@ function BillWidget({ expenseId, existingPath, onUploaded, tk }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0", marginBottom: 6 }}>
           <IFile size={13} color="#15803d" />
           <span style={{ fontSize: 11, color: "#15803d", fontWeight: 600, flex: 1 }}>Bill attached</span>
-          <a href={viewUrl} target="_blank" rel="noopener noreferrer"
-            style={{ fontSize: 11, color: tk.acc, fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", background: tk.accL, borderRadius: 6 }}>
+          <button
+            type="button"
+            onClick={() => API.openBillFile(billPath)}
+            style={{ fontSize: 11, color: tk.acc, fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", background: tk.accL, borderRadius: 6, border: "none", cursor: "pointer" }}>
             <IEye size={11} color={tk.acc} /> View
-          </a>
+          </button>
         </div>
       )}
       <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: tk.tx3, cursor: "pointer", fontWeight: 600 }}>

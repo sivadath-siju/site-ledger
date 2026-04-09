@@ -8,8 +8,6 @@ import {
 import { IFilePlus, ICheckCirc, IXCircle, IClock, IFileText, ISave, IFilter } from "../icons/Icons";
 
 const Rs       = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
-const BASE_URL = (process.env.REACT_APP_API_URL || "http://localhost:5001/api").replace("/api", "");
-
 const IUpload = ({ size = 13, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
     fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -30,8 +28,6 @@ function BillUploadWidget({ invoiceId, existingPath, onUploaded, tk }) {
   const [billPath,  setBillPath]  = useState(existingPath || null);
   const [error,     setError]     = useState(null);
 
-  const viewUrl = billPath ? `${BASE_URL}/uploads/bills/${billPath}` : null;
-
   const handleFile = async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
     setError(null); setUploading(true);
@@ -48,10 +44,12 @@ function BillUploadWidget({ invoiceId, existingPath, onUploaded, tk }) {
       {billPath && (
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0", marginBottom: 8 }}>
           <span style={{ fontSize: 11, color: "#15803d", fontWeight: 600, flex: 1 }}>Bill attached</span>
-          <a href={viewUrl} target="_blank" rel="noopener noreferrer"
-            style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.acc, fontWeight: 600, textDecoration: "none", padding: "3px 8px", background: tk.accL, borderRadius: 6 }}>
+          <button
+            type="button"
+            onClick={() => API.openBillFile(billPath)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.acc, fontWeight: 600, textDecoration: "none", padding: "3px 8px", background: tk.accL, borderRadius: 6, border: "none", cursor: "pointer" }}>
             <IEye size={11} color={tk.acc} /> Open
-          </a>
+          </button>
         </div>
       )}
       <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, padding: "9px 14px", border: `1.5px dashed ${error ? "#b91c1c" : tk.bdr}`, borderRadius: 10, cursor: "pointer", background: tk.surf2, fontSize: 12, color: tk.tx3, fontWeight: 600 }}>
@@ -246,10 +244,12 @@ export default function Invoices() {
 
                 {/* Bill upload/view */}
                 {invoice.bill_path ? (
-                  <a href={`${BASE_URL}/uploads/bills/${invoice.bill_path}`} target="_blank" rel="noopener noreferrer"
-                    style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "#15803d", fontWeight: 600, textDecoration: "none", padding: "2px 7px", background: "#f0fdf4", borderRadius: 5, border: "1px solid #bbf7d0" }}>
+                  <button
+                    type="button"
+                    onClick={() => API.openBillFile(invoice.bill_path)}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "#15803d", fontWeight: 600, textDecoration: "none", padding: "2px 7px", background: "#f0fdf4", borderRadius: 5, border: "1px solid #bbf7d0", cursor: "pointer" }}>
                     <IEye size={11} color="#15803d" /> View Bill
-                  </a>
+                  </button>
                 ) : (
                   <button onClick={() => { setActiveInv(invoice); setUploadSheet(true); }}
                     style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: tk.tx3, fontWeight: 600, cursor: "pointer", padding: "2px 7px", background: tk.surf2, border: `1px solid ${tk.bdr}`, borderRadius: 5 }}>
