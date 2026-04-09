@@ -1,8 +1,23 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
-import { IHardHat, IXCircle } from "../icons/Icons";
+import { IXCircle } from "../icons/Icons";
 import { Alert, Field, Input, Btn } from "../components/Primitives";
+
+const IHome = ({ size = 28, color = "currentColor" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+    fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+    <polyline points="9 22 9 12 15 12 15 22"/>
+  </svg>
+);
+
+const ROLES_INFO = [
+  { role: "Administrator", desc: "Full access — users, data, reports" },
+  { role: "Site Manager",  desc: "Operations, attendance, materials" },
+  { role: "Data Entry",    desc: "Log expenses, attendance, tasks" },
+  { role: "Accountant",    desc: "Finance, invoices, balance sheet" },
+];
 
 export default function Login({ onLogin }) {
   const { tk } = useApp();
@@ -12,7 +27,7 @@ export default function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
-    if (!u || !p) return setErr("Please enter your username and password.");
+    if (!u || !p) return setErr("Please enter username and password.");
     setLoading(true); setErr("");
     try {
       const res = await API.login(u, p);
@@ -23,74 +38,87 @@ export default function Login({ onLogin }) {
     } finally { setLoading(false); }
   };
 
-  const handleKey = e => { if (e.key === "Enter") submit(); };
+  const handleKey = (e) => { if (e.key === "Enter") submit(); };
 
   return (
     <div style={{
-      minHeight: "100vh",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      background: "linear-gradient(135deg,#0f1623 0%,#1a2740 100%)",
+      minHeight: "100vh", display: "flex",
+      alignItems: "center", justifyContent: "center",
+      background: "linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://cielhomes.in/Images/garden_lush.jpg') center/cover no-repeat",
       padding: 16,
     }}>
-      <div style={{
-        background: tk.surf, borderRadius: 20, padding: "36px 28px",
-        width: "100%", maxWidth: 380,
-        boxShadow: "0 24px 64px rgba(0,0,0,.35)",
-        animation: "scaleIn .4s cubic-bezier(.34,1.56,.64,1)",
-      }}>
-        {/* Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 6 }}>
-          <IHardHat size={26} color={tk.acc} />
-          <span style={{ fontSize: 21, fontWeight: 700, letterSpacing: "-.3px" }}>
-            Site<span style={{ color: tk.acc }}>Ledger</span>
-          </span>
-        </div>
-        <div style={{ fontSize: 12, color: tk.tx3, marginBottom: 28 }}>
-          Ciel Homes — Construction Site Management
-        </div>
+      {/* Background pattern */}
+      <div style={{ position: "fixed", inset: 0, opacity: .04, backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)", backgroundSize: "32px 32px", pointerEvents: "none" }} />
 
-        <div style={{ fontSize: 19, fontWeight: 700, marginBottom: 3 }}>Sign in</div>
-        <div style={{ fontSize: 13, color: tk.tx2, marginBottom: 20 }}>
-          Enter your credentials to continue
-        </div>
+      <div style={{ width: "100%", maxWidth: 420, position: "relative" }}>
+        {/* Card */}
+        <div style={{
+          background: "rgba(164, 187, 145, 0.65)",
+          backdropFilter: "blur(12px)",
+          borderRadius: 22,
+          padding: "40px 32px 32px",
+          boxShadow: "0 32px 80px rgba(0,0,0,.5)",
+          animation: "scaleIn .4s cubic-bezier(.34,1.56,.64,1)",
+          border: "1px solid rgba(255,255,255,0.15)",
+        }}>
+          {/* Brand */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
+            <div style={{ width: 46, height: 46, borderRadius: 14, background: "#1a2e1a", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+              <IHome size={24} color="#fff" />
+            </div>
+            <div>
+              <div style={{ fontSize: 22, color: "#0a1a0a", fontWeight: 800, letterSpacing: "-.3px", lineHeight: 1 }}>
+                Ciel Homes
+              </div>
+              <div style={{ fontSize: 11, color: "#2d4a2d", fontWeight: 500, letterSpacing: ".04em" }}>
+                SITE MANAGEMENT SYSTEM
+              </div>
+            </div>
+          </div>
 
-        {err && (
-          <Alert type="err">
-            <IXCircle size={14} />{err}
-          </Alert>
-        )}
+          <div style={{ fontSize: 13, color: "#2d4a2d", marginBottom: 28, marginTop: 4 }}>
+            Construction accounting &amp; site operations
+          </div>
 
-        <Field label="Username">
-          <Input
-            value={u}
-            onChange={e => setU(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder="Username"
-            autoComplete="username"
-            autoFocus
-          />
-        </Field>
+          <div style={{ fontSize: 16, color: "#0a1a0a", fontWeight: 700, marginBottom: 4 }}>Sign in</div>
+          <div style={{ fontSize: 13, color: "#1a2e1a", marginBottom: 20 }}>Enter your credentials to continue</div>
 
-        <div style={{ marginBottom: 20 }}>
-          <Field label="Password">
-            <Input
-              type="password"
-              value={p}
-              onChange={e => setP(e.target.value)}
-              onKeyDown={handleKey}
-              placeholder="Password"
-              autoComplete="current-password"
-            />
+          {err && <Alert type="err"><IXCircle size={14} />{err}</Alert>}
+
+          <Field label="Username">
+            <Input style={{ background: "rgba(0,0,0,0.1)", border: "1.5px solid rgba(0,0,0,0.2)", color: "#0a1a0a" }} value={u} onChange={e => setU(e.target.value)} placeholder="your.username" autoComplete="username" onKeyDown={handleKey} />
           </Field>
+          <div style={{ marginBottom: 22 }}>
+            <Field label="Password">
+              <Input style={{ background: "rgba(0,0,0,0.1)", border: "1.5px solid rgba(0,0,0,0.2)", color: "#0a1a0a" }} type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" autoComplete="current-password" onKeyDown={handleKey} />
+            </Field>
+          </div>
+
+          <Btn style={{ background: "#1a2e1a", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }} fullWidth onClick={submit} disabled={loading}>
+            {loading ? "Signing in…" : "Sign In"}
+          </Btn>
+
+          {/* Default credentials hint */}
+          <div style={{ marginTop: 20, padding: "12px 14px", background: "rgba(0,0,0,0.05)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", fontSize: 12 }}>
+            <div style={{ fontWeight: 700, color: "#0a1a0a", marginBottom: 6 }}>Default credentials</div>
+            {[
+              { user: "admin",   pass: "admin123",   role: "Administrator" },
+              { user: "manager", pass: "manager123", role: "Site Manager" },
+              { user: "staff",   pass: "staff123",   role: "Data Entry" },
+            ].map(c => (
+              <div key={c.user} style={{ display: "flex", gap: 6, marginBottom: 3, alignItems: "center" }}>
+                <code style={{ background: "rgba(0,0,0,0.1)", padding: "1px 6px", borderRadius: 4, fontSize: 11, color: tk.acc, fontWeight: 600 }}>{c.user}</code>
+                <span style={{ color: "#2d4a2d" }}>/</span>
+                <code style={{ background: "rgba(0,0,0,0.1)", padding: "1px 6px", borderRadius: 4, fontSize: 11, color: "#0a1a0a" }}>{c.pass}</code>
+                <span style={{ color: "#2d4a2d", fontSize: 11, marginLeft: 2 }}>({c.role})</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <Btn fullWidth onClick={submit} disabled={loading}>
-          {loading ? "Signing in…" : "Sign In"}
-        </Btn>
-
-        {/* Contact hint — no credentials shown */}
-        <div style={{ marginTop: 18, fontSize: 12, color: tk.tx3, textAlign: "center", lineHeight: 1.6 }}>
-          Contact your site administrator<br />if you've forgotten your credentials.
+        {/* Credit */}
+        <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: "rgba(255,255,255,.35)" }}>
+          Software made by <span style={{ color: "rgba(255,255,255,.6)", fontWeight: 600 }}>Sivadath Siju</span>
         </div>
       </div>
     </div>
