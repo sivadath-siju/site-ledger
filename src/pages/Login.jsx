@@ -12,13 +12,6 @@ const IHome = ({ size = 28, color = "currentColor" }) => (
   </svg>
 );
 
-const ROLES_INFO = [
-  { role: "Administrator", desc: "Full access — users, data, reports" },
-  { role: "Site Manager",  desc: "Operations, attendance, materials" },
-  { role: "Data Entry",    desc: "Log expenses, attendance, tasks" },
-  { role: "Accountant",    desc: "Finance, invoices, balance sheet" },
-];
-
 export default function Login({ onLogin }) {
   const { tk } = useApp();
   const [u, setU]           = useState("");
@@ -98,22 +91,6 @@ export default function Login({ onLogin }) {
             {loading ? "Signing in…" : "Sign In"}
           </Btn>
 
-          {/* Default credentials hint */}
-          <div style={{ marginTop: 20, padding: "12px 14px", background: "rgba(0,0,0,0.05)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", fontSize: 12 }}>
-            <div style={{ fontWeight: 700, color: "#0a1a0a", marginBottom: 6 }}>Default credentials</div>
-            {[
-              { user: "admin",   pass: "admin123",   role: "Administrator" },
-              { user: "manager", pass: "manager123", role: "Site Manager" },
-              { user: "staff",   pass: "staff123",   role: "Data Entry" },
-            ].map(c => (
-              <div key={c.user} style={{ display: "flex", gap: 6, marginBottom: 3, alignItems: "center" }}>
-                <code style={{ background: "rgba(0,0,0,0.1)", padding: "1px 6px", borderRadius: 4, fontSize: 11, color: tk.acc, fontWeight: 600 }}>{c.user}</code>
-                <span style={{ color: "#2d4a2d" }}>/</span>
-                <code style={{ background: "rgba(0,0,0,0.1)", padding: "1px 6px", borderRadius: 4, fontSize: 11, color: "#0a1a0a" }}>{c.pass}</code>
-                <span style={{ color: "#2d4a2d", fontSize: 11, marginLeft: 2 }}>({c.role})</span>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Credit */}

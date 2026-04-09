@@ -3,6 +3,11 @@ export const BASE_URL = BASE.replace(/\/api$/, "");
 export const getToken   = () => localStorage.getItem("sl_token");
 export const setToken   = t  => localStorage.setItem("sl_token", t);
 export const clearToken = () => localStorage.removeItem("sl_token");
+const normalizeTimestamp = value => {
+  if (!value || typeof value !== "string") return value;
+  if (value.includes("T")) return value;
+  return `${value.replace(" ", "T")}Z`;
+};
 async function request(path, options = {}) {
   const token = getToken();
   const res = await fetch(`${BASE}${path}`, { headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers }, ...options, body: options.body ? JSON.stringify(options.body) : undefined });
@@ -22,6 +27,11 @@ const post = (p, b) => request(p, { method: "POST",  body: b });
 const patch= (p, b) => request(p, { method: "PATCH", body: b });
 const put  = (p, b) => request(p, { method: "PUT",   body: b });
 const del  = p      => request(p, { method: "DELETE" });
+async function prepareBillFile(file) {
+  if (!file?.type?.startsWith("image/")) return file;
+  const { compressUploadImage } = await import("./utils/uploadCompression");
+  return compressUploadImage(file);
+}
 export const login=       (u,p)=>post("/auth/login",{username:u,password:p});
 export const getMe=       ()   =>get("/auth/me");
 export const getUsers=    ()   =>get("/auth/users");
@@ -56,8 +66,8 @@ export const deleteExpense=id =>del(`/expenses/${id}`);
 export const getExpCats=   () =>get("/expenses/categories");
 export const addExpCat=    n  =>post("/expenses/categories",{name:n});
 export const deleteExpCat= id =>del(`/expenses/categories/${id}`);
-export const uploadExpenseBill=(id,f)=>{const fd=new FormData();fd.append("bill",f);return upload(`/expenses/${id}/bill`,fd);};
-export const uploadInvoiceBill=(id,f)=>{const fd=new FormData();fd.append("bill",f);return upload(`/expenses/invoices/${id}/bill`,fd);};
+export const uploadExpenseBill=async(id,f)=>{const fd=new FormData();fd.append("bill",await prepareBillFile(f));return upload(`/expenses/${id}/bill`,fd);};
+export const uploadInvoiceBill=async(id,f)=>{const fd=new FormData();fd.append("bill",await prepareBillFile(f));return upload(`/expenses/invoices/${id}/bill`,fd);};
 export const billUrl=fn=>fn?`${BASE_URL}/uploads/bills/${fn}`:null;
 export const getVendors=   ()     =>get("/expenses/vendors");
 export const addVendor=    d      =>post("/expenses/vendors",d);
@@ -78,7 +88,10 @@ export const getDailyLog=   date=>get(`/tasks/logs?date=${date}`);
 export const saveDailyLog=  d   =>put("/tasks/logs",d);
 export const getAllDailyLogs=()  =>get("/tasks/logs/all");
 // SITE PHOTOS
-export const getSitePhotos=  date       =>get(`/tasks/photos?date=${date}`);
+export const getSitePhotos=  async date => {
+  const photos = await get(`/tasks/photos?date=${date}`);
+  return Array.isArray(photos) ? photos.map(photo => ({ ...photo, logged_at: normalizeTimestamp(photo.logged_at) })) : [];
+};
 export const uploadSitePhoto=(date,f,cap)=>{const fd=new FormData();fd.append("photo",f);fd.append("date",date);if(cap)fd.append("caption",cap);return upload("/tasks/photos",fd);};
 export const deleteSitePhoto=id=>del(`/tasks/photos/${id}`);
 export const photoUrl = (p) => {

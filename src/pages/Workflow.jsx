@@ -3,29 +3,11 @@ import { useApp } from "../context/AppCtx";
 import * as API from "../api";
 import { Card, CardTitle, Btn, Alert, Field, FormGrid, Badge } from "../components/Primitives";
 import { IEdit, ISave, ICheckCirc, ICheckSq, ICalendar } from "../icons/Icons";
+import { compressUploadImage, fmtFileSize } from "../utils/uploadCompression";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 
 // ── Image compression (kept from Gemini's version) ──────────
-const MAX_PHOTO_DIMENSION = 1600;
-const PHOTO_QUALITY       = 0.78;
-const MAX_ORIGINAL_SIZE_MB = 1.5;
-const fmtFileSize = b => b < 1024 * 1024 ? `${Math.round(b/1024)} KB` : `${(b/1024/1024).toFixed(2)} MB`;
-const loadImage   = f => new Promise((res, rej) => { const url = URL.createObjectURL(f); const img = new Image(); img.onload = () => { URL.revokeObjectURL(url); res(img); }; img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("Could not read image")); }; img.src = url; });
-const cvBlob      = (cv, t, q) => new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("Compress failed")), t, q));
-async function compressImage(file) {
-  if (!file?.type?.startsWith("image/") || file.size <= MAX_ORIGINAL_SIZE_MB * 1024 * 1024) return file;
-  const img = await loadImage(file);
-  const scale = Math.min(1, MAX_PHOTO_DIMENSION / Math.max(img.width, img.height));
-  const [w, h] = [Math.max(1, Math.round(img.width * scale)), Math.max(1, Math.round(img.height * scale))];
-  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
-  const ctx = cv.getContext("2d"); if (!ctx) throw new Error("Canvas failed"); ctx.drawImage(img, 0, 0, w, h);
-  const outType = file.type === "image/png" ? "image/jpeg" : (file.type === "image/webp" ? "image/webp" : "image/jpeg");
-  const blob = await cvBlob(cv, outType, PHOTO_QUALITY);
-  if (blob.size >= file.size) return file;
-  const ext = outType === "image/webp" ? "webp" : "jpg";
-  return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.${ext}`, { type: outType, lastModified: Date.now() });
-}
 
 // ── Inline icons ─────────────────────────────────────────────
 const ICamera = ({ size = 16, color = "currentColor" }) => (
@@ -116,7 +98,7 @@ function PhotoUpload({ date, onUploaded, tk }) {
     setPreparing(true); setError(null);
     if (inputRef.current) inputRef.current.value = "";
     try {
-      const compressed = await compressImage(file);
+      const compressed = await compressUploadImage(file);
       setPending({ file: compressed, originalSize: file.size, compressedSize: compressed.size, name: compressed.name, wasCompressed: compressed.size < file.size });
     } catch (err) { setError(err.message || "Could not prepare image"); }
     finally { setPreparing(false); }
