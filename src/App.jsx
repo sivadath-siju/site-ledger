@@ -162,7 +162,7 @@ export default function App() {
 
 function DesktopTopbar({ tk, user, page }) {
   return (
-    <div style={{ height: 54, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 32px", borderBottom: `1px solid ${tk.bdr}`, background: tk.surf }}>
+    <div style={{ height: 56, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 32px", borderBottom: `1px solid ${tk.bdr}`, background: tk.surf }}>
       <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-.2px" }}>{PAGE_LABELS[page] || "Ciel Homes"}</span>
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ textAlign: "right" }}>
