@@ -4,12 +4,6 @@ import { ILayoutDash, IClipboard, IPackage, IUsers, ICheckSq, IReceipt, IFileTex
 
 const ORANGE   = "#c75a00";
 const ORANGE_L = "#fff0e6";
-
-const IHome = ({ size = 18, color = "currentColor" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-  </svg>
-);
 const IBalance = ({ size = 16, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="12" y1="3" x2="12" y2="21"/><path d="M3 9l4.5 4.5L12 9"/><path d="M12 9l4.5 4.5L21 9"/>
@@ -65,6 +59,8 @@ const BOTTOM_NAV_ALL = [
   { id: "tasks",        Icon: ICheckSq,    label: "Tasks"  },
 ];
 
+const BRAND_LOGO = "/logo_banner.png";
+
 export function Sidebar({ open, onClose, desktop = false }) {
   const { tk, page, setPage, mats, inv, hasFinance } = useApp();
   const lsc = mats.filter(m => m.stock <= m.min).length;
@@ -74,12 +70,8 @@ export function Sidebar({ open, onClose, desktop = false }) {
   const content = (
     <div style={{ width: 260, height: "100%", background: tk.surf, borderRight: `1px solid ${tk.bdr}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
       {/* Logo */}
-      <div style={{ height: 56, display: "flex", alignItems: "center", padding: "0 18px", borderBottom: `1px solid ${tk.bdr}`, flexShrink: 0, gap: 9 }}>
-        <IHome size={20} color={tk.acc} />
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-.3px", lineHeight: 1.1 }}>Ciel<span style={{ color: tk.acc }}> Homes</span></div>
-          <div style={{ fontSize: 9, color: tk.tx3, fontWeight: 500, letterSpacing: ".05em" }}>SITE MANAGEMENT</div>
-        </div>
+      <div style={{ minHeight: 56, display: "flex", alignItems: "center", padding: "8px 18px", borderBottom: `1px solid ${tk.bdr}`, flexShrink: 0, gap: 9 }}>
+        <img src={BRAND_LOGO} alt="Ciel Homes" style={{ display: "block", height: 34, width: "auto", objectFit: "contain" }} />
         {!desktop && <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8 }}><IX size={18} color={tk.tx3} /></button>}
       </div>
 
@@ -140,9 +132,7 @@ export function Topbar({ onMenuClick }) {
   return (
     <div style={{ height: 54, background: tk.surf, display: "flex", alignItems: "center", padding: "0 14px", gap: 10, flexShrink: 0, zIndex: 100, boxShadow: "0 1px 0 rgba(0,0,0,.07), 0 2px 8px rgba(0,0,0,.04)" }}>
       <button onClick={onMenuClick} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8 }}><IMenu size={22} color={tk.tx} /></button>
-      <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 15, fontWeight: 800, letterSpacing: "-.3px" }}>
-        <IHome size={18} color={tk.acc} />Ciel<span style={{ color: tk.acc }}> Homes</span>
-      </div>
+      <img src={BRAND_LOGO} alt="Ciel Homes" style={{ display: "block", height: 28, width: "auto", objectFit: "contain" }} />
       <div style={{ marginLeft: "auto" }}>
         <div style={{ width: 34, height: 34, borderRadius: "50%", background: tk.acc, color: "#fff", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {user?.ini || "U"}
