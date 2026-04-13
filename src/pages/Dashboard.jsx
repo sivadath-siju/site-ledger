@@ -119,25 +119,32 @@ function ClickStatCard({ icon: Icon, value, label, color, delay = 0, onClick, tk
 export default function Dashboard() {
   const { tk, mats, tasks, workers, setPage } = useApp();
 
-  const [todayLog, setTodayLog]         = useState(null);
-  const [todayWorkers, setTodayWorkers] = useState([]);
-  const [todayPhotos, setTodayPhotos]   = useState([]);
-  const [logLoading, setLogLoading]     = useState(true);
+  const [todayLog,      setTodayLog]      = useState(null);
+  const [yesterdayLog,  setYesterdayLog]  = useState(null);
+  const [todayWorkers,  setTodayWorkers]  = useState([]);
+  const [todaySubLogs,  setTodaySubLogs]  = useState([]);   // subcontractor counts for today
+  const [todayPhotos,   setTodayPhotos]   = useState([]);
+  const [logLoading,    setLogLoading]    = useState(true);
   const [photosLoading, setPhotosLoading] = useState(true);
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
-  const todayStr = today();
+  const todayStr     = today();
+  const yesterdayStr = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split("T")[0]; })();
 
   useEffect(() => {
     setLogLoading(true);
     Promise.allSettled([
       API.getDailyLog(todayStr),
+      API.getDailyLog(yesterdayStr),
       API.getAttendance({ date: todayStr }),
-    ]).then(([logRes, attRes]) => {
-      if (logRes.status === "fulfilled") setTodayLog(logRes.value);
-      if (attRes.status === "fulfilled") setTodayWorkers(Array.isArray(attRes.value) ? attRes.value : []);
+      API.getSubDailyAll ? API.getSubDailyAll({ date: todayStr }) : Promise.resolve([]),
+    ]).then(([logRes, yLogRes, attRes, subRes]) => {
+      if (logRes.status   === "fulfilled") setTodayLog(logRes.value);
+      if (yLogRes.status  === "fulfilled") setYesterdayLog(yLogRes.value);
+      if (attRes.status   === "fulfilled") setTodayWorkers(Array.isArray(attRes.value) ? attRes.value : []);
+      if (subRes.status   === "fulfilled") setTodaySubLogs(Array.isArray(subRes.value) ? subRes.value : []);
     }).finally(() => setLogLoading(false));
-  }, [todayStr]);
+  }, [todayStr, yesterdayStr]);
 
   useEffect(() => {
     setPhotosLoading(true);
@@ -244,6 +251,30 @@ export default function Dashboard() {
         )}
       </Card>
 
+      {/* Today's subcontractor count summary */}
+      {todaySubLogs.length > 0 && (
+        <Card delay={.12}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#92400e", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span>Subcontractor Labour Today</span>
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, color: "#78350f" }}>
+              ₹{Number(todaySubLogs.reduce((s, l) => s + l.total_cost, 0)).toLocaleString("en-IN")} ref
+            </span>
+          </div>
+          {todaySubLogs.map(log => (
+            <div key={log.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: `1px solid ${tk.bdr}` }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b", flexShrink: 0 }} />
+              <div style={{ flex: 1, fontSize: 12 }}>
+                <span style={{ fontWeight: 600 }}>{log.subcontractor_name}</span>
+                <span style={{ color: tk.tx3, marginLeft: 6 }}>{log.worker_count} {log.category || "workers"}</span>
+              </div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 700, color: "#92400e" }}>
+                ₹{Number(log.total_cost).toLocaleString("en-IN")}
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
       {/* Today's site log */}
       <Card delay={.14}>
         <CardTitle icon={IClipboard}>
@@ -287,6 +318,30 @@ export default function Dashboard() {
           </div>
         )}
       </Card>
+
+      {/* Yesterday's log — subtle recap */}
+      {yesterdayLog && (yesterdayLog.notes || yesterdayLog.weather !== "Clear") && (
+        <Card delay={.16}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: tk.tx3 }}>Yesterday's Log</span>
+            <span style={{ fontSize: 10, color: tk.tx3, background: tk.surf2, padding: "1px 8px", borderRadius: 20, border: `1px solid ${tk.bdr}` }}>
+              {new Date(yesterdayStr + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}
+            </span>
+            {yesterdayLog.weather && (
+              <span style={{ fontSize: 11, color: tk.tx3, marginLeft: "auto" }}>
+                {{"Clear":"☀️","Partly Cloudy":"⛅","Overcast":"☁️","Light Rain":"🌧️","Heavy Rain":"⛈️","Extreme Heat":"🌡️"}[yesterdayLog.weather] || "🌤️"} {yesterdayLog.weather}
+              </span>
+            )}
+          </div>
+          {yesterdayLog.notes ? (
+            <div style={{ fontSize: 12, color: tk.tx2, lineHeight: 1.6, background: tk.surf2, borderRadius: 9, padding: "10px 12px", border: `1px solid ${tk.bdr}`, opacity: 0.85, whiteSpace: "pre-wrap" }}>
+              {yesterdayLog.notes.length > 200 ? yesterdayLog.notes.slice(0, 200) + "…" : yesterdayLog.notes}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: tk.tx3, fontStyle: "italic" }}>No notes recorded for yesterday.</div>
+          )}
+        </Card>
+      )}
 
       <Card delay={.18}>
         <CardTitle icon={IActivity}>
