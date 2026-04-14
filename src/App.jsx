@@ -75,7 +75,12 @@ export default function App() {
       ]);
       setMats(m.map(x => ({ ...x, min: x.min_stock, cost: x.unit_cost })));
       setWorkers(w.map(x => ({ ...x, rate: x.daily_rate })));
-      setMatLogs(ml.map(x => ({ ...x, material: x.material_name, qty: x.quantity })));
+      setMatLogs(ml.map(x => ({
+        ...x,
+        material: x.material_name,
+        qty: x.quantity,
+        date: x.date || (x.logged_at ? x.logged_at.split("T")[0] : "1970-01-01")
+      })));
       setAtt(a.map(x => ({ ...x, workerId: x.worker_id, name: x.worker_name, role: x.worker_role, ot: x.ot_hours, total: x.total_wage, isSubcontract: !!x.is_subcontract })));
       setExp(e.map(x => ({ ...x, category: x.category_name, desc: x.description, vendor: x.vendor_name, paymentMode: x.payment_mode })));
       setInv(i.map(x => ({ ...x, vendor: x.vendor_name, desc: x.description, due: x.due_date, paid: x.amount_paid || 0 })));

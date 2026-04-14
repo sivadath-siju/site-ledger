@@ -29,10 +29,10 @@ export default function Materials() {
     if (!q || q <= 0) return setMsg({ t: "err", s: "Enter a valid quantity." });
     if (type === "out" && q > m.stock) return setMsg({ t: "err", s: `Only ${m.stock} ${m.unit} available.` });
     try {
-      await API.recordMatMovement({ material_id: matId, type, quantity: q, note, supplier: note, date });
+      const res = await API.recordMatMovement({ material_id: matId, type, quantity: q, note, supplier: note, date });
       setMats(prev => prev.map(x => x.id === matId ? { ...x, stock: type === "in" ? x.stock + q : x.stock - q } : x));
-      setMatLogs(prev => [{ id: Date.now(), date, material: m.name, material_id: matId, unit: m.unit, type, qty: q, note, by: user.name }, ...prev]);
-      setMsg({ t: "ok", s: `Stock ${type === "in" ? "received" : "issued"} — ${Nf(q)} ${m.unit} on ${date}.` });
+      setMatLogs(prev => [{ id: res.id, date: res.date || date, material: m.name, material_id: matId, unit: m.unit, type, qty: q, note, by: user.name }, ...prev]);
+      setMsg({ t: "ok", s: `Stock ${type === "in" ? "received" : "issued"} — ${Nf(q)} ${m.unit} on ${res.date || date}.` });
       setQty(""); setNote("");
       setTimeout(() => setMsg(null), 2500);
     } catch (e) { setMsg({ t: "err", s: e.message }); }
