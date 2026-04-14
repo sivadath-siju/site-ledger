@@ -104,7 +104,7 @@ export default function Reports() {
     };
   }).reverse();
 
-  // 30-day daily spend for line chart (kept for reference but replaced in UI)
+  // 30-day daily spend for line chart
   const last30 = Array.from({ length: 30 }, (_, i) => {
     const d  = new Date(); d.setDate(d.getDate() - (29 - i));
     const ds = d.toISOString().split("T")[0];
@@ -112,26 +112,6 @@ export default function Reports() {
     const expenses = exp.filter(e => e.date === ds).reduce((s, e) => s + e.amount, 0);
     return { date: d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }), labour, expenses, total: labour + expenses };
   });
-
-  // 30-day STOCK USAGE line chart — one line per material, "out" movements only
-  const matUsageColors = ["#1d4ed8","#15803d","#7c3aed","#b91c1c","#0891b2","#92400e","#be123c","#0f766e"];
-  const last30Dates = Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - (29 - i));
-    return { ds: d.toISOString().split("T")[0], label: d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }) };
-  });
-  const stockUsageData = last30Dates.map(({ ds, label }) => {
-    const row = { date: label };
-    mats.forEach(m => {
-      const dayOut = matLogs
-        .filter(l => (l.material_id === m.id || l.material === m.name) && l.type === "out" && l.date === ds)
-        .reduce((s, l) => s + (l.qty || l.quantity || 0), 0);
-      row[m.name] = dayOut;
-    });
-    return row;
-  });
-  const activeMats = mats.filter(m =>
-    matLogs.some(l => (l.material_id === m.id || l.material === m.name) && l.type === "out")
-  ).slice(0, 6); // max 6 lines for readability
 
   // Spend breakdown pie
   const spendPie = [
@@ -177,7 +157,7 @@ export default function Reports() {
   // Recent expenses (last 5)
   const recentExp = [...exp].sort((a, b) => b.date > a.date ? 1 : -1).slice(0, 5);
 
-  const hasData = att.length > 0 || exp.length > 0;
+  const hasData = att.length > 0 || exp.length > 0 || mats.length > 0 || tasks.length > 0 || inv.length > 0;
 
   return (
     <div>
@@ -269,41 +249,32 @@ export default function Reports() {
           </div>
 
           {/* ══════════════════════════════════════════════════
-              ROW 2: 30-day STOCK USAGE line chart
+              ROW 2: 30-day area trend
           ══════════════════════════════════════════════════ */}
-          {activeMats.length > 0 && (
+          {last30.some(d => d.total > 0) && (
             <Card style={{ marginBottom: 14 }}>
-              <CardTitle icon={IPackage}>30-Day Material Usage (Quantities Issued)</CardTitle>
-              <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 8 }}>Daily quantity used per material — "out" movements only</div>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={stockUsageData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+              <CardTitle icon={IActivity}>30-Day Cumulative Spend Trend</CardTitle>
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={last30} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gradLabour" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={P.labour} stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor={P.labour} stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="gradExpense" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={P.expense} stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor={P.expense} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={6} />
-                  <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                  <Tooltip content={<ChartTip prefix="" />} />
+                  <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
+                  <Tooltip content={<ChartTip />} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  {activeMats.map((m, i) => (
-                    <Line
-                      key={m.id}
-                      type="monotone"
-                      dataKey={m.name}
-                      stroke={matUsageColors[i % matUsageColors.length]}
-                      strokeWidth={2}
-                      dot={false}
-                      connectNulls={false}
-                    />
-                  ))}
-                </LineChart>
+                  <Area type="monotone" dataKey="labour"   name="Labour"   stroke={P.labour}  fill="url(#gradLabour)"  strokeWidth={2} dot={false} />
+                  <Area type="monotone" dataKey="expenses" name="Expenses" stroke={P.expense} fill="url(#gradExpense)" strokeWidth={2} dot={false} />
+                </AreaChart>
               </ResponsiveContainer>
-              {/* Material legend with unit */}
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
-                {activeMats.map((m, i) => (
-                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#374151" }}>
-                    <span style={{ width: 16, height: 3, borderRadius: 2, background: matUsageColors[i % matUsageColors.length], display: "inline-block" }} />
-                    {m.name} ({m.unit})
-                  </div>
-                ))}
-              </div>
             </Card>
           )}
 
