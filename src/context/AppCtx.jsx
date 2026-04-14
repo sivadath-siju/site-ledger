@@ -31,7 +31,7 @@ export const ROLES = [
 
 export const LABOUR_CATEGORIES = [
   "General","Masonry","Carpentry","Electrical","Plumbing",
-  "Painting","Gardening","Welding","Finishing","Subcontract","Other"
+  "Painting","Gardening","Welding","Finishing","Helper","Subcontract","Other"
 ];
 
 export const AppCtx = createContext(null);
