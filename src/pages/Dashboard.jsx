@@ -158,11 +158,12 @@ export default function Dashboard() {
   const pt  = tasks.filter(t => t.status !== "Completed").length;
   const presentToday = todayWorkers.filter(w => w.status === "present").length;
   const halfToday    = todayWorkers.filter(w => w.status === "half").length;
+  const subToday     = todaySubLogs.reduce((s, l) => s + (l.worker_count || 0), 0);
   const directWages  = todayWorkers.filter(w => !w.is_subcontract).reduce((s, w) => s + (w.total_wage || 0), 0);
 
   // Stat cards — each navigates to a relevant page
   const statCards = [
-    { icon: IUsers,     value: presentToday + halfToday, label: "On Site Today", color: "grn", page: "attendance", delay: .04 },
+    { icon: IUsers,     value: presentToday + halfToday + subToday, label: "On Site Today", color: "grn", page: "attendance", delay: .04 },
     { icon: IListChecks,value: pt,                       label: "Pending Tasks",  color: "amb", page: "tasks",      delay: .08 },
     { icon: IPkgX,      value: lsc,                      label: "Low Stock",      color: "red", page: "materials",  delay: .12 },
     { icon: IUsers,     value: workers.filter(w => !w.is_subcontract).length, label: "Direct Workers", color: "acc", page: "attendance", delay: .16 },
