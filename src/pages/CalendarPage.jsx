@@ -40,6 +40,8 @@ function DayCell({ day, data, isToday, isSelected, maxSpend, onClick, tk, compac
   const borderColor = isSelected
     ? tk.acc : ratio > 0.6 ? "#93c5fd" : ratio > 0.25 ? "#bfdbfe" : data ? tk.bdr : "transparent";
 
+  const totalWorkers = (data?.attendees || []).reduce((s, a) => s + (a.worker_count || 1), 0);
+
   return (
     <div
       onClick={data || isToday ? onClick : undefined}
@@ -100,7 +102,7 @@ function DayCell({ day, data, isToday, isSelected, maxSpend, onClick, tk, compac
           }}>
             <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#16a34a", display: "inline-block", flexShrink: 0 }} />
             <span style={{ overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-              {data.attendees.length}
+              {totalWorkers}
             </span>
           </div>
         </>
@@ -122,6 +124,8 @@ function DetailPanel({ year, month, day, data, tk }) {
   const dateStr = `${MONTHS[month]} ${day}, ${year}`;
   if (!data) return <div style={box}><div style={{ fontSize: 14, fontWeight: 700, color: tk.tx, marginBottom: 14, paddingBottom: 10, borderBottom: `2px solid ${tk.surf2}` }}>{dateStr}</div><div style={{ color: tk.tx3, fontSize: 13, textAlign: "center", marginTop: 30 }}>No activity logged for this day.</div></div>;
 
+  const totalWorkers = data.attendees.reduce((s, a) => s + (a.worker_count || 1), 0);
+
   const Sec = ({ title, children }) => (
     <div style={{ marginBottom: 14 }}>
       <div style={{ fontSize: 10, color: tk.tx3, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
@@ -134,8 +138,8 @@ function DetailPanel({ year, month, day, data, tk }) {
       <div style={{ fontSize: 14, fontWeight: 700, color: tk.tx, marginBottom: 14, paddingBottom: 10, borderBottom: `2px solid ${tk.surf2}` }}>{dateStr}</div>
 
       {data.attendees.length > 0 && (
-        <Sec title={`Present (${data.attendees.length})`}>
-          {data.attendees.slice(0, 6).map((p, i) => {
+        <Sec title={`Present (${totalWorkers})`}>
+          {data.attendees.slice(0, 8).map((p, i) => {
             const c = AVATAR_COLORS[i % AVATAR_COLORS.length];
             return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
@@ -143,7 +147,9 @@ function DetailPanel({ year, month, day, data, tk }) {
                   {initials(p.name)}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: tk.tx, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: tk.tx, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {p.worker_count ? `${p.worker_count}× ` : ""}{p.name}
+                  </div>
                   <div style={{ fontSize: 10, color: tk.tx3 }}>{p.role}</div>
                 </div>
                 {!p.isSubcontract && p.total_wage > 0 && (
@@ -152,7 +158,7 @@ function DetailPanel({ year, month, day, data, tk }) {
               </div>
             );
           })}
-          {data.attendees.length > 6 && <div style={{ fontSize: 11, color: tk.tx3 }}>+{data.attendees.length - 6} more workers</div>}
+          {data.attendees.length > 8 && <div style={{ fontSize: 11, color: tk.tx3 }}>+{data.attendees.length - 8} more entries</div>}
         </Sec>
       )}
 
@@ -212,10 +218,11 @@ export default function CalendarPage() {
       const from = firstDay.toISOString().split("T")[0];
       const to   = lastDay.toISOString().split("T")[0];
 
-      const [attRaw, expRaw, logsRaw] = await Promise.all([
+      const [attRaw, expRaw, logsRaw, subLogsRaw] = await Promise.all([
         API.getAttendance({ from, to }),
         API.getExpenses({ from, to }),
         API.getAllDailyLogs(),
+        API.getSubDailyAll({ from, to }),
       ]);
 
       const data = {};
@@ -229,6 +236,14 @@ export default function CalendarPage() {
           role:          a.worker_role  || "",
           total_wage:    a.total_wage   || 0,
           isSubcontract: !!a.is_subcontract,
+        }));
+
+        const daySubLogs = (subLogsRaw || []).filter(l => l.date === ds).map(l => ({
+          name:          l.subcontractor_name || "Subcontractor",
+          role:          l.category || "Labour",
+          total_wage:    l.total_cost || 0,
+          isSubcontract: true,
+          worker_count:  l.worker_count || 0,
         }));
 
         const dayExp = (expRaw || []).filter(e => e.date === ds).map(e => ({
@@ -246,10 +261,13 @@ export default function CalendarPage() {
         const labourTotal  = dayAtt.filter(a => !a.isSubcontract).reduce((s, a) => s + a.total_wage, 0);
         const expenseTotal = dayExp.reduce((s, e) => s + e.amt, 0);
 
-        if (dayAtt.length > 0 || dayExp.length > 0 || dayLogs.length > 0) {
+        if (dayAtt.length > 0 || dayExp.length > 0 || dayLogs.length > 0 || daySubLogs.length > 0) {
           data[d] = {
-            attendees: dayAtt, expenses: dayExp, logs: dayLogs,
-            labourTotal, expenseTotal,
+            attendees: [...dayAtt, ...daySubLogs],
+            expenses: dayExp,
+            logs: dayLogs,
+            labourTotal,
+            expenseTotal,
             total: labourTotal + expenseTotal,
           };
         }
@@ -267,8 +285,10 @@ export default function CalendarPage() {
   const metrics = useMemo(() => {
     let totalSpend = 0, totalPresence = 0, busyDay = null, busyCount = 0, activeDays = 0;
     Object.entries(monthData).forEach(([d, dd]) => {
-      activeDays++; totalSpend += dd.total; totalPresence += dd.attendees.length;
-      if (dd.attendees.length > busyCount) { busyCount = dd.attendees.length; busyDay = Number(d); }
+      activeDays++; totalSpend += dd.total; 
+      const dayPresence = dd.attendees.reduce((s, a) => s + (a.worker_count || 1), 0);
+      totalPresence += dayPresence;
+      if (dayPresence > busyCount) { busyCount = dayPresence; busyDay = Number(d); }
     });
     return { totalSpend, avgSpend: activeDays ? Math.round(totalSpend / activeDays) : 0, busyDay, busyCount, activeDays, totalPresence };
   }, [monthData]);
