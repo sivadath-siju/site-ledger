@@ -204,77 +204,109 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Today's workers on site */}
+      {/* Workers on Site — Today (direct + subcontractor combined) */}
       <Card delay={.1}>
         <CardTitle icon={IUsers}>
           Workers on Site — Today
-          {directWages > 0 && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#15803d", marginLeft: 8 }}>
-              {Rs(directWages)} wages
-            </span>
-          )}
+          <span style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
+            {directWages > 0 && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#15803d" }}>{Rs(directWages)}</span>
+            )}
+            {todaySubLogs.length > 0 && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: "#92400e" }}>
+                +{todaySubLogs.reduce((s,l)=>s+l.worker_count,0)} sub
+              </span>
+            )}
+          </span>
         </CardTitle>
+
         {logLoading ? (
           <div style={{ padding: "12px 0", color: tk.tx3, fontSize: 13 }}>Loading…</div>
-        ) : todayWorkers.length === 0 ? (
+        ) : (todayWorkers.length === 0 && todaySubLogs.length === 0) ? (
           <Empty icon={IUsers} text="No attendance marked today. Go to Labour & Attendance to mark workers." />
         ) : (
-          todayWorkers.map(w => {
-            const status = w.status || "present";
-            return (
-              <div key={w.id || w.worker_id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${tk.bdr}` }}>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, background: w.is_subcontract ? tk.ambL : tk.accL, color: w.is_subcontract ? tk.amb : tk.acc, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13 }}>
-                  {(w.worker_name || w.name || "?").charAt(0).toUpperCase()}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-                    {w.worker_name || w.name}
-                    {w.is_subcontract ? <Badge color="amber">Sub</Badge> : null}
+          <>
+            {/* Direct workers */}
+            {todayWorkers.length > 0 && (
+              <>
+                {todaySubLogs.length > 0 && (
+                  <div style={{ fontSize: 10, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 8 }}>
+                    Direct Workers
                   </div>
-                  <div style={{ fontSize: 11, color: tk.tx3 }}>
-                    {w.worker_role || w.role} · {w.hours || 8}h
-                    {w.ot_hours > 0 ? ` + ${w.ot_hours}h OT` : ""}
-                  </div>
-                </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <Badge color={status === "present" ? "green" : status === "half" ? "amber" : "red"}>
-                    {status === "present" ? "Present" : status === "half" ? "Half" : "Absent"}
-                  </Badge>
-                  {!w.is_subcontract && w.total_wage > 0 && (
-                    <div style={{ fontSize: 12, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.tx, marginTop: 2 }}>
-                      {Rs(w.total_wage)}
+                )}
+                {todayWorkers.map(w => {
+                  const status = w.status || "present";
+                  return (
+                    <div key={w.id || w.worker_id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${tk.bdr}` }}>
+                      <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, background: tk.accL, color: tk.acc, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13 }}>
+                        {(w.worker_name || w.name || "?").charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{w.worker_name || w.name}</div>
+                        <div style={{ fontSize: 11, color: tk.tx3 }}>
+                          {w.worker_role || w.role} · {w.hours || 8}h{w.ot_hours > 0 ? ` + ${w.ot_hours}h OT` : ""}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <Badge color={status === "present" ? "green" : status === "half" ? "amber" : "red"}>
+                          {status === "present" ? "Present" : status === "half" ? "Half" : "Absent"}
+                        </Badge>
+                        {w.total_wage > 0 && (
+                          <div style={{ fontSize: 12, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.tx, marginTop: 2 }}>{Rs(w.total_wage)}</div>
+                        )}
+                      </div>
                     </div>
-                  )}
+                  );
+                })}
+              </>
+            )}
+
+            {/* Subcontractor workers — shown inline in same card */}
+            {todaySubLogs.length > 0 && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0 8px" }}>
+                  <div style={{ height: 1, background: tk.bdr, flex: 1 }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#92400e", textTransform: "uppercase", letterSpacing: ".08em", whiteSpace: "nowrap" }}>
+                    Subcontractor Labour (Reference)
+                  </span>
+                  <div style={{ height: 1, background: tk.bdr, flex: 1 }} />
                 </div>
-              </div>
-            );
-          })
+
+                {todaySubLogs.map(log => (
+                  <div key={log.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${tk.bdr}` }}>
+                    {/* Worker count as avatar */}
+                    <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, background: "#fef3c7", color: "#92400e", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13 }}>
+                      {log.worker_count}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: tk.tx }}>{log.subcontractor_name}</div>
+                      <div style={{ fontSize: 11, color: tk.tx3 }}>
+                        {log.category} · ₹{Number(log.rate_per_worker).toLocaleString("en-IN")}/day
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: "#92400e" }}>
+                        {Rs(log.total_cost)}
+                      </div>
+                      <div style={{ fontSize: 9, color: "#9ca3af" }}>ref only</div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Sub day total */}
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 2px", marginTop: 4 }}>
+                  <span style={{ fontSize: 11, color: "#92400e", fontWeight: 600 }}>
+                    {todaySubLogs.reduce((s,l)=>s+l.worker_count,0)} subcontract workers total
+                  </span>
+                  <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 700, color: "#92400e" }}>
+                    {Rs(todaySubLogs.reduce((s,l)=>s+l.total_cost,0))}
+                  </span>
+                </div>
+              </>
+            )}
+          </>
         )}
       </Card>
-
-      {/* Today's subcontractor count summary */}
-      {todaySubLogs.length > 0 && (
-        <Card delay={.12}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#92400e", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span>Subcontractor Labour Today</span>
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, color: "#78350f" }}>
-              ₹{Number(todaySubLogs.reduce((s, l) => s + l.total_cost, 0)).toLocaleString("en-IN")} ref
-            </span>
-          </div>
-          {todaySubLogs.map(log => (
-            <div key={log.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: `1px solid ${tk.bdr}` }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b", flexShrink: 0 }} />
-              <div style={{ flex: 1, fontSize: 12 }}>
-                <span style={{ fontWeight: 600 }}>{log.subcontractor_name}</span>
-                <span style={{ color: tk.tx3, marginLeft: 6 }}>{log.worker_count} {log.category || "workers"}</span>
-              </div>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 700, color: "#92400e" }}>
-                ₹{Number(log.total_cost).toLocaleString("en-IN")}
-              </div>
-            </div>
-          ))}
-        </Card>
-      )}
 
       {/* Today's site log */}
       <Card delay={.14}>
