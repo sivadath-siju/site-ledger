@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
 import { Card, CardTitle, Btn, Alert, Field, FormGrid, Badge } from "../components/Primitives";
@@ -69,23 +70,115 @@ const WEATHER_OPTS  = ["Clear","Partly Cloudy","Overcast","Light Rain","Heavy Ra
 const SAFETY_OPTS   = ["All Clear","Minor Concerns","Work Stopped"];
 
 // ── Lightbox ─────────────────────────────────────────────────
+// Uses a React Portal so it renders at document.body, escaping ALL
+// stacking contexts (transforms, filters on ancestors).
+// This fixes the iPhone "image behind UI" bug.
 function Lightbox({ url, caption, onClose }) {
   useEffect(() => {
-    const fn = e => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", fn);
-    return () => window.removeEventListener("keydown", fn);
+    // Keyboard close
+    const onKey = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+
+    // Lock body scroll while open (critical for iOS)
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
   }, [onClose]);
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.88)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ position: "relative", maxWidth: "min(90vw, 860px)", maxHeight: "88vh", display: "flex", flexDirection: "column", gap: 8 }}>
-        <img src={url} alt={caption || "Site photo"} style={{ maxWidth: "100%", maxHeight: "82vh", objectFit: "contain", borderRadius: 12, display: "block" }} />
-        {caption && <div style={{ color: "#e5e7eb", fontSize: 13, textAlign: "center", fontWeight: 500 }}>{caption}</div>}
-        <button onClick={onClose} style={{ position: "absolute", top: -12, right: -12, width: 30, height: 30, borderRadius: "50%", background: "#374151", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <IXSmall size={13} color="#fff" />
+
+  const overlay = (
+    <div
+      // Backdrop — tap anywhere to close
+      onPointerDown={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        // Use dvh for iOS Safari where 100vh ≠ visible viewport
+        height: "100dvh",
+        background: "rgba(0,0,0,.92)",
+        // zIndex 9999 — sits above navigation, sheets, everything
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 16px)",
+        boxSizing: "border-box",
+        WebkitTapHighlightColor: "transparent",
+        touchAction: "none",          // prevent background scroll on iOS
+        overscrollBehavior: "contain",
+      }}
+    >
+      {/* Inner container — stop tap from closing when tapping image */}
+      <div
+        onPointerDown={e => e.stopPropagation()}
+        style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: 860,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
+        {/* Close button — top right, large tap target for mobile */}
+        <button
+          onPointerDown={e => { e.stopPropagation(); onClose(); }}
+          style={{
+            position: "absolute",
+            top: -8, right: 0,
+            width: 40, height: 40,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,.15)",
+            border: "1.5px solid rgba(255,255,255,.3)",
+            cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1,
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <IXSmall size={16} color="#fff" />
         </button>
+
+        {/* Photo */}
+        <img
+          src={url}
+          alt={caption || "Site photo"}
+          style={{
+            maxWidth: "92vw",
+            maxHeight: "75dvh",
+            objectFit: "contain",
+            borderRadius: 12,
+            display: "block",
+            boxShadow: "0 8px 40px rgba(0,0,0,.5)",
+          }}
+        />
+
+        {/* Caption */}
+        {caption && (
+          <div style={{
+            color: "#e5e7eb", fontSize: 13, textAlign: "center",
+            fontWeight: 500, maxWidth: "80vw",
+            padding: "4px 0",
+          }}>
+            {caption}
+          </div>
+        )}
+
+        {/* Tap hint */}
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginTop: 2 }}>
+          Tap anywhere outside to close
+        </div>
       </div>
     </div>
   );
+
+  // Portal renders at document.body — escapes all CSS stacking contexts
+  return ReactDOM.createPortal(overlay, document.body);
 }
 
 // ── Photo card ────────────────────────────────────────────────
