@@ -388,13 +388,13 @@ export default function Attendance() {
       </Card>
 
       {/* ═══ SECTION 2 — SUBCONTRACTOR ATTENDANCE ═══ */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#92400e", textTransform: "uppercase", letterSpacing: ".1em", marginTop: 24, marginBottom: 8 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: tk.amb, textTransform: "uppercase", letterSpacing: ".1em", marginTop: 24, marginBottom: 8 }}>
         Subcontractor Labour (Reference Only)
       </div>
 
       <Card delay={.05}>
         <CardTitle icon={IUsers}>Record Subcontractor Labour</CardTitle>
-        <div style={{ fontSize: 12, color: tk.tx3, marginBottom: 14, padding: "8px 12px", background: "#fffbeb", borderRadius: 8, border: "1px solid #fde68a" }}>
+        <div style={{ fontSize: 12, color: tk.tx3, marginBottom: 14, padding: "8px 12px", background: tk.ambL, borderRadius: 8, border: `1px solid ${tk.amb}44` }}>
           Record how many workers of each category a subcontractor sent. No individual names needed.
         </div>
         {subLogMsg && <Alert type={subLogMsg.t}>{subLogMsg.t === "ok" ? <ICheckCirc size={14} /> : <IXCircle size={14} />}{subLogMsg.s}</Alert>}
@@ -431,11 +431,11 @@ export default function Attendance() {
         </FormGrid>
 
         {subLogCount && subLogRate && parseInt(subLogCount) > 0 && parseFloat(subLogRate) > 0 && (
-          <div style={{ padding: "10px 14px", background: "#fffbeb", borderRadius: 9, border: "1px solid #fde68a", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 13, color: "#92400e" }}>
+          <div style={{ padding: "10px 14px", background: tk.ambL, borderRadius: 9, border: `1px solid ${tk.amb}44`, marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 13, color: tk.amb }}>
               {subLogCount} {subLogCat}{parseInt(subLogCount) !== 1 ? "s" : ""} × {Rs(parseFloat(subLogRate))}
             </span>
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 16, fontWeight: 800, color: "#78350f" }}>
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 16, fontWeight: 800, color: tk.amb }}>
               {Rs(parseInt(subLogCount) * parseFloat(subLogRate))}
             </span>
           </div>
@@ -510,12 +510,12 @@ export default function Attendance() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             {logDirectTotal > 0 && (
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: "#15803d" }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: tk.grn }}>
                 {Rs(logDirectTotal)} direct
               </span>
             )}
             {logSubTotal > 0 && (
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: "#92400e" }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: tk.amb }}>
                 {Rs(logSubTotal)} sub (ref)
               </span>
             )}

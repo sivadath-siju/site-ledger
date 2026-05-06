@@ -319,9 +319,9 @@ export default function BalanceSheet() {
           {vendors.length === 0 ? <Empty icon={IBuilding} text="No vendors added yet." /> : (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
-                <thead><tr style={{ background: "#f8fafc" }}>
+                <thead><tr style={{ background: tk.surf2 }}>
                   {["Vendor","Invoiced","Expenses","Total Debit","Paid","Balance"].map((h, i) => (
-                    <th key={h} style={{ textAlign: i > 0 ? "right" : "left", padding: "10px 12px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: "#6b7280", borderBottom: `2px solid #e5e7eb`, whiteSpace: "nowrap" }}>{h}</th>
+                    <th key={h} style={{ textAlign: i > 0 ? "right" : "left", padding: "10px 12px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: tk.tx2, borderBottom: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr></thead>
                 <tbody>
@@ -340,13 +340,13 @@ export default function BalanceSheet() {
                       <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid #f3f4f6`, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: v.balance > 0.01 ? C.debitInvoice : C.credit, whiteSpace: "nowrap" }}>{Rs(v.balance)}</td>
                     </tr>
                   ))}
-                  <tr style={{ background: "#f8fafc" }}>
-                    <td style={{ padding: "11px 12px", fontWeight: 700, fontSize: 13, borderTop: `2px solid #e5e7eb`, color: "#111827" }}>Total</td>
-                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.debitInvoice, borderTop: `2px solid #e5e7eb`, whiteSpace: "nowrap" }}>{Rs(grandTotals.invoiceTotal)}</td>
-                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.debitExpense, borderTop: `2px solid #e5e7eb`, whiteSpace: "nowrap" }}>{Rs(grandTotals.expenseTotal)}</td>
-                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#111827", borderTop: `2px solid #e5e7eb`, whiteSpace: "nowrap" }}>{Rs(grandTotals.invoiceTotal + grandTotals.expenseTotal)}</td>
-                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.credit, borderTop: `2px solid #e5e7eb`, whiteSpace: "nowrap" }}>{Rs(grandTotals.paidTotal)}</td>
-                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: grandTotals.outstanding > 0.01 ? C.debitInvoice : C.credit, borderTop: `2px solid #e5e7eb`, whiteSpace: "nowrap" }}>{Rs(grandTotals.outstanding)}</td>
+                  <tr style={{ background: tk.surf2 }}>
+                    <td style={{ padding: "11px 12px", fontWeight: 700, fontSize: 13, borderTop: `2px solid ${tk.bdr}`, color: tk.tx }}>Total</td>
+                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.debitInvoice, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandTotals.invoiceTotal)}</td>
+                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.debitExpense, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandTotals.expenseTotal)}</td>
+                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.tx, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandTotals.invoiceTotal + grandTotals.expenseTotal)}</td>
+                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.credit, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandTotals.paidTotal)}</td>
+                    <td style={{ padding: "11px 12px", textAlign: "right", fontFamily: "'DM Mono',monospace", fontWeight: 700, color: grandTotals.outstanding > 0.01 ? C.debitInvoice : C.credit, borderTop: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{Rs(grandTotals.outstanding)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -397,25 +397,25 @@ export default function BalanceSheet() {
           ) : (
             <>
               {/* Summary */}
-              <div style={{ display: "flex", gap: 20, marginBottom: 14, padding: "12px 14px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e5e7eb", flexWrap: "wrap" }}>
-                <div><div style={{ fontSize: 10, color: "#6b7280", textTransform: "uppercase" }}>Vendor</div><div style={{ fontWeight: 700, fontSize: 14 }}>{vendorLedger.vendor.name}</div></div>
-                {[{l:"Total Debit",v:Rs(vendorLedger.summary.total_debit),c:"#111827"},{l:"Total Paid",v:Rs(vendorLedger.summary.total_paid),c:C.credit},{l:"Balance",v:Rs(vendorLedger.summary.balance),c:vendorLedger.summary.balance>0.01?C.debitInvoice:C.credit}].map(s=>(
-                  <div key={s.l}><div style={{ fontSize:10, color:"#6b7280", textTransform:"uppercase" }}>{s.l}</div><div style={{ fontFamily:"'DM Mono',monospace", fontWeight:700, fontSize:15, color:s.c, whiteSpace:"nowrap" }}>{s.v}</div></div>
+              <div style={{ display: "flex", gap: 20, marginBottom: 14, padding: "12px 14px", background: tk.surf2, borderRadius: 10, border: `1px solid ${tk.bdr}`, flexWrap: "wrap" }}>
+                <div><div style={{ fontSize: 10, color: tk.tx2, textTransform: "uppercase" }}>Vendor</div><div style={{ fontWeight: 700, fontSize: 14 }}>{vendorLedger.vendor.name}</div></div>
+                {[{l:"Total Debit",v:Rs(vendorLedger.summary.total_debit),c:tk.tx},{l:"Total Paid",v:Rs(vendorLedger.summary.total_paid),c:C.credit},{l:"Balance",v:Rs(vendorLedger.summary.balance),c:vendorLedger.summary.balance>0.01?C.debitInvoice:C.credit}].map(s=>(
+                  <div key={s.l}><div style={{ fontSize:10, color:tk.tx2, textTransform:"uppercase" }}>{s.l}</div><div style={{ fontFamily:"'DM Mono',monospace", fontWeight:700, fontSize:15, color:s.c, whiteSpace:"nowrap" }}>{s.v}</div></div>
                 ))}
               </div>
               {/* Colour legend */}
               <div style={{ display: "flex", gap: 14, marginBottom: 12, flexWrap: "wrap" }}>
                 {[{c:C.debitInvoice,l:"Invoice Dr"},{c:C.debitExpense,l:"Expense Dr"},{c:C.credit,l:"Payment Cr"}].map(x=>(
-                  <div key={x.l} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:"#6b7280" }}>
+                  <div key={x.l} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:tk.tx2 }}>
                     <span style={{ width:10, height:10, borderRadius:3, background:x.c, display:"inline-block" }}/>{x.l}
                   </div>
                 ))}
               </div>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width:"100%", borderCollapse:"collapse", minWidth:580 }}>
-                  <thead><tr style={{ background:"#f8fafc" }}>
+                  <thead><tr style={{ background:tk.surf2 }}>
                     {["Date","Type","Particulars","Ref","Dr","Cr","Balance",""].map((h,i)=>(
-                      <th key={i} style={{ textAlign:i>3?"right":"left", padding:"10px 10px", fontSize:10, fontWeight:700, textTransform:"uppercase", color:"#6b7280", borderBottom:"2px solid #e5e7eb", whiteSpace:"nowrap" }}>{h}</th>
+                      <th key={i} style={{ textAlign:i>3?"right":"left", padding:"10px 10px", fontSize:10, fontWeight:700, textTransform:"uppercase", color:tk.tx2, borderBottom:`2px solid ${tk.bdr}`, whiteSpace:"nowrap" }}>{h}</th>
                     ))}
                   </tr></thead>
                   <tbody>
@@ -426,10 +426,10 @@ export default function BalanceSheet() {
                       const rowBg = e.source==="payment" ? tk.grnL : e.source==="expense" ? tk.ambL : tk.redL;
                       return (
                         <tr key={i} style={{ background:rowBg }}>
-                          <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", fontSize:11, color:"#6b7280", whiteSpace:"nowrap" }}>{fmtD(e.date)}</td>
+                          <td style={{ padding:"9px 10px", borderBottom:`1px solid ${tk.bdr}`, fontSize:11, color:tk.tx2, whiteSpace:"nowrap" }}>{fmtD(e.date)}</td>
                           <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6" }}><SourceBadge source={e.source} tk={tk} C={C}/></td>
                           <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", fontSize:12, fontWeight:isDr?600:400, maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.particulars}</td>
-                          <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", fontSize:10, fontFamily:"'DM Mono',monospace", color:"#9ca3af", whiteSpace:"nowrap" }}>{e.ref}</td>
+                          <td style={{ padding:"9px 10px", borderBottom:`1px solid ${tk.bdr}`, fontSize:10, fontFamily:"'DM Mono',monospace", color:tk.tx3, whiteSpace:"nowrap" }}>{e.ref}</td>
                           <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:isDr?dc:"#d1d5db", whiteSpace:"nowrap" }}>{isDr?Rs(e.amount):"—"}</td>
                           <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:!isDr?C.credit:"#d1d5db", whiteSpace:"nowrap" }}>{!isDr?Rs(e.amount):"—"}</td>
                           <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:e.running_balance>0.01?C.debitInvoice:C.credit, whiteSpace:"nowrap" }}>{Rs(Math.max(0,e.running_balance))}</td>
@@ -439,12 +439,12 @@ export default function BalanceSheet() {
                         </tr>
                       );
                     })}
-                    <tr style={{ background:"#f8fafc" }}>
-                      <td colSpan={4} style={{ padding:"11px 10px", fontWeight:700, fontSize:13, borderTop:"2px solid #e5e7eb", color:"#111827" }}>Closing Balance</td>
-                      <td style={{ padding:"11px 10px", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:C.debitInvoice, borderTop:"2px solid #e5e7eb", whiteSpace:"nowrap" }}>{Rs(vendorLedger.summary.total_debit)}</td>
-                      <td style={{ padding:"11px 10px", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:C.credit, borderTop:"2px solid #e5e7eb", whiteSpace:"nowrap" }}>{Rs(vendorLedger.summary.total_paid)}</td>
-                      <td style={{ padding:"11px 10px", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:vendorLedger.summary.balance>0.01?C.debitInvoice:C.credit, borderTop:"2px solid #e5e7eb", whiteSpace:"nowrap" }}>{Rs(vendorLedger.summary.balance)}</td>
-                      <td style={{ borderTop:"2px solid #e5e7eb" }}/>
+                    <tr style={{ background:tk.surf2 }}>
+                      <td colSpan={4} style={{ padding:"11px 10px", fontWeight:700, fontSize:13, borderTop:`2px solid ${tk.bdr}`, color:tk.tx }}>Closing Balance</td>
+                      <td style={{ padding:"11px 10px", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:C.debitInvoice, borderTop:`2px solid ${tk.bdr}`, whiteSpace:"nowrap" }}>{Rs(vendorLedger.summary.total_debit)}</td>
+                      <td style={{ padding:"11px 10px", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:C.credit, borderTop:`2px solid ${tk.bdr}`, whiteSpace:"nowrap" }}>{Rs(vendorLedger.summary.total_paid)}</td>
+                      <td style={{ padding:"11px 10px", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:vendorLedger.summary.balance>0.01?C.debitInvoice:C.credit, borderTop:`2px solid ${tk.bdr}`, whiteSpace:"nowrap" }}>{Rs(vendorLedger.summary.balance)}</td>
+                      <td style={{ borderTop:`2px solid ${tk.bdr}` }}/>
                     </tr>
                   </tbody>
                 </table>
@@ -466,27 +466,27 @@ export default function BalanceSheet() {
           : (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width:"100%", borderCollapse:"collapse", minWidth:380 }}>
-                <thead><tr style={{ background:"#f8fafc" }}>
+                <thead><tr style={{ background:tk.surf2 }}>
                   {["Date","Workers","Day Total","Running Total"].map((h,i)=>(
-                    <th key={h} style={{ textAlign:i>1?"right":"left", padding:"10px 10px", fontSize:10, fontWeight:700, textTransform:"uppercase", color:"#6b7280", borderBottom:"2px solid #e5e7eb", whiteSpace:"nowrap" }}>{h}</th>
+                    <th key={h} style={{ textAlign:i>1?"right":"left", padding:"10px 10px", fontSize:10, fontWeight:700, textTransform:"uppercase", color:tk.tx2, borderBottom:`2px solid ${tk.bdr}`, whiteSpace:"nowrap" }}>{h}</th>
                   ))}
                 </tr></thead>
                 <tbody>
                   {labourLedger.map((e,i)=>(
-                    <tr key={i} style={{ background:i%2===0?"transparent":"#f9fafb" }}>
-                      <td style={{ padding:"10px", borderBottom:"1px solid #f3f4f6", fontSize:12, color:"#6b7280", whiteSpace:"nowrap" }}>{e.date}</td>
-                      <td style={{ padding:"10px", borderBottom:"1px solid #f3f4f6" }}>
-                        <div style={{ fontSize:13, color:"#111827" }}>{e.particulars}</div>
+                    <tr key={i} style={{ background:i%2===0?"transparent":tk.surf2 }}>
+                      <td style={{ padding:"10px", borderBottom:`1px solid ${tk.bdr}`, fontSize:12, color:tk.tx2, whiteSpace:"nowrap" }}>{e.date}</td>
+                      <td style={{ padding:"10px", borderBottom:`1px solid ${tk.bdr}` }}>
+                        <div style={{ fontSize:13, color:tk.tx }}>{e.particulars}</div>
                         {e.workers?.length>0&&<div style={{ fontSize:10, color:"#9ca3af", marginTop:2 }}>{e.workers.slice(0,2).join(" · ")}{e.workers.length>2?` +${e.workers.length-2} more`:""}</div>}
                       </td>
-                      <td style={{ padding:"10px", borderBottom:"1px solid #f3f4f6", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:C.debitLabour, whiteSpace:"nowrap" }}>{Rs(e.amount)}</td>
-                      <td style={{ padding:"10px", borderBottom:"1px solid #f3f4f6", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:600, color:"#374151", whiteSpace:"nowrap" }}>{Rs(e.running_balance)}</td>
+                      <td style={{ padding:"10px", borderBottom:`1px solid ${tk.bdr}`, textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:C.debitLabour, whiteSpace:"nowrap" }}>{Rs(e.amount)}</td>
+                      <td style={{ padding:"10px", borderBottom:`1px solid ${tk.bdr}`, textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:600, color:tk.tx2, whiteSpace:"nowrap" }}>{Rs(e.running_balance)}</td>
                     </tr>
                   ))}
-                  <tr style={{ background:"#f8fafc" }}>
-                    <td colSpan={2} style={{ padding:"11px 10px", fontWeight:700, borderTop:"2px solid #e5e7eb" }}>Total</td>
-                    <td style={{ padding:"11px 10px", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:C.debitLabour, borderTop:"2px solid #e5e7eb", whiteSpace:"nowrap" }}>{Rs(grandTotals.labourTotal)}</td>
-                    <td style={{ borderTop:"2px solid #e5e7eb" }}/>
+                  <tr style={{ background:tk.surf2 }}>
+                    <td colSpan={2} style={{ padding:"11px 10px", fontWeight:700, borderTop:`2px solid ${tk.bdr}`, color:tk.tx }}>Total</td>
+                    <td style={{ padding:"11px 10px", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:C.debitLabour, borderTop:`2px solid ${tk.bdr}`, whiteSpace:"nowrap" }}>{Rs(grandTotals.labourTotal)}</td>
+                    <td style={{ borderTop:`2px solid ${tk.bdr}` }}/>
                   </tr>
                 </tbody>
               </table>
