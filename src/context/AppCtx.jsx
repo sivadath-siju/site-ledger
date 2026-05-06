@@ -8,6 +8,8 @@ export const LIGHT = {
   grn:"#0d7a4e", grnL:"#e6f7f1",
   red:"#c0392b", redL:"#fdf0ee",
   amb:"#b45309", ambL:"#fef3e2",
+  vio:"#7c3aed", vioL:"#f5f3ff",
+  cyan:"#0891b2", cyanL:"#ecfeff",
   sh:"0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04)",
   shLg:"0 8px 28px rgba(0,0,0,.12)",
 };
@@ -20,6 +22,8 @@ export const DARK = {
   grn:"#34d47a", grnL:"#0a2818",
   red:"#f05a4e", redL:"#28100e",
   amb:"#f5a623", ambL:"#281a06",
+  vio:"#a78bfa", vioL:"#221642",
+  cyan:"#22c3ee", cyanL:"#0b2230",
   sh:"0 1px 3px rgba(0,0,0,.3)",
   shLg:"0 8px 28px rgba(0,0,0,.5)",
 };

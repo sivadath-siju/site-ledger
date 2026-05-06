@@ -164,13 +164,13 @@ export default function Materials() {
                   <div key={l.id || i} style={{
                     display: "flex", alignItems: "center", gap: 10, padding: "9px 10px",
                     borderRadius: 8, marginBottom: 4,
-                    background: l.type === "in" ? "#f0fdf4" : "#fef2f2",
-                    border: `1px solid ${l.type === "in" ? "#bbf7d0" : "#fecaca"}`,
+                    background: l.type === "in" ? tk.grnL : tk.redL,
+                    border: `1px solid ${(l.type === "in" ? tk.grn : tk.red)}33`,
                   }}>
                     {/* Direction indicator */}
                     <div style={{
                       width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                      background: l.type === "in" ? "#15803d" : "#b91c1c",
+                      background: l.type === "in" ? tk.grn : tk.red,
                       color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 14, fontWeight: 700,
                     }}>
@@ -178,20 +178,20 @@ export default function Materials() {
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: tk.tx }}>
                         {l.material}
-                        <span style={{ fontSize: 11, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>
+                        <span style={{ fontSize: 11, fontWeight: 400, color: tk.tx2, marginLeft: 6 }}>
                           {l.type === "in" ? "received" : "issued"}
                         </span>
                       </div>
-                      {l.note && <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>{l.note}</div>}
-                      {l.by && <div style={{ fontSize: 10, color: "#9ca3af" }}>by {l.by}</div>}
+                      {l.note && <div style={{ fontSize: 11, color: tk.tx2, marginTop: 1 }}>{l.note}</div>}
+                      {l.by && <div style={{ fontSize: 10, color: tk.tx3 }}>by {l.by}</div>}
                     </div>
 
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{
                         fontFamily: "'DM Mono',monospace", fontWeight: 800, fontSize: 14,
-                        color: l.type === "in" ? "#15803d" : "#b91c1c",
+                        color: l.type === "in" ? tk.grn : tk.red,
                       }}>
                         {l.type === "in" ? "+" : "−"}{Nf(l.qty)} {l.unit}
                       </div>

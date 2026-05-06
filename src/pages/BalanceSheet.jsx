@@ -4,12 +4,6 @@ import * as API from "../api";
 import { Card, CardTitle, Btn, Alert, Field, Select, Input, FormGrid, Sheet, Badge, Empty } from "../components/Primitives";
 import { IFileText, ICheckCirc, IXCircle, IBuilding, IClock, ITrash, IUsers, IReceipt } from "../icons/Icons";
 
-const C = {
-  debitInvoice: "#b91c1c",
-  debitExpense: "#92400e",
-  debitLabour:  "#1d4ed8",
-  credit:       "#15803d",
-};
 const Rs   = n => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtD = d => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const fmtDT = d => d ? new Date(d).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
@@ -41,8 +35,8 @@ const IFilter = ({ size = 13, color = "currentColor" }) => (
   </svg>
 );
 
-function SourceBadge({ source }) {
-  const cfg = { invoice: { bg:"#fef2f2", c:C.debitInvoice, l:"INV" }, expense: { bg:"#fffbeb", c:C.debitExpense, l:"EXP" }, payment: { bg:"#f0fdf4", c:C.credit, l:"PMT" }, labour: { bg:"#eff6ff", c:C.debitLabour, l:"LAB" } };
+function SourceBadge({ source, tk, C }) {
+  const cfg = { invoice: { bg:tk.redL, c:C.debitInvoice, l:"INV" }, expense: { bg:tk.ambL, c:C.debitExpense, l:"EXP" }, payment: { bg:tk.grnL, c:C.credit, l:"PMT" }, labour: { bg:tk.accL, c:C.debitLabour, l:"LAB" } };
   const x = cfg[source] || cfg.invoice;
   return <span style={{ background: x.bg, color: x.c, fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6, border: `1px solid ${x.c}33`, whiteSpace: "nowrap" }}>{x.l}</span>;
 }
@@ -54,6 +48,12 @@ function exportCSV(rows, filename) {
 
 export default function BalanceSheet() {
   const { tk, vendors, inv, setInv, exp, att, isDesktop } = useApp();
+  const C = {
+    debitInvoice: tk.red,
+    debitExpense: tk.amb,
+    debitLabour: tk.acc,
+    credit: tk.grn,
+  };
 
   // ── Date range filter — default is all-time (empty strings) ──
   const [from,       setFrom]       = useState("");
@@ -196,14 +196,14 @@ export default function BalanceSheet() {
 
   // ── Summary cards ────────────────────────────────────────────
   const summaryCards = [
-    { label: "Total Expenditure", sublabel: "Invoices + Expenses + Labour", value: Rs(grandTotals.grandTotal), color: "#1e3a5f", bg: "#eff6ff", border: "#bfdbfe",
+    { label: "Total Expenditure", sublabel: "Invoices + Expenses + Labour", value: Rs(grandTotals.grandTotal), color: tk.acc, bg: tk.accL, border: `${tk.acc}44`,
       breakdown: [
         { l: "Invoices", v: Rs(grandTotals.invoiceTotal), c: C.debitInvoice },
         { l: "Expenses", v: Rs(grandTotals.expenseTotal), c: C.debitExpense },
         { l: "Labour",   v: Rs(grandTotals.labourTotal),  c: C.debitLabour  },
       ]},
-    { label: "Amount Paid", sublabel: "Payments made", value: Rs(grandTotals.paidTotal), color: C.credit, bg: "#f0fdf4", border: "#bbf7d0", breakdown: [] },
-    { label: "Outstanding Balance", sublabel: "Remaining to pay", value: Rs(grandTotals.outstanding), color: grandTotals.outstanding > 0.01 ? C.debitInvoice : C.credit, bg: grandTotals.outstanding > 0.01 ? "#fef2f2" : "#f0fdf4", border: grandTotals.outstanding > 0.01 ? "#fecaca" : "#bbf7d0", breakdown: [] },
+    { label: "Amount Paid", sublabel: "Payments made", value: Rs(grandTotals.paidTotal), color: C.credit, bg: tk.grnL, border: `${tk.grn}44`, breakdown: [] },
+    { label: "Outstanding Balance", sublabel: "Remaining to pay", value: Rs(grandTotals.outstanding), color: grandTotals.outstanding > 0.01 ? C.debitInvoice : C.credit, bg: grandTotals.outstanding > 0.01 ? tk.redL : tk.grnL, border: grandTotals.outstanding > 0.01 ? `${tk.red}44` : `${tk.grn}44`, breakdown: [] },
   ];
 
   return (
@@ -423,11 +423,11 @@ export default function BalanceSheet() {
                     {vendorLedger.entries.map((e, i) => {
                       const isDr = e.type === "debit";
                       const dc   = e.source==="invoice"?C.debitInvoice:e.source==="expense"?C.debitExpense:C.credit;
-                      const rowBg = e.source==="payment"?"#f0fdf4":e.source==="expense"?"#fffbeb":"#fef2f2";
+                      const rowBg = e.source==="payment" ? tk.grnL : e.source==="expense" ? tk.ambL : tk.redL;
                       return (
                         <tr key={i} style={{ background:rowBg }}>
                           <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", fontSize:11, color:"#6b7280", whiteSpace:"nowrap" }}>{fmtD(e.date)}</td>
-                          <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6" }}><SourceBadge source={e.source}/></td>
+                          <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6" }}><SourceBadge source={e.source} tk={tk} C={C}/></td>
                           <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", fontSize:12, fontWeight:isDr?600:400, maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.particulars}</td>
                           <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", fontSize:10, fontFamily:"'DM Mono',monospace", color:"#9ca3af", whiteSpace:"nowrap" }}>{e.ref}</td>
                           <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:isDr?dc:"#d1d5db", whiteSpace:"nowrap" }}>{isDr?Rs(e.amount):"—"}</td>
@@ -534,7 +534,7 @@ export default function BalanceSheet() {
             : payments.length === 0 ? <Empty icon={IFileText} text="No payments yet." />
             : payments.map(p=>(
               <div key={p.id} style={{ display:"flex", gap:10, padding:"11px 0", borderBottom:"1px solid #f3f4f6", alignItems:"flex-start" }}>
-                <div style={{ width:36, height:36, borderRadius:10, background:"#f0fdf4", color:C.credit, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, flexShrink:0 }}>₹</div>
+                <div style={{ width:36, height:36, borderRadius:10, background:tk.grnL, color:C.credit, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, flexShrink:0 }}>₹</div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontWeight:700, fontFamily:"'DM Mono',monospace", color:C.credit }}>{Rs(p.amount)}</div>
                   <div style={{ fontSize:12, color:"#6b7280" }}>{p.payment_mode}{p.reference?` · ${p.reference}`:""}</div>

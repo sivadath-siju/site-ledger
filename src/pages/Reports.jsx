@@ -13,26 +13,19 @@ const Nf  = n => Number(n || 0).toLocaleString("en-IN");
 const Pct = (n, t) => t > 0 ? ((n / t) * 100).toFixed(1) + "%" : "0%";
 
 // Palette — semantic, consistent
-const P = {
-  labour:  "#1d4ed8",  // blue
-  expense: "#7c3aed",  // violet
-  invoice: "#b91c1c",  // red
-  sub:     "#92400e",  // amber-dark (subcontract reference)
-  green:   "#15803d",
-  gray:    "#6b7280",
-};
-const CHART_COLORS = ["#1d4ed8","#15803d","#7c3aed","#b91c1c","#0891b2","#92400e","#be123c","#0f766e","#a16207","#4338ca"];
+
+const CHART_COLORS = tk => [tk.acc, tk.grn, tk.vio, tk.red, tk.cyan, tk.amb, "#be123c", "#0f766e", "#a16207", "#4338ca"];
 
 // Custom recharts tooltip
-function ChartTip({ active, payload, label, prefix = "₹" }) {
+function ChartTip({ active, payload, label, prefix = "₹", tk }) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 16px rgba(0,0,0,.1)" }}>
-      <div style={{ fontWeight: 700, marginBottom: 4, color: "#111827" }}>{label}</div>
+    <div style={{ background: tk.surf, border: `1px solid ${tk.bdr}`, borderRadius: 8, padding: "8px 12px", fontSize: 12, boxShadow: tk.shLg }}>
+      <div style={{ fontWeight: 700, marginBottom: 4, color: tk.tx }}>{label}</div>
       {payload.map((p, i) => (
         <div key={i} style={{ color: p.color, display: "flex", gap: 6, alignItems: "center" }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: p.color, display: "inline-block" }} />
-          <span style={{ color: "#6b7280" }}>{p.name}:</span>
+          <span style={{ color: tk.tx2 }}>{p.name}:</span>
           <span style={{ fontWeight: 700 }}>{prefix === "₹" ? Rs(p.value) : p.value}</span>
         </div>
       ))}
@@ -41,30 +34,30 @@ function ChartTip({ active, payload, label, prefix = "₹" }) {
 }
 
 // Small stat tile
-function Tile({ label, value, sub, color, delay = 0 }) {
+function Tile({ label, value, sub, color, delay = 0, tk }) {
   return (
-    <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px", animation: `fadeUp .3s ease ${delay}s both` }}>
-      <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono',monospace", color: color || "#111827", letterSpacing: "-.3px" }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{sub}</div>}
+    <div style={{ background: tk.surf, border: `1px solid ${tk.bdr}`, borderRadius: 12, padding: "14px 16px", animation: `fadeUp .3s ease ${delay}s both` }}>
+      <div style={{ fontSize: 11, color: tk.tx2, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono',monospace", color: color || tk.tx, letterSpacing: "-.3px" }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: tk.tx3, marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
 
 // Horizontal progress bar
-function HBar({ label, value, max, color, total, right }) {
+function HBar({ label, value, max, color, total, right, tk }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-        <span style={{ color: "#374151", fontWeight: 500 }}>{label}</span>
+        <span style={{ color: tk.tx2, fontWeight: 500 }}>{label}</span>
         <span style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: color }}>{right || Rs(value)}</span>
       </div>
-      <div style={{ background: "#f3f4f6", borderRadius: 6, height: 8, overflow: "hidden" }}>
+      <div style={{ background: tk.surf3, borderRadius: 6, height: 8, overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, height: 8, borderRadius: 6, background: color, transition: "width .6s cubic-bezier(.4,0,.2,1)" }} />
       </div>
       {total != null && (
-        <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, textAlign: "right" }}>{Pct(value, total)} of total</div>
+        <div style={{ fontSize: 10, color: tk.tx3, marginTop: 2, textAlign: "right" }}>{Pct(value, total)} of total</div>
       )}
     </div>
   );
@@ -72,6 +65,15 @@ function HBar({ label, value, max, color, total, right }) {
 
 export default function Reports() {
   const { tk, att, exp, mats, matLogs, expCats, workers, inv, tasks } = useApp();
+  const P = {
+    labour: tk.acc,
+    expense: tk.vio,
+    invoice: tk.red,
+    sub: tk.amb,
+    green: tk.grn,
+    gray: tk.tx2,
+  };
+  const chartColors = CHART_COLORS(tk);
 
   const [subTotals, setSubTotals] = useState({ bySub: [], byType: [] });
   const [grandTotals, setGrandTotals] = useState(null);
@@ -171,12 +173,12 @@ export default function Reports() {
 
       {/* ── Top KPI tiles ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 20 }}>
-        <Tile label="Total Spend"     value={Rs(grandTotal)}      sub="Labour + Expenses"       color={P.labour}  delay={.02} />
-        <Tile label="Outstanding"     value={Rs(tOutstanding)}    sub="Unpaid invoices"         color={tOutstanding > 0 ? P.invoice : P.green} delay={.05} />
-        <Tile label="Direct Workers"  value={directWorkers.length} sub={`${directAtt.length} records`} color={P.labour} delay={.08} />
-        <Tile label="Low Stock Items" value={lowStock.length}     sub={`${mats.length} total materials`} color={lowStock.length > 0 ? P.invoice : P.green} delay={.11} />
-        <Tile label="Pending Tasks"   value={tasksPending + tasksInProg} sub={`${tasksDone} completed`} color={P.expense} delay={.14} />
-        <Tile label="Expense Entries" value={exp.length}          sub={Rs(tE) + " total"}       color={P.expense} delay={.17} />
+        <Tile tk={tk} label="Total Spend"     value={Rs(grandTotal)}      sub="Labour + Expenses"       color={P.labour}  delay={.02} />
+        <Tile tk={tk} label="Outstanding"     value={Rs(tOutstanding)}    sub="Unpaid invoices"         color={tOutstanding > 0 ? P.invoice : P.green} delay={.05} />
+        <Tile tk={tk} label="Direct Workers"  value={directWorkers.length} sub={`${directAtt.length} records`} color={P.labour} delay={.08} />
+        <Tile tk={tk} label="Low Stock Items" value={lowStock.length}     sub={`${mats.length} total materials`} color={lowStock.length > 0 ? P.invoice : P.green} delay={.11} />
+        <Tile tk={tk} label="Pending Tasks"   value={tasksPending + tasksInProg} sub={`${tasksDone} completed`} color={P.expense} delay={.14} />
+        <Tile tk={tk} label="Expense Entries" value={exp.length}          sub={Rs(tE) + " total"}       color={P.expense} delay={.17} />
       </div>
 
       {!hasData && (
@@ -238,7 +240,7 @@ export default function Reports() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
                     <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}k` : `₹${v}`} />
-                    <Tooltip content={<ChartTip />} />
+                    <Tooltip content={<ChartTip tk={tk} />} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Bar dataKey="labour"   name="Labour"   fill={P.labour}  radius={[3,3,0,0]} />
                     <Bar dataKey="expenses" name="Expenses" fill={P.expense} radius={[3,3,0,0]} />
@@ -269,7 +271,7 @@ export default function Reports() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
                   <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={6} />
                   <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
-                  <Tooltip content={<ChartTip />} />
+                    <Tooltip content={<ChartTip tk={tk} />} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Area type="monotone" dataKey="labour"   name="Labour"   stroke={P.labour}  fill="url(#gradLabour)"  strokeWidth={2} dot={false} />
                   <Area type="monotone" dataKey="expenses" name="Expenses" stroke={P.expense} fill="url(#gradExpense)" strokeWidth={2} dot={false} />
@@ -290,7 +292,7 @@ export default function Reports() {
               {labCatData.length === 0 ? <Empty icon={IUsers} text="No categorised labour data." /> : (
                 <>
                   {labCatData.map((c, i) => (
-                    <HBar key={c.name} label={c.name} value={c.value} max={labCatData[0].value} color={CHART_COLORS[i % CHART_COLORS.length]} total={tL} />
+                    <HBar tk={tk} key={c.name} label={c.name} value={c.value} max={labCatData[0].value} color={chartColors[i % chartColors.length]} total={tL} />
                   ))}
                   <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8, marginTop: 8, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
                     <span style={{ fontWeight: 700, color: "#111827" }}>Total Direct Labour</span>
@@ -306,7 +308,7 @@ export default function Reports() {
               {expByCat.length === 0 ? <Empty icon={IReceipt} text="No expense data yet." /> : (
                 <>
                   {expByCat.slice(0, 7).map((c, i) => (
-                    <HBar key={c.name} label={c.name} value={c.value} max={expByCat[0].value} color={CHART_COLORS[i % CHART_COLORS.length]} total={tE} />
+                    <HBar tk={tk} key={c.name} label={c.name} value={c.value} max={expByCat[0].value} color={chartColors[i % chartColors.length]} total={tE} />
                   ))}
                   <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8, marginTop: 8, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
                     <span style={{ fontWeight: 700, color: "#111827" }}>Total Expenses</span>
@@ -331,17 +333,17 @@ export default function Reports() {
               {subTotals.byType?.length > 0 && (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10, marginBottom: 16 }}>
                   {subTotals.byType.map((t, i) => (
-                    <div key={t.type} style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 14px" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#92400e", marginBottom: 4 }}>{t.type}</div>
-                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 18, fontWeight: 800, color: "#78350f" }}>{Rs(t.total_cost)}</div>
-                      <div style={{ fontSize: 11, color: "#b45309", marginTop: 2 }}>
+                    <div key={t.type} style={{ background: tk.ambL, border: `1px solid ${tk.amb}44`, borderRadius: 10, padding: "12px 14px" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: tk.amb, marginBottom: 4 }}>{t.type}</div>
+                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 18, fontWeight: 800, color: tk.amb }}>{Rs(t.total_cost)}</div>
+                      <div style={{ fontSize: 11, color: tk.amb, marginTop: 2 }}>
                         {t.contractor_count} contractor{t.contractor_count !== 1 ? "s" : ""} · {t.worker_count} worker{t.worker_count !== 1 ? "s" : ""}
                       </div>
                     </div>
                   ))}
-                  <div style={{ background: "#fef3c7", border: "2px solid #f59e0b", borderRadius: 10, padding: "12px 14px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "#92400e", marginBottom: 4, textTransform: "uppercase", letterSpacing: ".05em" }}>Grand Total (Ref)</div>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 20, fontWeight: 800, color: "#78350f" }}>{Rs(tSub)}</div>
+                  <div style={{ background: tk.ambL, border: `2px solid ${tk.amb}`, borderRadius: 10, padding: "12px 14px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: tk.amb, marginBottom: 4, textTransform: "uppercase", letterSpacing: ".05em" }}>Grand Total (Ref)</div>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 20, fontWeight: 800, color: tk.amb }}>{Rs(tSub)}</div>
                   </div>
                 </div>
               )}
@@ -353,7 +355,7 @@ export default function Reports() {
                     <XAxis type="number" tick={{ fontSize: 10, fill: "#9ca3af" }} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}k` : `₹${v}`} axisLine={false} tickLine={false} />
                     <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#374151" }} axisLine={false} tickLine={false} width={120} />
                     <Tooltip formatter={v => [Rs(v), "Total Wages"]} />
-                    <Bar dataKey="total_cost" name="Wages" fill="#f59e0b" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="total_cost" name="Wages" fill={tk.amb} radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -371,7 +373,7 @@ export default function Reports() {
               {topWorkers.length === 0 ? <Empty icon={IUsers} text="No attendance data." /> : (
                 topWorkers.map((w, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #f3f4f6" }}>
-                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#eff6ff", color: P.labour, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: tk.accL, color: P.labour, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
                       {w.name.charAt(0).toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -391,9 +393,9 @@ export default function Reports() {
               {/* Summary pills */}
               <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
                 {[
-                  { label: "Healthy",  count: healthyStock.length, color: "#15803d", bg: "#f0fdf4" },
-                  { label: "Caution",  count: cautionStock.length, color: "#92400e", bg: "#fffbeb" },
-                  { label: "Low",      count: lowStock.length,     color: "#b91c1c", bg: "#fef2f2" },
+                  { label: "Healthy",  count: healthyStock.length, color: tk.grn, bg: tk.grnL },
+                  { label: "Caution",  count: cautionStock.length, color: tk.amb, bg: tk.ambL },
+                  { label: "Low",      count: lowStock.length,     color: tk.red, bg: tk.redL },
                 ].map(s => (
                   <div key={s.label} style={{ background: s.bg, border: `1px solid ${s.color}33`, borderRadius: 8, padding: "6px 12px", textAlign: "center", flex: 1 }}>
                     <div style={{ fontSize: 18, fontWeight: 800, color: s.color }}>{s.count}</div>
@@ -404,7 +406,7 @@ export default function Reports() {
 
               {mats.length === 0 ? <Empty icon={IPackage} text="No materials added." /> : mats.map(m => {
                 const pct  = Math.min(100, (m.stock / Math.max(m.min * 3, m.stock, 1)) * 100);
-                const color = m.stock <= m.min ? "#b91c1c" : m.stock <= m.min * 1.5 ? "#92400e" : "#15803d";
+                const color = m.stock <= m.min ? tk.red : m.stock <= m.min * 1.5 ? tk.amb : tk.grn;
                 const statusLabel = m.stock <= m.min ? "LOW" : m.stock <= m.min * 1.5 ? "WATCH" : "OK";
                 return (
                   <div key={m.id} style={{ marginBottom: 10 }}>
@@ -440,15 +442,15 @@ export default function Reports() {
                     <PieChart>
                       <Pie
                         data={[
-                          { name: "Completed",  value: tasksDone,    color: "#15803d" },
-                          { name: "In Progress",value: tasksInProg,  color: "#1d4ed8" },
+                          { name: "Completed",  value: tasksDone,    color: tk.grn },
+                          { name: "In Progress",value: tasksInProg,  color: tk.acc },
                           { name: "Pending",    value: tasksPending, color: "#9ca3af" },
                         ].filter(d => d.value > 0)}
                         cx="50%" cy="50%" innerRadius={36} outerRadius={60} paddingAngle={2} dataKey="value"
                       >
                         {[
-                          { name: "Completed",  color: "#15803d" },
-                          { name: "In Progress",color: "#1d4ed8" },
+                          { name: "Completed",  color: tk.grn },
+                          { name: "In Progress",color: tk.acc },
                           { name: "Pending",    color: "#9ca3af" },
                         ].map((d, i) => <Cell key={i} fill={d.color} />)}
                       </Pie>
@@ -457,8 +459,8 @@ export default function Reports() {
                   </ResponsiveContainer>
                   <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 4 }}>
                     {[
-                      { l: "Completed",   v: tasksDone,    c: "#15803d" },
-                      { l: "In Progress", v: tasksInProg,  c: "#1d4ed8" },
+                      { l: "Completed",   v: tasksDone,    c: tk.grn },
+                      { l: "In Progress", v: tasksInProg,  c: tk.acc },
                       { l: "Pending",     v: tasksPending, c: "#9ca3af" },
                     ].map(t => (
                       <div key={t.l} style={{ textAlign: "center" }}>
@@ -468,10 +470,10 @@ export default function Reports() {
                     ))}
                   </div>
                   {tasks.length > 0 && (
-                    <div style={{ marginTop: 10, background: "#f9fafb", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#374151" }}>
+                    <div style={{ marginTop: 10, background: tk.surf2, borderRadius: 8, padding: "8px 12px", fontSize: 12, color: tk.tx2 }}>
                       <span style={{ fontWeight: 700 }}>{Pct(tasksDone, tasks.length)}</span> of tasks completed
                       <div style={{ marginTop: 4, background: "#e5e7eb", borderRadius: 4, height: 6 }}>
-                        <div style={{ width: Pct(tasksDone, tasks.length), height: 6, borderRadius: 4, background: "#15803d" }} />
+                        <div style={{ width: Pct(tasksDone, tasks.length), height: 6, borderRadius: 4, background: tk.grn }} />
                       </div>
                     </div>
                   )}
@@ -485,7 +487,7 @@ export default function Reports() {
               {recentExp.length === 0 ? <Empty icon={IReceipt} text="No expenses recorded yet." /> : (
                 recentExp.map((e, i) => (
                   <div key={e.id || i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < recentExp.length - 1 ? "1px solid #f3f4f6" : "none" }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: "#f5f3ff", color: P.expense, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, fontWeight: 700 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: tk.vioL, color: P.expense, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, fontWeight: 700 }}>
                       {(e.category || "?").charAt(0)}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -507,10 +509,10 @@ export default function Reports() {
               <CardTitle icon={IRupee}>Invoice & Payment Status</CardTitle>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px,1fr))", gap: 10, marginBottom: 16 }}>
                 {[
-                  { l: "Total Invoiced", v: Rs(tInv),        c: "#111827", bg: "#f8fafc" },
-                  { l: "Paid",           v: Rs(tPaid),        c: P.green,   bg: "#f0fdf4" },
-                  { l: "Outstanding",    v: Rs(tOutstanding), c: tOutstanding > 0 ? P.invoice : P.green, bg: tOutstanding > 0 ? "#fef2f2" : "#f0fdf4" },
-                  { l: "Invoices",       v: inv.length,       c: "#1d4ed8", bg: "#eff6ff" },
+                  { l: "Total Invoiced", v: Rs(tInv),        c: tk.tx,      bg: tk.surf2 },
+                  { l: "Paid",           v: Rs(tPaid),        c: P.green,   bg: tk.grnL },
+                  { l: "Outstanding",    v: Rs(tOutstanding), c: tOutstanding > 0 ? P.invoice : P.green, bg: tOutstanding > 0 ? tk.redL : tk.grnL },
+                  { l: "Invoices",       v: inv.length,       c: tk.acc,    bg: tk.accL },
                 ].map(s => (
                   <div key={s.l} style={{ background: s.bg, borderRadius: 10, padding: "12px 14px" }}>
                     <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 600, marginBottom: 4, textTransform: "uppercase", letterSpacing: ".05em" }}>{s.l}</div>
@@ -523,7 +525,7 @@ export default function Reports() {
               {(() => {
                 const byStatus = [
                   { name: "Paid",           count: inv.filter(i => i.status === "Paid").length,            color: P.green  },
-                  { name: "Partially Paid", count: inv.filter(i => i.status === "Partially Paid").length,  color: "#f59e0b" },
+                  { name: "Partially Paid", count: inv.filter(i => i.status === "Partially Paid").length,  color: tk.amb },
                   { name: "Unpaid",         count: inv.filter(i => i.status === "Unpaid").length,           color: P.invoice },
                 ].filter(x => x.count > 0);
 
@@ -541,7 +543,7 @@ export default function Reports() {
               <div style={{ display: "flex", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
                 {[
                   { c: P.green,   l: "Paid" },
-                  { c: "#f59e0b", l: "Partially Paid" },
+                  { c: tk.amb, l: "Partially Paid" },
                   { c: P.invoice, l: "Unpaid" },
                 ].map(s => (
                   <div key={s.l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#6b7280" }}>
