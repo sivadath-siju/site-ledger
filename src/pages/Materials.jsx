@@ -30,7 +30,9 @@ export default function Materials() {
 
 
   const submit = async () => {
+    console.log("submit fired", { matId, mats: mats.map(x => x.id), qty, type });
     const m = mats.find(x => x.id === matId);
+    console.log("found material:", m);
     if (!m) return;
     const q = parseFloat(qty);
     if (!q || q <= 0) return setMsg({ t: "err", s: "Enter a valid quantity." });
