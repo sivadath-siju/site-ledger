@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
 import { Card, CardTitle, Btn, Alert, Field, Select, Input, FormGrid, TableWrap, Badge, Sheet } from "../components/Primitives";
@@ -21,6 +21,13 @@ export default function Materials() {
 
   // Log filter
   const [logMat, setLogMat] = useState("all");
+  // Sync matId when mats loads from context
+  useEffect(() => {
+    if (mats.length > 0 && !mats.find(x => x.id === matId)) {
+      setMatId(mats[0].id);
+    }
+  }, [mats]);
+
 
   const submit = async () => {
     const m = mats.find(x => x.id === matId);
