@@ -23,7 +23,7 @@ export default function Materials() {
   const [logMat, setLogMat] = useState("all");
   // Sync matId when mats loads from context
   useEffect(() => {
-    if (mats.length > 0 && !mats.find(x => x.id === matId)) {
+    if (mats.length > 0 && !mats.find(x => String(x.id) === String(matId))) {
       setMatId(mats[0].id);
     }
   }, [mats]);
@@ -31,15 +31,16 @@ export default function Materials() {
 
   const submit = async () => {
     console.log("submit fired", { matId, mats: mats.map(x => x.id), qty, type });
-    const m = mats.find(x => x.id === matId);
+    const m = mats.find(x => String(x.id) === String(matId));
     console.log("found material:", m);
+    console.log("mat ids:", mats.map(x => x.id));
     if (!m) return;
     const q = parseFloat(qty);
     if (!q || q <= 0) return setMsg({ t: "err", s: "Enter a valid quantity." });
     if (type === "out" && q > m.stock) return setMsg({ t: "err", s: `Only ${m.stock} ${m.unit} available.` });
     try {
       const res = await API.recordMatMovement({ material_id: matId, type, quantity: q, note, supplier: note, date });
-      setMats(prev => prev.map(x => x.id === matId ? { ...x, stock: type === "in" ? x.stock + q : x.stock - q } : x));
+      setMats(prev => prev.map(x => String(x.id) === String(matId) ? { ...x, stock: type === "in" ? x.stock + q : x.stock - q } : x));
       setMatLogs(prev => [{ id: res.id, date: res.date || date, material: m.name, material_id: matId, unit: m.unit, type, qty: q, note, by: user.name }, ...prev]);
       setMsg({ t: "ok", s: `Stock ${type === "in" ? "received" : "issued"} — ${Nf(q)} ${m.unit} on ${res.date || date}.` });
       setQty(""); setNote("");
@@ -81,7 +82,7 @@ export default function Materials() {
         <CardTitle icon={IArrows}>Record Movement</CardTitle>
         {msg && <Alert type={msg.t}>{msg.t === "ok" ? <ICheckCirc size={14} /> : <IXCircle size={14} />}{msg.s}</Alert>}
         <Field label="Material">
-          <Select value={matId} onChange={e => setMatId(parseInt(e.target.value))}>
+          <Select value={matId} onChange={e => setMatId(e.target.value)}>
             {mats.map(m => <option key={m.id} value={m.id}>{m.name} — {Nf(m.stock)} {m.unit}</option>)}
           </Select>
         </Field>
