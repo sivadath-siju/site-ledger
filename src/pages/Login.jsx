@@ -3,6 +3,7 @@ import { useApp } from "../context/AppCtx";
 import * as API from "../api";
 import { IXCircle } from "../icons/Icons";
 import { Alert, Field, Input, Btn } from "../components/Primitives";
+import LoadingPage from "../components/LoadingPage";
 
 const IHome = ({ size = 28, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
@@ -32,6 +33,8 @@ export default function Login({ onLogin }) {
   };
 
   const handleKey = (e) => { if (e.key === "Enter") submit(); };
+
+  if (loading) return <LoadingPage />;
 
   return (
     <div style={{

@@ -16,6 +16,7 @@ import BalanceSheet from "./pages/BalanceSheet";
 import Workflow     from "./pages/Workflow";
 import Settings     from "./pages/Settings";
 import CalendarPage from "./pages/CalendarPage";
+import LoadingPage  from "./components/LoadingPage";
 
 const DESKTOP = 768;
 
@@ -92,7 +93,11 @@ export default function App() {
 
   useEffect(() => { if (user) loadAllData(); }, [user, loadAllData]);
 
-  if (appLoading) return null;
+  if (appLoading) return (
+    <AppCtx.Provider value={{ tk }}>
+      <LoadingPage />
+    </AppCtx.Provider>
+  );
 
   if (!user) return (
     <AppCtx.Provider value={{ tk }}>
