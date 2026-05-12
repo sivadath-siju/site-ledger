@@ -120,17 +120,17 @@ export default function TodayAttendance({ att, setAtt, workers }) {
             <div key={rec.id} style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "9px 0", borderBottom: i < todayRecords.length - 1 ? `1px solid ${tk.bdr}` : "none",
-              background: isSub ? "#fffbeb" : "transparent",
+              background: isSub ? tk.ambL : "transparent",
             }}>
               {/* Avatar */}
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: isSub ? "#fde68a" : tk.accL, color: isSub ? "#92400e" : tk.acc, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: isSub ? tk.amb + "33" : tk.accL, color: isSub ? tk.amb : tk.acc, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                 {(rec.name || "?").charAt(0).toUpperCase()}
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 5, color: tk.tx }}>
                   {rec.name}
-                  {isSub && <span style={{ fontSize: 9, color: "#92400e", fontWeight: 500 }}>sub</span>}
+                  {isSub && <span style={{ fontSize: 9, color: tk.amb, fontWeight: 500 }}>sub</span>}
                 </div>
                 <div style={{ fontSize: 11, color: tk.tx3 }}>
                   {rec.hours || 8}h{(rec.ot || rec.ot_hours || 0) > 0 ? ` + ${rec.ot || rec.ot_hours}h OT` : ""}
@@ -141,10 +141,10 @@ export default function TodayAttendance({ att, setAtt, workers }) {
               <Badge color={statusColor(status)}>{statusLabel(status)}</Badge>
 
               <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 13, color: isSub ? "#92400e" : tk.tx }}>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 13, color: isSub ? tk.amb : tk.tx }}>
                   {Rs(wage)}
                 </div>
-                {isSub && <div style={{ fontSize: 9, color: "#9ca3af" }}>ref</div>}
+                {isSub && <div style={{ fontSize: 9, color: tk.tx3 }}>ref</div>}
               </div>
 
               {/* Edit/Delete — today only */}
@@ -152,8 +152,8 @@ export default function TodayAttendance({ att, setAtt, workers }) {
                 <button onClick={() => openEdit(rec)} style={{ background: tk.surf2, border: `1px solid ${tk.bdr}`, borderRadius: 7, padding: "4px 7px", cursor: "pointer", color: tk.tx2, display: "flex", alignItems: "center", gap: 3, fontSize: 11 }}>
                   <IEdit size={11} color={tk.tx2} /> Edit
                 </button>
-                <button onClick={() => deleteRecord(rec)} style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 7, padding: "4px 7px", cursor: "pointer", color: "#b91c1c", display: "flex", alignItems: "center" }}>
-                  <ITrash size={11} color="#b91c1c" />
+                <button onClick={() => deleteRecord(rec)} style={{ background: tk.redL, border: `1px solid ${tk.red}44`, borderRadius: 7, padding: "4px 7px", cursor: "pointer", color: tk.red, display: "flex", alignItems: "center" }}>
+                  <ITrash size={11} color={tk.red} />
                 </button>
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function TodayAttendance({ att, setAtt, workers }) {
           return (
             <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", padding: "8px 10px", background: tk.surf2, borderRadius: 8, fontSize: 12 }}>
               <span style={{ fontWeight: 600, color: tk.tx }}>Today's direct labour total</span>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#1d4ed8" }}>{Rs(directTotal)}</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.acc }}>{Rs(directTotal)}</span>
             </div>
           );
         })()}

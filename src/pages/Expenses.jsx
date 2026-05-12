@@ -54,9 +54,9 @@ function BillWidget({ expenseId, existingPath, onUploaded, tk }) {
   return (
     <div style={{ marginTop: 8 }}>
       {billPath && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0", marginBottom: 6 }}>
-          <IFile size={13} color="#15803d" />
-          <span style={{ fontSize: 11, color: "#15803d", fontWeight: 600, flex: 1 }}>Bill attached</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: tk.grnL, borderRadius: 8, border: `1px solid ${tk.grn}33`, marginBottom: 6 }}>
+          <IFile size={13} color={tk.grn} />
+          <span style={{ fontSize: 11, color: tk.grn, fontWeight: 600, flex: 1 }}>Bill attached</span>
           <button
             type="button"
             onClick={() => API.openBillFile(billPath)}

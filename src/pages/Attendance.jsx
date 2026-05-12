@@ -11,18 +11,19 @@ const today      = () => new Date().toISOString().split("T")[0];
 const monthStart = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-01`; };
 const Rs         = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
 
-const TYPE_COLORS = [
-  { bg: "#fffbeb", border: "#fde68a", text: "#92400e", dot: "#f59e0b" },
-  { bg: "#eff6ff", border: "#bfdbfe", text: "#1e40af", dot: "#3b82f6" },
-  { bg: "#f0fdf4", border: "#bbf7d0", text: "#15653a", dot: "#22c55e" },
-  { bg: "#fdf4ff", border: "#e9d5ff", text: "#7e22ce", dot: "#a855f7" },
-  { bg: "#fff7ed", border: "#fed7aa", text: "#9a3412", dot: "#f97316" },
-  { bg: "#f0f9ff", border: "#bae6fd", text: "#0c4a6e", dot: "#0ea5e9" },
+const getTypeColors = (tk) => [
+  { bg: tk.ambL,  border: tk.amb + "33",  text: tk.amb,  dot: tk.amb },
+  { bg: tk.accL,  border: tk.acc + "33",  text: tk.acc,  dot: tk.acc },
+  { bg: tk.grnL,  border: tk.grn + "33",  text: tk.grn,  dot: tk.grn },
+  { bg: tk.vioL,  border: tk.vio + "33",  text: tk.vio,  dot: tk.vio },
+  { bg: tk.redL,  border: tk.red + "33",  text: tk.red,  dot: tk.red },
+  { bg: tk.cyanL, border: tk.cyan + "33", text: tk.cyan, dot: tk.cyan },
 ];
 
 // ── Combined attendance log ───────────────────────────────────
 // Shows both direct workers and subcontractor entries, grouped by date
 function CombinedLog({ directRecords, subRecords, subTypes, onDeleteDirect, onDeleteSub, hasFinance, tk }) {
+  const TYPE_COLORS = getTypeColors(tk);
   // Merge all dates
   const allDates = [...new Set([
     ...directRecords.map(a => a.date),
@@ -58,12 +59,12 @@ function CombinedLog({ directRecords, subRecords, subTypes, onDeleteDirect, onDe
                 {/* Day totals pill */}
                 <div style={{ display: "flex", gap: 5 }}>
                   {dayWages > 0 && (
-                    <span style={{ fontSize: 10, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#15803d", background: "#f0fdf4", padding: "1px 7px", borderRadius: 20, border: "1px solid #bbf7d0" }}>
+                    <span style={{ fontSize: 10, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.grn, background: tk.grnL, padding: "1px 7px", borderRadius: 20, border: `1px solid ${tk.grn}33` }}>
                       {Rs(dayWages)}
                     </span>
                   )}
                   {daySubWorkers > 0 && (
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#92400e", background: "#fffbeb", padding: "1px 7px", borderRadius: 20, border: "1px solid #fde68a" }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: tk.amb, background: tk.ambL, padding: "1px 7px", borderRadius: 20, border: `1px solid ${tk.amb}33` }}>
                       +{daySubWorkers} sub
                     </span>
                   )}
@@ -104,9 +105,9 @@ function CombinedLog({ directRecords, subRecords, subTypes, onDeleteDirect, onDe
                     </span>
                     {hasFinance && (
                       <button onClick={() => onDeleteDirect(a.id)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#d1d5db", padding: 4, borderRadius: 6, display: "flex" }}
-                        onMouseEnter={e => e.currentTarget.style.color = "#b91c1c"}
-                        onMouseLeave={e => e.currentTarget.style.color = "#d1d5db"}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: tk.tx3, padding: 4, borderRadius: 6, display: "flex" }}
+                        onMouseEnter={e => e.currentTarget.style.color = tk.red}
+                        onMouseLeave={e => e.currentTarget.style.color = tk.tx3}
                         title="Delete record">
                         <ITrash size={13} />
                       </button>
@@ -130,13 +131,13 @@ function CombinedLog({ directRecords, subRecords, subTypes, onDeleteDirect, onDe
                     {log.worker_count}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: "#111827", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: tk.tx, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                       {log.subcontractor_name}
                       <span style={{ fontSize: 10, fontWeight: 700, background: c.dot + "22", color: c.text, padding: "1px 7px", borderRadius: 20, border: `1px solid ${c.dot}55` }}>
                         {log.category}
                       </span>
                     </div>
-                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 1 }}>
+                    <div style={{ fontSize: 11, color: tk.tx2, marginTop: 1 }}>
                       {log.worker_count} worker{log.worker_count !== 1 ? "s" : ""} × {Rs(log.rate_per_worker)}/day
                       {log.note ? ` · ${log.note}` : ""}
                     </div>
@@ -144,12 +145,12 @@ function CombinedLog({ directRecords, subRecords, subTypes, onDeleteDirect, onDe
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 800, fontSize: 13, color: c.text }}>{Rs(log.total_cost)}</div>
-                      <div style={{ fontSize: 9, color: "#9ca3af" }}>ref only</div>
+                      <div style={{ fontSize: 9, color: tk.tx3 }}>ref only</div>
                     </div>
                     <button onClick={() => onDeleteSub(log.id)}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: "#d1d5db", padding: 4, borderRadius: 6, display: "flex" }}
-                      onMouseEnter={e => e.currentTarget.style.color = "#b91c1c"}
-                      onMouseLeave={e => e.currentTarget.style.color = "#d1d5db"}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: tk.tx3, padding: 4, borderRadius: 6, display: "flex" }}
+                      onMouseEnter={e => e.currentTarget.style.color = tk.red}
+                      onMouseLeave={e => e.currentTarget.style.color = tk.tx3}
                       title="Delete record">
                       <ITrash size={13} />
                     </button>
@@ -614,7 +615,7 @@ export default function Attendance() {
           <div style={{ textAlign: "center", padding: "20px 0", color: tk.tx3, fontSize: 13 }}>No subcontractors yet.</div>
         ) : (
           [...new Set(subcontractors.map(s => s.type))].map((type, ti) => {
-            const c = TYPE_COLORS[ti % TYPE_COLORS.length];
+            const c = getTypeColors(tk)[ti % getTypeColors(tk).length];
             return (
               <div key={type} style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: c.text, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
@@ -623,10 +624,10 @@ export default function Attendance() {
                 {subcontractors.filter(s => s.type === type).map(s => (
                   <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, marginBottom: 6 }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{s.name}</div>
-                      <div style={{ fontSize: 11, color: "#6b7280" }}>{s.contact_name || "—"}{s.phone ? ` · ${s.phone}` : ""}{s.total_cost > 0 ? ` · ${Rs(s.total_cost)} total` : ""}</div>
+                      <div style={{ fontWeight: 600, fontSize: 13, color: tk.tx }}>{s.name}</div>
+                      <div style={{ fontSize: 11, color: tk.tx2 }}>{s.contact_name || "—"}{s.phone ? ` · ${s.phone}` : ""}{s.total_cost > 0 ? ` · ${Rs(s.total_cost)} total` : ""}</div>
                     </div>
-                    <button onClick={() => deleteSubcontractor(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#d1d5db", padding: 4 }}>
+                    <button onClick={() => deleteSubcontractor(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: tk.tx3, padding: 4 }}>
                       <ITrash size={14} />
                     </button>
                   </div>

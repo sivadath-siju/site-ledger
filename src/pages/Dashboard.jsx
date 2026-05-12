@@ -210,10 +210,10 @@ export default function Dashboard() {
           Workers on Site — Today
           <span style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
             {directWages > 0 && (
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#15803d" }}>{Rs(directWages)}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: tk.grn }}>{Rs(directWages)}</span>
             )}
             {todaySubLogs.length > 0 && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: "#92400e" }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: tk.amb }}>
                 +{todaySubLogs.reduce((s,l)=>s+l.worker_count,0)} sub
               </span>
             )}
@@ -266,7 +266,7 @@ export default function Dashboard() {
               <>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0 8px" }}>
                   <div style={{ height: 1, background: tk.bdr, flex: 1 }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#92400e", textTransform: "uppercase", letterSpacing: ".08em", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: tk.amb, textTransform: "uppercase", letterSpacing: ".08em", whiteSpace: "nowrap" }}>
                     Subcontractor Labour (Reference)
                   </span>
                   <div style={{ height: 1, background: tk.bdr, flex: 1 }} />
@@ -275,7 +275,7 @@ export default function Dashboard() {
                 {todaySubLogs.map(log => (
                   <div key={log.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${tk.bdr}` }}>
                     {/* Worker count as avatar */}
-                    <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, background: "#fef3c7", color: "#92400e", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, background: tk.ambL, color: tk.amb, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13 }}>
                       {log.worker_count}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -285,20 +285,20 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: "#92400e" }}>
+                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: tk.amb }}>
                         {Rs(log.total_cost)}
                       </div>
-                      <div style={{ fontSize: 9, color: "#9ca3af" }}>ref only</div>
+                      <div style={{ fontSize: 9, color: tk.tx3 }}>ref only</div>
                     </div>
                   </div>
                 ))}
 
                 {/* Sub day total */}
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 2px", marginTop: 4 }}>
-                  <span style={{ fontSize: 11, color: "#92400e", fontWeight: 600 }}>
+                  <span style={{ fontSize: 11, color: tk.amb, fontWeight: 600 }}>
                     {todaySubLogs.reduce((s,l)=>s+l.worker_count,0)} subcontract workers total
                   </span>
-                  <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 700, color: "#92400e" }}>
+                  <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 700, color: tk.amb }}>
                     {Rs(todaySubLogs.reduce((s,l)=>s+l.total_cost,0))}
                   </span>
                 </div>

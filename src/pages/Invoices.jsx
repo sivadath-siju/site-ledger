@@ -42,8 +42,8 @@ function BillUploadWidget({ invoiceId, existingPath, onUploaded, tk }) {
   return (
     <div>
       {billPath && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0", marginBottom: 8 }}>
-          <span style={{ fontSize: 11, color: "#15803d", fontWeight: 600, flex: 1 }}>Bill attached</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: tk.grnL, borderRadius: 8, border: `1px solid ${tk.grn}33`, marginBottom: 8 }}>
+          <span style={{ fontSize: 11, color: tk.grn, fontWeight: 600, flex: 1 }}>Bill attached</span>
           <button
             type="button"
             onClick={() => API.openBillFile(billPath)}
@@ -171,8 +171,8 @@ export default function Invoices() {
             <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap", fontSize: 12 }}>
               <span style={{ color: tk.tx3 }}>Showing <strong style={{ color: tk.tx }}>{filtered.length}</strong> invoices</span>
               <span style={{ color: tk.tx3 }}>Total: <strong style={{ color: tk.tx }}>{Rs(totalAmount)}</strong></span>
-              <span style={{ color: "#15803d" }}>Paid: <strong>{Rs(totalPaid)}</strong></span>
-              {totalUnpaid > 0 && <span style={{ color: "#b91c1c" }}>Outstanding: <strong>{Rs(totalUnpaid)}</strong></span>}
+              <span style={{ color: tk.grn }}>Paid: <strong>{Rs(totalPaid)}</strong></span>
+              {totalUnpaid > 0 && <span style={{ color: tk.red }}>Outstanding: <strong>{Rs(totalUnpaid)}</strong></span>}
             </div>
           )}
         </Card>
@@ -235,7 +235,7 @@ export default function Invoices() {
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 800, fontSize: 15, color: tk.tx }}>{Rs(invoice.amount)}</div>
-                  {(invoice.paid || 0) > 0 && <div style={{ fontSize: 11, color: "#15803d" }}>Paid: {Rs(invoice.paid)}</div>}
+                  {(invoice.paid || 0) > 0 && <div style={{ fontSize: 11, color: tk.grn }}>Paid: {Rs(invoice.paid)}</div>}
                 </div>
               </div>
 
@@ -247,8 +247,8 @@ export default function Invoices() {
                   <button
                     type="button"
                     onClick={() => API.openBillFile(invoice.bill_path)}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "#15803d", fontWeight: 600, textDecoration: "none", padding: "2px 7px", background: "#f0fdf4", borderRadius: 5, border: "1px solid #bbf7d0", cursor: "pointer" }}>
-                    <IEye size={11} color="#15803d" /> View Bill
+                    style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: tk.grn, fontWeight: 600, textDecoration: "none", padding: "2px 7px", background: tk.grnL, borderRadius: 5, border: `1px solid ${tk.grn}33`, cursor: "pointer" }}>
+                    <IEye size={11} color={tk.grn} /> View Bill
                   </button>
                 ) : (
                   <button onClick={() => { setActiveInv(invoice); setUploadSheet(true); }}
