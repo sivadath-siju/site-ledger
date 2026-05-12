@@ -1,13 +1,6 @@
 import React from "react";
 import { useApp } from "../context/AppCtx";
-
-const IHome = ({ size = 48, color = "currentColor" }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
-    fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-    <polyline points="9 22 9 12 15 12 15 22"/>
-  </svg>
-);
+import loadingImg from "./loading.png";
 
 export default function LoadingPage() {
   const { tk } = useApp();
@@ -34,7 +27,7 @@ export default function LoadingPage() {
         {`
           @keyframes pulse {
             0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
+            50% { transform: scale(1.02); opacity: 0.95; }
             100% { transform: scale(1); opacity: 1; }
           }
           @keyframes loadingBar {
@@ -52,18 +45,16 @@ export default function LoadingPage() {
         gap: 20,
         animation: "pulse 2s infinite ease-in-out"
       }}>
-        <div style={{
-          width: 80,
-          height: 80,
-          borderRadius: 22,
-          background: accent,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
-        }}>
-          <IHome size={40} color="#fff" />
-        </div>
+        <img 
+          src={loadingImg} 
+          alt="Loading..." 
+          style={{ 
+            width: "300px", 
+            maxWidth: "80vw", 
+            borderRadius: "16px",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.1)"
+          }} 
+        />
         
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 26, fontWeight: 800, color: textColor, letterSpacing: "-.6px" }}>
