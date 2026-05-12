@@ -62,7 +62,7 @@ const BOTTOM_NAV_ALL = [
 const BRAND_LOGO = "/logo_banner.png";
 
 export function Sidebar({ open, onClose, desktop = false }) {
-  const { tk, page, setPage, mats, inv, hasFinance } = useApp();
+  const { tk, theme, page, setPage, mats, inv, hasFinance } = useApp();
   const lsc = mats.filter(m => m.stock <= m.min).length;
   const pi  = inv.filter(i => i.status !== "Paid").length;
   const navigate = id => { setPage(id); if (!desktop) onClose(); };
@@ -71,7 +71,12 @@ export function Sidebar({ open, onClose, desktop = false }) {
     <div style={{ width: 260, height: "100%", background: tk.surf, borderRight: `1px solid ${tk.bdr}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
       {/* Logo */}
       <div style={{ minHeight: 56, display: "flex", alignItems: "center", padding: "8px 18px", borderBottom: `1px solid ${tk.bdr}`, flexShrink: 0, gap: 9 }}>
-        <img src={BRAND_LOGO} alt="Ciel Homes" style={{ display: "block", height: 34, width: "auto", objectFit: "contain" }} />
+        <img src={BRAND_LOGO} alt="Ciel Homes" style={{ 
+          display: "block", height: 34, width: "auto", objectFit: "contain",
+          background: theme === "dark" ? "#fff" : "transparent",
+          padding: theme === "dark" ? "4px 8px" : 0,
+          borderRadius: 8
+        }} />
         {!desktop && <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8 }}><IX size={18} color={tk.tx3} /></button>}
       </div>
 
@@ -128,11 +133,16 @@ export function Sidebar({ open, onClose, desktop = false }) {
 }
 
 export function Topbar({ onMenuClick }) {
-  const { tk, user } = useApp();
+  const { tk, theme, user } = useApp();
   return (
     <div style={{ height: 54, background: tk.surf, display: "flex", alignItems: "center", padding: "0 14px", gap: 10, flexShrink: 0, zIndex: 100, boxShadow: "0 1px 0 rgba(0,0,0,.07), 0 2px 8px rgba(0,0,0,.04)" }}>
       <button onClick={onMenuClick} style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: 8 }}><IMenu size={22} color={tk.tx} /></button>
-      <img src={BRAND_LOGO} alt="Ciel Homes" style={{ display: "block", height: 28, width: "auto", objectFit: "contain" }} />
+      <img src={BRAND_LOGO} alt="Ciel Homes" style={{ 
+        display: "block", height: 28, width: "auto", objectFit: "contain",
+        background: theme === "dark" ? "#fff" : "transparent",
+        padding: theme === "dark" ? "3px 7px" : 0,
+        borderRadius: 7
+      }} />
       <div style={{ marginLeft: "auto" }}>
         <div style={{ width: 34, height: 34, borderRadius: "50%", background: tk.acc, color: "#fff", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {user?.ini || "U"}
