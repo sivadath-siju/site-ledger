@@ -16,6 +16,13 @@ const ICalendar = ({ size = 16, color = "currentColor" }) => (
     <line x1="3" y1="10" x2="21" y2="10"/>
   </svg>
 );
+const IDatabase = ({ size = 16, color = "currentColor" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+  </svg>
+);
 
 const NAV_SECTIONS = [
   { section: "Overview", items: [
@@ -39,6 +46,7 @@ const NAV_SECTIONS = [
   ]},
   { section: "Account", items: [
     { id: "settings",     label: "Settings",            Icon: ISettings   },
+    { id: "adminmaster",  label: "Master Control",      Icon: IDatabase,  adminOnly: true   },
   ]},
 ];
 
@@ -62,7 +70,7 @@ const BOTTOM_NAV_ALL = [
 const BRAND_LOGO = "/logo_banner.png";
 
 export function Sidebar({ open, onClose, desktop = false }) {
-  const { tk, theme, page, setPage, mats, inv, hasFinance } = useApp();
+  const { tk, theme, page, setPage, mats, inv, hasFinance, user } = useApp();
   const lsc = mats.filter(m => m.stock <= m.min).length;
   const pi  = inv.filter(i => i.status !== "Paid").length;
   const navigate = id => { setPage(id); if (!desktop) onClose(); };
@@ -87,6 +95,7 @@ export function Sidebar({ open, onClose, desktop = false }) {
             <div style={{ fontSize: 9, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".12em", padding: "12px 18px 4px" }}>{sec.section}</div>
             {sec.items.map(item => {
               if (item.financeOnly && !hasFinance) return null;
+              if (item.adminOnly && user?.role !== "Administrator") return null;
               const active   = page === item.id;
               const isLedger = item.financeOnly;
               const ac = isLedger ? ORANGE   : tk.acc;

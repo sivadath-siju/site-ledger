@@ -163,3 +163,11 @@ export const getGrandTotals   = (p = {}) => get(`/reports/grand-totals?${new URL
 export const getBalanceSheet  = (p = {}) => get(`/reports/balance-sheet?${new URLSearchParams(p)}`);
 export const getVendorLedger  = (id, p = {}) => get(`/reports/vendor-ledger/${id}?${new URLSearchParams(p)}`);
 export const getLabourLedger  = (p = {}) => get(`/reports/labour-ledger?${new URLSearchParams(p)}`);
+
+// ADMIN
+export const adminGetTables = () => get("/admin/tables");
+export const adminGetSchema = table => get(`/admin/tables/${table}/schema`);
+export const adminGetData   = (table, p = {}) => get(`/admin/tables/${table}/data?${new URLSearchParams(p)}`);
+export const adminAddData   = (table, d) => post(`/admin/tables/${table}/data`, d);
+export const adminUpdateData= (table, id, d) => patch(`/admin/tables/${table}/data/${id}`, d);
+export const adminDeleteData= (table, id) => del(`/admin/tables/${table}/data/${id}`);

@@ -16,6 +16,7 @@ import BalanceSheet from "./pages/BalanceSheet";
 import Workflow     from "./pages/Workflow";
 import Settings     from "./pages/Settings";
 import CalendarPage from "./pages/CalendarPage";
+import AdminMaster  from "./pages/AdminMaster";
 import LoadingPage  from "./components/LoadingPage";
 
 const DESKTOP = 768;
@@ -29,6 +30,7 @@ const PAGE_LABELS = {
   expenses: "Expenses", tasks: "Task Tracker", invoices: "Invoices & Payables",
   vendors: "Vendors", reports: "Reports", balancesheet: "Balance Sheet",
   workflow: "Daily Workflow", settings: "Settings", calendar: "Calendar Log",
+  adminmaster: "Master Control",
 };
 
 export default function App() {
@@ -124,6 +126,7 @@ export default function App() {
       case "workflow":     return <Workflow />;
       case "settings":     return <Settings />;
       case "calendar":     return <CalendarPage />;
+      case "adminmaster":  return user?.role === "Administrator" ? <AdminMaster /> : <Dashboard />;
       default:             return <Dashboard />;
     }
   };
