@@ -5,6 +5,11 @@ import { IXCircle } from "../icons/Icons";
 import { Alert, Field, Input, Btn } from "../components/Primitives";
 import LoadingPage from "../components/LoadingPage";
 
+// The login card is always a light "frosted glass" panel over the photo, so its
+// fields use fixed high-contrast colours regardless of light/dark theme.
+const LOGIN_LABEL = { color: "#1a2e1a" };
+const LOGIN_INPUT = { background: "rgba(255,255,255,.6)", border: "1px solid rgba(0,0,0,.28)", color: "#0a1a0a", colorScheme: "light" };
+
 const IHome = ({ size = 28, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
     fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -38,7 +43,7 @@ export default function Login({ onLogin }) {
 
   return (
     <div style={{
-      minHeight: "100vh", display: "flex",
+      minHeight: "100dvh", display: "flex",
       alignItems: "center", justifyContent: "center",
       background: "linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://cielhomes.in/Images/garden_lush.jpg') center/cover no-repeat",
       padding: 16,
@@ -81,12 +86,12 @@ export default function Login({ onLogin }) {
 
           {err && <Alert type="err"><IXCircle size={14} />{err}</Alert>}
 
-          <Field label="Username">
-            <Input style={{ background: "rgba(0,0,0,0.1)", border: "1.5px solid rgba(0,0,0,0.2)", color: "#0a1a0a" }} value={u} onChange={e => setU(e.target.value)} placeholder="your.username" autoComplete="username" onKeyDown={handleKey} />
+          <Field label="Username" labelStyle={LOGIN_LABEL}>
+            <Input style={LOGIN_INPUT} value={u} onChange={e => setU(e.target.value)} placeholder="your.username" autoComplete="username" onKeyDown={handleKey} />
           </Field>
           <div style={{ marginBottom: 22 }}>
-            <Field label="Password">
-              <Input style={{ background: "rgba(0,0,0,0.1)", border: "1.5px solid rgba(0,0,0,0.2)", color: "#0a1a0a" }} type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" autoComplete="current-password" onKeyDown={handleKey} />
+            <Field label="Password" labelStyle={LOGIN_LABEL}>
+              <Input style={LOGIN_INPUT} type="password" value={p} onChange={e => setP(e.target.value)} placeholder="••••••••" autoComplete="current-password" onKeyDown={handleKey} />
             </Field>
           </div>
 
@@ -97,8 +102,8 @@ export default function Login({ onLogin }) {
         </div>
 
         {/* Credit */}
-        <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: "rgba(255,255,255,.35)" }}>
-          Software made by <span style={{ color: "rgba(255,255,255,.6)", fontWeight: 600 }}>Sivadath Siju</span>
+        <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: "rgba(255,255,255,.8)", textShadow: "0 1px 3px rgba(0,0,0,.6)" }}>
+          Software made by <span style={{ color: "#fff", fontWeight: 600 }}>Sivadath Siju</span>
         </div>
       </div>
     </div>

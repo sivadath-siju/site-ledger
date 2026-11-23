@@ -30,8 +30,8 @@ export default function Tasks() {
   return (
     <div>
       <div style={{ marginBottom: 18, animation: "fadeUp .25s ease" }}>
-        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Task Tracker</div>
-        <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Site work orders and assignments</div>
+        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.4px" }}>Task Tracker</div>
+        <div style={{ fontSize: 13, color: tk.tx2, marginTop: 2 }}>Site work orders and assignments</div>
       </div>
       <Card delay={.05}>
         <CardTitle icon={IPlus}>New Task</CardTitle>
@@ -53,7 +53,7 @@ export default function Tasks() {
       </Card>
       <Card delay={.1}>
         <CardTitle icon={ICheckSq} action={
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             {["All", "Pending", "In Progress", "Completed"].map(f => (
               <Btn key={f} variant={filter === f ? "primary" : "secondary"} small onClick={() => setFilter(f)}>{f}</Btn>
             ))}
@@ -62,7 +62,7 @@ export default function Tasks() {
         {filtered.length === 0 ? <Empty icon={ICheckSq} text="No tasks found." /> : (
           <TableWrap>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 400 }}>
-              <thead><tr>{["Task", "Assigned", "Priority", "Status", ""].map(h => <th key={h} style={{ textAlign: "left", padding: "9px 10px", fontSize: 10, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".08em", borderBottom: `1.5px solid ${tk.bdr}`, background: tk.surf2 }}>{h}</th>)}</tr></thead>
+              <thead><tr>{["Task", "Assigned", "Priority", "Status", ""].map(h => <th key={h} style={{ textAlign: "left", padding: "9px 10px", fontSize: 11, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".08em", borderBottom: `1.5px solid ${tk.bdr}`, background: tk.surf2 }}>{h}</th>)}</tr></thead>
               <tbody>
                 {filtered.map(t => (
                   <tr key={t.id}>
@@ -71,7 +71,7 @@ export default function Tasks() {
                     <td style={{ padding: "10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}` }}><Badge color={t.pri === "High" ? "red" : t.pri === "Medium" ? "amber" : "gray"}>{t.pri}</Badge></td>
                     <td style={{ padding: "10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}` }}><Badge color={t.status === "Completed" ? "green" : t.status === "In Progress" ? "blue" : "gray"}>{t.status}</Badge></td>
                     <td style={{ padding: "10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}` }}>
-                      <div style={{ display: "flex", gap: 4 }}>
+                      <div style={{ display: "flex", gap: 8 }}>
                         {t.status !== "Completed" && <Btn variant="secondary" small onClick={async () => { try { await API.updateTask(t.id, { status: "Completed" }); setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: "Completed" } : x)); } catch (e) { alert(e.message); } }}>Done</Btn>}
                         {t.status === "Pending" && <Btn variant="ghost" small onClick={async () => { try { await API.updateTask(t.id, { status: "In Progress" }); setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: "In Progress" } : x)); } catch (e) { alert(e.message); } }}>Start</Btn>}
                         <Btn variant="ghost" small onClick={async () => { try { await API.deleteTask(t.id); setTasks(prev => prev.filter(x => x.id !== t.id)); } catch (e) { alert(e.message); } }} style={{ padding: "5px 8px" }}><ITrash size={12} /></Btn>

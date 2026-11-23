@@ -3,6 +3,7 @@ import { useApp } from "../context/AppCtx";
 import * as API from "../api";
 import { Card, CardTitle, Btn, Empty } from "../components/Primitives";
 import { IRupee, IUsers, IPackage, IReceipt, ITrending, IPieChart, ITag, IActivity } from "../icons/Icons";
+import { toLocalISO } from "../utils/dates";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line, AreaChart, Area,
@@ -38,7 +39,7 @@ function Tile({ label, value, sub, color, delay = 0, tk }) {
   return (
     <div style={{ background: tk.surf, border: `1px solid ${tk.bdr}`, borderRadius: 12, padding: "14px 16px", animation: `fadeUp .3s ease ${delay}s both` }}>
       <div style={{ fontSize: 11, color: tk.tx2, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono',monospace", color: color || tk.tx, letterSpacing: "-.3px" }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", color: color || tk.tx, letterSpacing: "-.3px" }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: tk.tx3, marginTop: 2 }}>{sub}</div>}
     </div>
   );
@@ -51,7 +52,7 @@ function HBar({ label, value, max, color, total, right, tk }) {
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
         <span style={{ color: tk.tx2, fontWeight: 500 }}>{label}</span>
-        <span style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: color }}>{right || Rs(value)}</span>
+        <span style={{ fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontWeight: 700, color: color }}>{right || Rs(value)}</span>
       </div>
       <div style={{ background: tk.surf3, borderRadius: 6, height: 8, overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, height: 8, borderRadius: 6, background: color, transition: "width .6s cubic-bezier(.4,0,.2,1)" }} />
@@ -98,7 +99,7 @@ export default function Reports() {
   // 7-day daily spend
   const last7 = Array.from({ length: 7 }, (_, i) => {
     const d  = new Date(); d.setDate(d.getDate() - i);
-    const ds = d.toISOString().split("T")[0];
+    const ds = toLocalISO(d);
     return {
       date:     d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }),
       labour:   directAtt.filter(a => a.date === ds).reduce((s, a) => s + (a.total || 0), 0),
@@ -109,7 +110,7 @@ export default function Reports() {
   // 30-day daily spend for line chart
   const last30 = Array.from({ length: 30 }, (_, i) => {
     const d  = new Date(); d.setDate(d.getDate() - (29 - i));
-    const ds = d.toISOString().split("T")[0];
+    const ds = toLocalISO(d);
     const labour   = directAtt.filter(a => a.date === ds).reduce((s, a) => s + (a.total || 0), 0);
     const expenses = exp.filter(e => e.date === ds).reduce((s, e) => s + e.amount, 0);
     return { date: d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }), labour, expenses, total: labour + expenses };
@@ -165,8 +166,8 @@ export default function Reports() {
     <div>
       {/* ── Header ── */}
       <div style={{ marginBottom: 20, animation: "fadeUp .25s ease" }}>
-        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Reports & Analytics</div>
-        <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>
+        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.4px" }}>Reports & Analytics</div>
+        <div style={{ fontSize: 13, color: tk.tx2, marginTop: 2 }}>
           Ciel Homes — complete project overview · {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
         </div>
       </div>
@@ -182,9 +183,9 @@ export default function Reports() {
       </div>
 
       {!hasData && (
-        <div style={{ textAlign: "center", padding: "60px 20px", color: "#9ca3af" }}>
+        <div style={{ textAlign: "center", padding: "60px 20px", color: tk.tx2 }}>
           <IPieChart size={48} style={{ marginBottom: 16, opacity: .3 }} />
-          <div style={{ fontSize: 16, fontWeight: 600, color: "#6b7280", marginBottom: 8 }}>No data to display yet</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: tk.tx, marginBottom: 8 }}>No data to display yet</div>
           <div style={{ fontSize: 13 }}>Start adding attendance, expenses and materials to see reports.</div>
         </div>
       )}
@@ -214,17 +215,17 @@ export default function Reports() {
                       <div key={d.name} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12 }}>
                           <span style={{ width: 10, height: 10, borderRadius: 3, background: d.color, display: "inline-block", flexShrink: 0 }} />
-                          <span style={{ color: "#374151" }}>{d.name}</span>
+                          <span style={{ color: tk.tx2 }}>{d.name}</span>
                         </div>
                         <div style={{ textAlign: "right" }}>
-                          <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 700, color: d.color }}>{Rs(d.value)}</span>
-                          <span style={{ fontSize: 10, color: "#9ca3af", marginLeft: 6 }}>{Pct(d.value, tL + tE)}</span>
+                          <span style={{ fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontSize: 12, fontWeight: 700, color: d.color }}>{Rs(d.value)}</span>
+                          <span style={{ fontSize: 11, color: tk.tx3, marginLeft: 6 }}>{Pct(d.value, tL + tE)}</span>
                         </div>
                       </div>
                     ))}
-                    <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8, marginTop: 4, display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "#111827" }}>Grand Total</span>
-                      <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 800, color: "#111827" }}>{Rs(tL + tE)}</span>
+                    <div style={{ borderTop: `1px solid ${tk.bdr}`, paddingTop: 8, marginTop: 4, display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: tk.tx }}>Grand Total</span>
+                      <span style={{ fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontSize: 13, fontWeight: 800, color: tk.tx }}>{Rs(tL + tE)}</span>
                     </div>
                   </div>
                 </>
@@ -237,9 +238,9 @@ export default function Reports() {
               {last7.some(d => d.labour > 0 || d.expenses > 0) ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={last7} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}k` : `₹${v}`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={tk.bdr} vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: tk.tx3 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: tk.tx3 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}k` : `₹${v}`} />
                     <Tooltip content={<ChartTip tk={tk} />} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Bar dataKey="labour"   name="Labour"   fill={P.labour}  radius={[3,3,0,0]} />
@@ -268,9 +269,9 @@ export default function Reports() {
                       <stop offset="95%" stopColor={P.expense} stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={6} />
-                  <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={tk.bdr} vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: tk.tx3 }} axisLine={false} tickLine={false} interval={6} />
+                  <YAxis tick={{ fontSize: 11, fill: tk.tx3 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v} />
                     <Tooltip content={<ChartTip tk={tk} />} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Area type="monotone" dataKey="labour"   name="Labour"   stroke={P.labour}  fill="url(#gradLabour)"  strokeWidth={2} dot={false} />
@@ -288,15 +289,15 @@ export default function Reports() {
             {/* Labour by category */}
             <Card>
               <CardTitle icon={ITag}>Labour by Category</CardTitle>
-              <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 12 }}>Direct workers only</div>
+              <div style={{ fontSize: 11, color: tk.tx2, marginBottom: 12 }}>Direct workers only</div>
               {labCatData.length === 0 ? <Empty icon={IUsers} text="No categorised labour data." /> : (
                 <>
                   {labCatData.map((c, i) => (
                     <HBar tk={tk} key={c.name} label={c.name} value={c.value} max={labCatData[0].value} color={chartColors[i % chartColors.length]} total={tL} />
                   ))}
-                  <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8, marginTop: 8, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-                    <span style={{ fontWeight: 700, color: "#111827" }}>Total Direct Labour</span>
-                    <span style={{ fontFamily: "'DM Mono',monospace", fontWeight: 800, color: P.labour }}>{Rs(tL)}</span>
+                  <div style={{ borderTop: `1px solid ${tk.bdr}`, paddingTop: 8, marginTop: 8, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                    <span style={{ fontWeight: 700, color: tk.tx }}>Total Direct Labour</span>
+                    <span style={{ fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontWeight: 800, color: P.labour }}>{Rs(tL)}</span>
                   </div>
                 </>
               )}
@@ -310,9 +311,9 @@ export default function Reports() {
                   {expByCat.slice(0, 7).map((c, i) => (
                     <HBar tk={tk} key={c.name} label={c.name} value={c.value} max={expByCat[0].value} color={chartColors[i % chartColors.length]} total={tE} />
                   ))}
-                  <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8, marginTop: 8, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-                    <span style={{ fontWeight: 700, color: "#111827" }}>Total Expenses</span>
-                    <span style={{ fontFamily: "'DM Mono',monospace", fontWeight: 800, color: P.expense }}>{Rs(tE)}</span>
+                  <div style={{ borderTop: `1px solid ${tk.bdr}`, paddingTop: 8, marginTop: 8, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                    <span style={{ fontWeight: 700, color: tk.tx }}>Total Expenses</span>
+                    <span style={{ fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontWeight: 800, color: P.expense }}>{Rs(tE)}</span>
                   </div>
                 </>
               )}
@@ -352,8 +353,8 @@ export default function Reports() {
               {subTotals.bySub?.length > 0 && (
                 <ResponsiveContainer width="100%" height={Math.max(120, subTotals.bySub.length * 38)}>
                   <BarChart data={subTotals.bySub} layout="vertical" margin={{ top: 0, right: 16, left: 8, bottom: 0 }}>
-                    <XAxis type="number" tick={{ fontSize: 10, fill: "#9ca3af" }} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}k` : `₹${v}`} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#374151" }} axisLine={false} tickLine={false} width={120} />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: tk.tx3 }} tickFormatter={v => v >= 1000 ? `₹${(v/1000).toFixed(0)}k` : `₹${v}`} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: tk.tx2 }} axisLine={false} tickLine={false} width={120} />
                     <Tooltip formatter={v => [Rs(v), "Total Wages"]} />
                     <Bar dataKey="total_cost" name="Wages" fill={tk.amb} radius={[0, 4, 4, 0]} />
                   </BarChart>
@@ -372,15 +373,15 @@ export default function Reports() {
               <CardTitle icon={IUsers}>Worker Productivity (Direct)</CardTitle>
               {topWorkers.length === 0 ? <Empty icon={IUsers} text="No attendance data." /> : (
                 topWorkers.map((w, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #f3f4f6" }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${tk.bdr}` }}>
                     <div style={{ width: 28, height: 28, borderRadius: "50%", background: tk.accL, color: P.labour, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
                       {w.name.charAt(0).toUpperCase()}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.name}</div>
-                      <div style={{ fontSize: 10, color: "#6b7280" }}>{w.role} · {w.days} day{w.days !== 1 ? "s" : ""}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: tk.tx, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.name}</div>
+                      <div style={{ fontSize: 11, color: tk.tx2 }}>{w.role} · {w.days} day{w.days !== 1 ? "s" : ""}</div>
                     </div>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: P.labour, whiteSpace: "nowrap" }}>{Rs(w.total)}</div>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontSize: 13, fontWeight: 700, color: P.labour, whiteSpace: "nowrap" }}>{Rs(w.total)}</div>
                   </div>
                 ))
               )}
@@ -411,16 +412,16 @@ export default function Reports() {
                 return (
                   <div key={m.id} style={{ marginBottom: 10 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, marginBottom: 3 }}>
-                      <span style={{ fontWeight: 500, color: "#374151" }}>{m.name}</span>
+                      <span style={{ fontWeight: 500, color: tk.tx2, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ color: "#6b7280" }}>{Nf(m.stock)} {m.unit}</span>
-                        <span style={{ fontSize: 9, fontWeight: 700, background: color + "18", color, padding: "1px 5px", borderRadius: 4, border: `1px solid ${color}33` }}>{statusLabel}</span>
+                        <span style={{ color: tk.tx2, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{Nf(m.stock)} {m.unit}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, background: color + "18", color, padding: "1px 5px", borderRadius: 4, border: `1px solid ${color}33` }}>{statusLabel}</span>
                       </div>
                     </div>
-                    <div style={{ background: "#f3f4f6", borderRadius: 6, height: 6, overflow: "hidden" }}>
+                    <div style={{ background: tk.surf3, borderRadius: 6, height: 6, overflow: "hidden" }}>
                       <div style={{ width: `${pct}%`, height: 6, borderRadius: 6, background: color, transition: "width .6s" }} />
                     </div>
-                    <div style={{ fontSize: 9, color: "#9ca3af", marginTop: 1 }}>Min: {Nf(m.min)} {m.unit}</div>
+                    <div style={{ fontSize: 11, color: tk.tx3, marginTop: 1 }}>Min: {Nf(m.min)} {m.unit}</div>
                   </div>
                 );
               })}
@@ -444,14 +445,14 @@ export default function Reports() {
                         data={[
                           { name: "Completed",  value: tasksDone,    color: tk.grn },
                           { name: "In Progress",value: tasksInProg,  color: tk.acc },
-                          { name: "Pending",    value: tasksPending, color: "#9ca3af" },
+                          { name: "Pending",    value: tasksPending, color: tk.tx3 },
                         ].filter(d => d.value > 0)}
                         cx="50%" cy="50%" innerRadius={36} outerRadius={60} paddingAngle={2} dataKey="value"
                       >
                         {[
                           { name: "Completed",  color: tk.grn },
                           { name: "In Progress",color: tk.acc },
-                          { name: "Pending",    color: "#9ca3af" },
+                          { name: "Pending",    color: tk.tx3 },
                         ].map((d, i) => <Cell key={i} fill={d.color} />)}
                       </Pie>
                       <Tooltip />
@@ -461,18 +462,18 @@ export default function Reports() {
                     {[
                       { l: "Completed",   v: tasksDone,    c: tk.grn },
                       { l: "In Progress", v: tasksInProg,  c: tk.acc },
-                      { l: "Pending",     v: tasksPending, c: "#9ca3af" },
+                      { l: "Pending",     v: tasksPending, c: tk.tx3 },
                     ].map(t => (
                       <div key={t.l} style={{ textAlign: "center" }}>
                         <div style={{ fontSize: 20, fontWeight: 800, color: t.c }}>{t.v}</div>
-                        <div style={{ fontSize: 10, color: "#6b7280" }}>{t.l}</div>
+                        <div style={{ fontSize: 11, color: tk.tx2 }}>{t.l}</div>
                       </div>
                     ))}
                   </div>
                   {tasks.length > 0 && (
                     <div style={{ marginTop: 10, background: tk.surf2, borderRadius: 8, padding: "8px 12px", fontSize: 12, color: tk.tx2 }}>
                       <span style={{ fontWeight: 700 }}>{Pct(tasksDone, tasks.length)}</span> of tasks completed
-                      <div style={{ marginTop: 4, background: "#e5e7eb", borderRadius: 4, height: 6 }}>
+                      <div style={{ marginTop: 4, background: tk.bdr, borderRadius: 4, height: 6 }}>
                         <div style={{ width: Pct(tasksDone, tasks.length), height: 6, borderRadius: 4, background: tk.grn }} />
                       </div>
                     </div>
@@ -486,15 +487,15 @@ export default function Reports() {
               <CardTitle icon={IReceipt}>Recent Expenses</CardTitle>
               {recentExp.length === 0 ? <Empty icon={IReceipt} text="No expenses recorded yet." /> : (
                 recentExp.map((e, i) => (
-                  <div key={e.id || i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < recentExp.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                  <div key={e.id || i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < recentExp.length - 1 ? `1px solid ${tk.bdr}` : "none" }}>
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: tk.vioL, color: P.expense, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, fontWeight: 700 }}>
                       {(e.category || "?").charAt(0)}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.desc}</div>
-                      <div style={{ fontSize: 10, color: "#6b7280" }}>{e.category} · {e.date}</div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: tk.tx, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.desc}</div>
+                      <div style={{ fontSize: 11, color: tk.tx2 }}>{e.category} · {e.date}</div>
                     </div>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: P.expense, whiteSpace: "nowrap" }}>{Rs(e.amount)}</div>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontSize: 13, fontWeight: 700, color: P.expense, whiteSpace: "nowrap" }}>{Rs(e.amount)}</div>
                   </div>
                 ))
               )}
@@ -515,7 +516,7 @@ export default function Reports() {
                   { l: "Invoices",       v: inv.length,       c: tk.acc,    bg: tk.accL },
                 ].map(s => (
                   <div key={s.l} style={{ background: s.bg, borderRadius: 10, padding: "12px 14px" }}>
-                    <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 600, marginBottom: 4, textTransform: "uppercase", letterSpacing: ".05em" }}>{s.l}</div>
+                    <div style={{ fontSize: 11, color: tk.tx2, fontWeight: 600, marginBottom: 4, textTransform: "uppercase", letterSpacing: ".05em" }}>{s.l}</div>
                     <div style={{ fontSize: 18, fontWeight: 800, fontFamily: typeof s.v === "string" ? "'DM Mono',monospace" : undefined, color: s.c }}>{s.v}</div>
                   </div>
                 ))}
@@ -533,10 +534,10 @@ export default function Reports() {
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     {byStatus.map(s => (
                       <div key={s.name} style={{ flex: s.count, minWidth: 20, background: s.color, height: 28, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "#fff" }}>{s.count}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: tk.onAcc }}>{s.count}</span>
                       </div>
                     ))}
-                    <div style={{ fontSize: 11, color: "#6b7280", flexShrink: 0 }}>invoices</div>
+                    <div style={{ fontSize: 11, color: tk.tx2, flexShrink: 0 }}>invoices</div>
                   </div>
                 );
               })()}
@@ -546,7 +547,7 @@ export default function Reports() {
                   { c: tk.amb, l: "Partially Paid" },
                   { c: P.invoice, l: "Unpaid" },
                 ].map(s => (
-                  <div key={s.l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#6b7280" }}>
+                  <div key={s.l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: tk.tx2 }}>
                     <span style={{ width: 10, height: 10, borderRadius: 3, background: s.c, display: "inline-block" }} />
                     {s.l}
                   </div>

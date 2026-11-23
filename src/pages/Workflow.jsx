@@ -3,9 +3,11 @@ import ReactDOM from "react-dom";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
 import { Card, CardTitle, Btn, Alert, Field, FormGrid, Badge } from "../components/Primitives";
-import { IEdit, ISave, ICheckCirc, ICheckSq, ICalendar } from "../icons/Icons";
+import { IEdit, ISave, ICheckCirc, ICheckSq, ICalendar, ISun } from "../icons/Icons";
 
-const todayStr = () => new Date().toISOString().split("T")[0];
+import { toLocalISO } from "../utils/dates";
+import AuthImg from "../components/AuthImg";
+const todayStr = () => toLocalISO();
 
 // ── Image compression ────────────────────────────────────────
 const MAX_PHOTO_DIMENSION = 1600;
@@ -64,7 +66,6 @@ const IChevR   = ({ size = 16, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
 );
 
-const WEATHER_EMOJI = { "Clear":"☀️","Partly Cloudy":"⛅","Overcast":"☁️","Light Rain":"🌧️","Heavy Rain":"⛈️","Extreme Heat":"🌡️" };
 const SAFETY_COLOR  = { "All Clear":"green","Minor Concerns":"amber","Work Stopped":"red" };
 const WEATHER_OPTS  = ["Clear","Partly Cloudy","Overcast","Light Rain","Heavy Rain","Extreme Heat"];
 const SAFETY_OPTS   = ["All Clear","Minor Concerns","Work Stopped"];
@@ -73,7 +74,7 @@ const SAFETY_OPTS   = ["All Clear","Minor Concerns","Work Stopped"];
 // Uses a React Portal so it renders at document.body, escaping ALL
 // stacking contexts (transforms, filters on ancestors).
 // This fixes the iPhone "image behind UI" bug.
-function Lightbox({ url, caption, onClose }) {
+function Lightbox({ url, caption, onClose, tk }) {
   useEffect(() => {
     // Keyboard close
     const onKey = e => { if (e.key === "Escape") onClose(); };
@@ -98,7 +99,7 @@ function Lightbox({ url, caption, onClose }) {
         inset: 0,
         // Use dvh for iOS Safari where 100vh ≠ visible viewport
         height: "100dvh",
-        background: "rgba(0,0,0,.92)",
+        background: `${tk.brand}f5`,
         // zIndex 9999 — sits above navigation, sheets, everything
         zIndex: 9999,
         display: "flex",
@@ -127,25 +128,27 @@ function Lightbox({ url, caption, onClose }) {
       >
         {/* Close button — top right, large tap target for mobile */}
         <button
+          type="button"
+          aria-label="Close photo viewer"
           onPointerDown={e => { e.stopPropagation(); onClose(); }}
           style={{
             position: "absolute",
             top: -8, right: 0,
-            width: 40, height: 40,
+            width: 44, height: 44,
             borderRadius: "50%",
-            background: "rgba(255,255,255,.15)",
-            border: "1.5px solid rgba(255,255,255,.3)",
+            background: tk.surf3,
+            border: `1.5px solid ${tk.bdr2}`,
             cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             zIndex: 1,
             WebkitTapHighlightColor: "transparent",
           }}
         >
-          <IXSmall size={16} color="#fff" />
+          <IXSmall size={16} color={tk.tx} />
         </button>
 
         {/* Photo */}
-        <img
+        <AuthImg
           src={url}
           alt={caption || "Site photo"}
           style={{
@@ -161,7 +164,7 @@ function Lightbox({ url, caption, onClose }) {
         {/* Caption */}
         {caption && (
           <div style={{
-            color: "#e5e7eb", fontSize: 13, textAlign: "center",
+            color: tk.surf, fontSize: 13, textAlign: "center",
             fontWeight: 500, maxWidth: "80vw",
             padding: "4px 0",
           }}>
@@ -170,7 +173,7 @@ function Lightbox({ url, caption, onClose }) {
         )}
 
         {/* Tap hint */}
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,.35)", marginTop: 2 }}>
+        <div style={{ fontSize: 11, color: tk.surf, marginTop: 2 }}>
           Tap anywhere outside to close
         </div>
       </div>
@@ -186,19 +189,19 @@ function PhotoCard({ photo, onDelete, onOpen, tk, readOnly = false }) {
   const url = API.photoUrl(photo);
   return (
     <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", background: tk.surf2, border: `1px solid ${tk.bdr}`, aspectRatio: "4/3" }}>
-      <img src={url} alt={photo.caption || "Site"} onClick={() => onOpen(photo)}
+      <AuthImg src={url} alt={photo.caption || "Site"} onClick={() => onOpen(photo)}
         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", cursor: "pointer" }} loading="lazy" />
       {photo.caption && (
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "rgba(0,0,0,.65)", color: "#fff", fontSize: 10, padding: "4px 7px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: `${tk.brand}d9`, color: tk.surf, fontSize: 11, padding: "4px 7px", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {photo.caption}
         </div>
       )}
-      <button onClick={() => onOpen(photo)} style={{ position: "absolute", top: 5, left: 5, width: 22, height: 22, borderRadius: 6, background: "rgba(0,0,0,.5)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <IExpand size={11} color="#fff" />
+      <button type="button" aria-label="Open photo" onClick={() => onOpen(photo)} style={{ position: "absolute", top: 5, left: 5, width: 44, height: 44, borderRadius: 8, background: `${tk.brand}cc`, border: `1px solid ${tk.bdr2}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <IExpand size={16} color={tk.surf} />
       </button>
       {!readOnly && (
-        <button onClick={() => onDelete(photo.id)} style={{ position: "absolute", top: 5, right: 5, width: 22, height: 22, borderRadius: 6, background: "rgba(185,28,28,.8)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <IXSmall size={11} color="#fff" />
+        <button type="button" aria-label="Delete photo" onClick={() => onDelete(photo.id)} style={{ position: "absolute", top: 5, right: 5, width: 44, height: 44, borderRadius: 8, background: tk.red, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <IXSmall size={16} color={tk.onAcc} />
         </button>
       )}
     </div>
@@ -242,15 +245,15 @@ function PhotoUpload({ date, onUploaded, tk }) {
         <div style={{ fontSize: 11, color: tk.tx2, marginBottom: 8 }}>
           {pending.wasCompressed ? `Compressed ${fmtFileSize(pending.originalSize)} → ${fmtFileSize(pending.compressedSize)}` : `Size: ${fmtFileSize(pending.compressedSize)}`}
         </div>
-        {error && <div style={{ fontSize: 11, color: "#b91c1c", marginBottom: 8, fontWeight: 600 }}>{error}</div>}
+        {error && <div style={{ fontSize: 11, color: tk.red, marginBottom: 8, fontWeight: 600 }}>{error}</div>}
         <Field label="Caption (optional)">
           <input value={caption} onChange={e => setCaption(e.target.value)} placeholder="Describe what's in the photo" autoFocus
             onKeyDown={e => { if (e.key === "Enter") doUpload(); if (e.key === "Escape") { setPending(null); setCaption(""); } }}
-            style={{ width: "100%", padding: "9px 12px", border: `1.5px solid ${tk.bdr}`, borderRadius: 9, fontSize: 13, fontFamily: "'DM Sans',sans-serif", background: tk.surf, color: tk.tx, boxSizing: "border-box" }} />
+            style={{ width: "100%", minHeight: 44, padding: "9px 12px", border: `1.5px solid ${tk.bdr2}`, borderRadius: 10, fontSize: 16, fontFamily: "'DM Sans',sans-serif", background: tk.surf, color: tk.tx, boxSizing: "border-box" }} />
         </Field>
         <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-          <button onClick={() => { setPending(null); setCaption(""); }} style={{ flex: 1, padding: 9, border: `1px solid ${tk.bdr}`, borderRadius: 9, background: "transparent", cursor: "pointer", fontSize: 13, color: tk.tx2, fontFamily: "'DM Sans',sans-serif" }}>Cancel</button>
-          <button onClick={doUpload} disabled={uploading} style={{ flex: 2, padding: 9, border: "none", borderRadius: 9, background: tk.acc, color: "#fff", cursor: uploading ? "default" : "pointer", fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", opacity: uploading ? .7 : 1 }}>
+          <button type="button" onClick={() => { setPending(null); setCaption(""); }} style={{ flex: 1, minHeight: 44, padding: 9, border: `1px solid ${tk.bdr}`, borderRadius: 9, background: "transparent", cursor: "pointer", fontSize: 13, color: tk.tx2, fontFamily: "'DM Sans',sans-serif" }}>Cancel</button>
+          <button type="button" onClick={doUpload} disabled={uploading} style={{ flex: 2, minHeight: 44, padding: 9, border: "none", borderRadius: 9, background: tk.acc, color: tk.onAcc, cursor: uploading ? "default" : "pointer", fontSize: 13, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", opacity: uploading ? .7 : 1 }}>
             {uploading ? "Uploading…" : "Upload Photo"}
           </button>
         </div>
@@ -259,10 +262,10 @@ function PhotoUpload({ date, onUploaded, tk }) {
   }
 
   return (
-    <label style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, padding: "18px 12px", border: `2px dashed ${tk.bdr}`, borderRadius: 12, cursor: "pointer", background: tk.surf2, color: tk.tx3 }}>
-      <IUpload size={22} color={tk.tx3} />
+    <label style={{ display: "flex", minHeight: 44, flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 7, padding: "18px 12px", border: `2px dashed ${tk.bdr2}`, borderRadius: 12, cursor: "pointer", background: tk.surf2, color: tk.tx2 }}>
+      <IUpload size={22} color={tk.tx2} />
       <div style={{ fontSize: 13, fontWeight: 600, color: tk.tx2 }}>{preparing ? "Preparing…" : "Add site photo"}</div>
-      <div style={{ fontSize: 10, color: tk.tx3 }}>JPEG, PNG, WebP · auto-compressed</div>
+      <div style={{ fontSize: 11, color: tk.tx2 }}>JPEG, PNG, WebP · auto-compressed</div>
       <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={handlePick} style={{ display: "none" }} />
     </label>
   );
@@ -317,7 +320,7 @@ function LogEditor({ date, isToday, tk, tasks, setTasks }) {
         <CardTitle icon={IEdit}>
           {isToday ? "Progress Notes" : `Notes for ${date}`}
           {!isToday && (
-            <span style={{ fontSize: 10, color: tk.tx3, fontWeight: 400, marginLeft: 8 }}>
+            <span style={{ fontSize: 11, color: tk.tx2, fontWeight: 400, marginLeft: 8 }}>
               (editing past date)
             </span>
           )}
@@ -325,19 +328,19 @@ function LogEditor({ date, isToday, tk, tasks, setTasks }) {
         <Field label="Observations / Summary">
           <textarea value={log} onChange={e => setLog(e.target.value)}
             placeholder="Work completed, issues encountered, materials used…" rows={4}
-            style={{ width: "100%", padding: "10px 12px", border: `1.5px solid ${tk.bdr}`, borderRadius: 10, fontSize: 13, fontFamily: "'DM Sans',sans-serif", background: tk.surf2, color: tk.tx, resize: "vertical", lineHeight: 1.65, boxSizing: "border-box" }}
+            style={{ width: "100%", minHeight: 44, padding: "10px 12px", border: `1.5px solid ${tk.bdr2}`, borderRadius: 10, fontSize: 16, fontFamily: "'DM Sans',sans-serif", background: tk.surf, color: tk.tx, resize: "vertical", lineHeight: 1.65, boxSizing: "border-box" }}
           />
         </Field>
         <FormGrid>
           <Field label="Weather">
             <select value={weather} onChange={e => setWeather(e.target.value)}
-              style={{ width: "100%", padding: "9px 10px", border: `1.5px solid ${tk.bdr}`, borderRadius: 10, fontSize: 13, background: tk.surf2, color: tk.tx, fontFamily: "'DM Sans',sans-serif" }}>
+              style={{ width: "100%", minHeight: 44, padding: "9px 10px", border: `1.5px solid ${tk.bdr2}`, borderRadius: 10, fontSize: 16, background: tk.surf, color: tk.tx, fontFamily: "'DM Sans',sans-serif" }}>
               {WEATHER_OPTS.map(w => <option key={w}>{w}</option>)}
             </select>
           </Field>
           <Field label="Safety Status">
             <select value={safety} onChange={e => setSafety(e.target.value)}
-              style={{ width: "100%", padding: "9px 10px", border: `1.5px solid ${tk.bdr}`, borderRadius: 10, fontSize: 13, background: tk.surf2, color: tk.tx, fontFamily: "'DM Sans',sans-serif" }}>
+              style={{ width: "100%", minHeight: 44, padding: "9px 10px", border: `1.5px solid ${tk.bdr2}`, borderRadius: 10, fontSize: 16, background: tk.surf, color: tk.tx, fontFamily: "'DM Sans',sans-serif" }}>
               {SAFETY_OPTS.map(s => <option key={s}>{s}</option>)}
             </select>
           </Field>
@@ -349,7 +352,7 @@ function LogEditor({ date, isToday, tk, tasks, setTasks }) {
       <Card style={{ marginBottom: 14 }}>
         <CardTitle icon={ICamera}>
           Site Photos
-          <span style={{ fontSize: 11, fontWeight: 400, color: tk.tx3, marginLeft: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 400, color: tk.tx2, marginLeft: 8 }}>
             {photos.length === 0 ? "No photos" : `${photos.length} photo${photos.length !== 1 ? "s" : ""}`}
           </span>
         </CardTitle>
@@ -358,7 +361,7 @@ function LogEditor({ date, isToday, tk, tasks, setTasks }) {
         ) : (
           <>
             {photos.length > 0 && (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 8, marginBottom: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8, marginBottom: 12 }}>
                 {photos.map(p => (
                   <PhotoCard key={p.id} photo={p}
                     onDelete={deletePhoto}
@@ -369,7 +372,7 @@ function LogEditor({ date, isToday, tk, tasks, setTasks }) {
               </div>
             )}
             <PhotoUpload date={date} onUploaded={p => setPhotos(prev => [...prev, p])} tk={tk} />
-            {lightbox && <Lightbox url={lightbox.url} caption={lightbox.caption} onClose={() => setLightbox(null)} />}
+            {lightbox && <Lightbox url={lightbox.url} caption={lightbox.caption} onClose={() => setLightbox(null)} tk={tk} />}
           </>
         )}
       </Card>
@@ -379,14 +382,14 @@ function LogEditor({ date, isToday, tk, tasks, setTasks }) {
         <Card>
           <CardTitle icon={ICheckSq}>Task Checklist</CardTitle>
           {tasks.length === 0 ? (
-            <div style={{ padding: "14px 0", color: tk.tx3, fontSize: 13, textAlign: "center" }}>No tasks yet. Add them from the Task Tracker page.</div>
+            <div style={{ padding: "14px 0", color: tk.tx2, fontSize: 13, textAlign: "center" }}>No tasks yet. Add them from the Task Tracker page.</div>
           ) : tasks.map(t => (
             <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: `1px solid ${tk.bdr}` }}>
               <input type="checkbox" checked={t.status === "Completed"} onChange={async e => {
                 const s = e.target.checked ? "Completed" : "Pending";
                 try { await API.updateTask(t.id, { status: s }); } catch {}
                 setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: s } : x));
-              }} style={{ width: 17, height: 17, accentColor: tk.acc, cursor: "pointer" }} />
+              }} style={{ width: 20, height: 20, minWidth: 44, minHeight: 44, accentColor: tk.acc, cursor: "pointer" }} />
               <label style={{ fontSize: 13, flex: 1, textDecoration: t.status === "Completed" ? "line-through" : "none", color: t.status === "Completed" ? tk.tx3 : tk.tx }}>
                 {t.title}
               </label>
@@ -405,7 +408,7 @@ function LogEditor({ date, isToday, tk, tasks, setTasks }) {
 function HistoryView({ tk, allLogs }) {
   // Allow navigating to ANY date, even ones without existing logs
   const [selectedDate, setSelectedDate] = useState(
-    allLogs[0]?.date || new Date(Date.now() - 86400000).toISOString().split("T")[0]
+    allLogs[0]?.date || toLocalISO(new Date(Date.now() - 86400000))
   );
   const [manualDate, setManualDate] = useState("");
 
@@ -424,22 +427,22 @@ function HistoryView({ tk, allLogs }) {
       <div style={{ background: tk.surf2, borderRadius: 12, border: `1px solid ${tk.bdr}`, padding: "12px 14px", marginBottom: 14 }}>
         {/* Navigate existing logs */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-          <button onClick={() => navigate(1)} disabled={!hasPrev}
-            style={{ background: "none", border: "none", cursor: hasPrev ? "pointer" : "not-allowed", padding: 4, borderRadius: 6, opacity: hasPrev ? 1 : .3 }}>
+          <button type="button" aria-label="Previous logged date" onClick={() => navigate(1)} disabled={!hasPrev}
+            style={{ minWidth: 44, minHeight: 44, background: "none", border: "none", cursor: hasPrev ? "pointer" : "not-allowed", padding: 4, borderRadius: 6, opacity: hasPrev ? 1 : .3 }}>
             <IChevL size={18} color={tk.tx} />
           </button>
           <div style={{ flex: 1, textAlign: "center" }}>
             {allLogs.length > 0 ? (
               <>
                 <select value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
-                  style={{ border: "none", background: "transparent", fontSize: 15, fontWeight: 700, color: tk.tx, textAlign: "center", cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
+                  style={{ minHeight: 44, border: "none", background: "transparent", fontSize: 16, fontWeight: 700, color: tk.tx, textAlign: "center", cursor: "pointer", fontFamily: "'DM Sans',sans-serif" }}>
                   {allLogs.map(l => (
                     <option key={l.date} value={l.date}>
                       {new Date(l.date + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
                     </option>
                   ))}
                 </select>
-                <div style={{ fontSize: 10, color: tk.tx3, marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: tk.tx2, marginTop: 2 }}>
                   {currentIdx >= 0 ? `${currentIdx + 1} of ${allLogs.length} logged days` : "New date"}
                 </div>
               </>
@@ -447,25 +450,25 @@ function HistoryView({ tk, allLogs }) {
               <div style={{ fontSize: 13, color: tk.tx3 }}>No past logs found</div>
             )}
           </div>
-          <button onClick={() => navigate(-1)} disabled={!hasNext}
-            style={{ background: "none", border: "none", cursor: hasNext ? "pointer" : "not-allowed", padding: 4, borderRadius: 6, opacity: hasNext ? 1 : .3 }}>
+          <button type="button" aria-label="Next logged date" onClick={() => navigate(-1)} disabled={!hasNext}
+            style={{ minWidth: 44, minHeight: 44, background: "none", border: "none", cursor: hasNext ? "pointer" : "not-allowed", padding: 4, borderRadius: 6, opacity: hasNext ? 1 : .3 }}>
             <IChevR size={18} color={tk.tx} />
           </button>
         </div>
 
         {/* Or jump to any date */}
         <div style={{ borderTop: `1px solid ${tk.bdr}`, paddingTop: 10 }}>
-          <div style={{ fontSize: 11, color: tk.tx3, marginBottom: 6, fontWeight: 600 }}>
+          <div style={{ fontSize: 11, color: tk.tx2, marginBottom: 6, fontWeight: 600 }}>
             Or go to a specific date (add log for any past date):
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <input type="date" value={manualDate} onChange={e => setManualDate(e.target.value)}
-              max={new Date(Date.now() - 86400000).toISOString().split("T")[0]}
-              style={{ flex: 1, padding: "7px 10px", border: `1.5px solid ${tk.bdr}`, borderRadius: 8, fontSize: 13, background: tk.surf, color: tk.tx, fontFamily: "'DM Sans',sans-serif" }}
+              max={toLocalISO(new Date(Date.now() - 86400000))}
+              style={{ flex: 1, minHeight: 44, padding: "7px 10px", border: `1.5px solid ${tk.bdr2}`, borderRadius: 10, fontSize: 16, background: tk.surf, color: tk.tx, fontFamily: "'DM Sans',sans-serif" }}
             />
-            <button onClick={() => { if (manualDate) { setSelectedDate(manualDate); setManualDate(""); } }}
+            <button type="button" onClick={() => { if (manualDate) { setSelectedDate(manualDate); setManualDate(""); } }}
               disabled={!manualDate}
-              style={{ padding: "7px 14px", background: tk.acc, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: manualDate ? "pointer" : "not-allowed", opacity: manualDate ? 1 : .5, fontFamily: "'DM Sans',sans-serif" }}>
+              style={{ minWidth: 44, minHeight: 44, padding: "7px 14px", background: tk.acc, color: tk.onAcc, border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: manualDate ? "pointer" : "not-allowed", opacity: manualDate ? 1 : .5, fontFamily: "'DM Sans',sans-serif" }}>
               Go
             </button>
           </div>
@@ -503,21 +506,21 @@ export default function Workflow() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 10, animation: "fadeUp .25s ease" }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Daily Workflow</div>
-          <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.4px" }}>Daily Workflow</div>
+          <div style={{ fontSize: 13, color: tk.tx2, marginTop: 2 }}>
             {view === "today" ? `Site log for ${date}` : "Browse and edit past logs"}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", gap: 8 }}>
           {["today", "history"].map(t => (
-            <button key={t} onClick={() => setView(t)} style={{
-              padding: "7px 14px", borderRadius: 9, fontSize: 12, fontWeight: 700,
+            <button type="button" key={t} onClick={() => setView(t)} style={{
+              minHeight: 44, padding: "7px 14px", borderRadius: 9, fontSize: 12, fontWeight: 700,
               border: `1.5px solid ${view === t ? tk.acc : tk.bdr}`,
               background: view === t ? tk.acc : "transparent",
-              color: view === t ? "#fff" : tk.tx2,
-              cursor: "pointer", transition: "all .15s",
+              color: view === t ? tk.onAcc : tk.tx2,
+              cursor: "pointer", transition: "all .15s", display: "inline-flex", alignItems: "center", gap: 5,
             }}>
-              {t === "today" ? "Today" : "📅 History"}
+              {t === "today" ? "Today" : <><ICalendar size={14} /> History</>}
             </button>
           ))}
         </div>

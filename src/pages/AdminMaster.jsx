@@ -36,9 +36,9 @@ const ITrashX   = ({ size = 13, color = "currentColor" }) => (
     <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
   </svg>
 );
-const ISearch   = ({ size = 13, color = "currentColor" }) => (
+const ISearch   = ({ size = 13, color = "currentColor", style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-    stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
   </svg>
 );
@@ -64,7 +64,7 @@ function typeBadge(type = "") {
 // ── Null / empty display ────────────────────────────────────────
 function CellVal({ v }) {
   if (v === null || v === undefined || v === "")
-    return <span style={{ color: "#9ca3af", fontStyle: "italic", fontSize: 11 }}>null</span>;
+    return <span style={{ color: "inherit", opacity: .7, fontStyle: "italic", fontSize: 11 }}>null</span>;
   const s = String(v);
   if (s.length > 60) return <span title={s}>{s.slice(0, 58)}…</span>;
   return s;
@@ -234,19 +234,20 @@ export default function AdminMaster() {
                 const active = selectedTable === t;
                 return (
                   <button
+                    type="button"
                     key={t}
                     onClick={() => selectTable(t)}
                     style={{
                       display: "flex", alignItems: "center", gap: 7,
-                      width: "100%", textAlign: "left", padding: "8px 10px",
+                      width: "100%", minHeight: 44, textAlign: "left", padding: "8px 10px",
                       marginBottom: 2, borderRadius: 8, border: "none", cursor: "pointer",
                       fontSize: 12, fontWeight: active ? 700 : 500,
                       background: active ? tk.acc : "transparent",
-                      color: active ? "#fff" : tk.tx2,
+                      color: active ? tk.onAcc : tk.tx2,
                       transition: "all .15s",
                     }}
                   >
-                    <ITable size={11} color={active ? "#fff" : tk.tx3} />
+                    <ITable size={11} color={active ? tk.onAcc : tk.tx3} />
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t}</span>
                   </button>
                 );
@@ -255,7 +256,7 @@ export default function AdminMaster() {
         </Card>
 
         {/* ── Main panel ─────────────────────────────────── */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: "1 1 320px", minWidth: 0 }}>
           {!selectedTable ? (
             <Card style={{ padding: "40px 20px", textAlign: "center" }}>
               <ITable size={38} color={tk.bdr2} />
@@ -361,7 +362,7 @@ export default function AdminMaster() {
                                 <Btn variant="ghost" small onClick={() => openEdit(row)}>
                                   <IEdit size={11} /> Edit
                                 </Btn>
-                                <Btn variant="danger" small onClick={() => setDeleteId(row.id)}>
+                                <Btn variant="danger" small onClick={() => setDeleteId(row.id)} aria-label={`Delete record ${row.id}`}>
                                   <ITrashX size={11} />
                                 </Btn>
                               </div>

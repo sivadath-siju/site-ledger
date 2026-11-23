@@ -7,7 +7,8 @@ import {
 } from "../components/Primitives";
 import { IUserPlus, IClipboard, ICheckCirc, IXCircle, IUsers, IFileText, ISave, ITag, IPlus, ITrash } from "../icons/Icons";
 
-const today      = () => new Date().toISOString().split("T")[0];
+import { toLocalISO } from "../utils/dates";
+const today      = () => toLocalISO();
 const monthStart = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-01`; };
 const Rs         = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
 
@@ -59,12 +60,12 @@ function CombinedLog({ directRecords, subRecords, subTypes, onDeleteDirect, onDe
                 {/* Day totals pill */}
                 <div style={{ display: "flex", gap: 5 }}>
                   {dayWages > 0 && (
-                    <span style={{ fontSize: 10, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.grn, background: tk.grnL, padding: "1px 7px", borderRadius: 20, border: `1px solid ${tk.grn}33` }}>
+                    <span style={{ fontSize: 11, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.grn, background: tk.grnL, padding: "1px 7px", borderRadius: 20, border: `1px solid ${tk.grn}33`, fontVariantNumeric: "tabular-nums" }}>
                       {Rs(dayWages)}
                     </span>
                   )}
                   {daySubWorkers > 0 && (
-                    <span style={{ fontSize: 10, fontWeight: 700, color: tk.amb, background: tk.ambL, padding: "1px 7px", borderRadius: 20, border: `1px solid ${tk.amb}33` }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: tk.amb, background: tk.ambL, padding: "1px 7px", borderRadius: 20, border: `1px solid ${tk.amb}33` }}>
                       +{daySubWorkers} sub
                     </span>
                   )}
@@ -100,12 +101,13 @@ function CombinedLog({ directRecords, subRecords, subTypes, onDeleteDirect, onDe
                     <Badge color={isPresent ? "green" : isHalf ? "amber" : "red"}>
                       {isPresent ? "Present" : isHalf ? "Half" : "Absent"}
                     </Badge>
-                    <span style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 13, color: tk.tx }}>
+                    <span style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 13, color: tk.tx, fontVariantNumeric: "tabular-nums" }}>
                       {Rs(a.total || 0)}
                     </span>
                     {hasFinance && (
-                      <button onClick={() => onDeleteDirect(a.id)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: tk.tx3, padding: 4, borderRadius: 6, display: "flex" }}
+                      <button type="button" onClick={() => onDeleteDirect(a.id)}
+                        aria-label={`Delete attendance record for ${a.name}`}
+                        style={{ background: "none", border: "none", cursor: "pointer", color: tk.tx3, minWidth: 44, minHeight: 44, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}
                         onMouseEnter={e => e.currentTarget.style.color = tk.red}
                         onMouseLeave={e => e.currentTarget.style.color = tk.tx3}
                         title="Delete record">
@@ -133,7 +135,7 @@ function CombinedLog({ directRecords, subRecords, subTypes, onDeleteDirect, onDe
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, color: tk.tx, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                       {log.subcontractor_name}
-                      <span style={{ fontSize: 10, fontWeight: 700, background: c.dot + "22", color: c.text, padding: "1px 7px", borderRadius: 20, border: `1px solid ${c.dot}55` }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, background: c.dot + "22", color: c.text, padding: "1px 7px", borderRadius: 20, border: `1px solid ${c.dot}55` }}>
                         {log.category}
                       </span>
                     </div>
@@ -144,11 +146,12 @@ function CombinedLog({ directRecords, subRecords, subTypes, onDeleteDirect, onDe
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 800, fontSize: 13, color: c.text }}>{Rs(log.total_cost)}</div>
-                      <div style={{ fontSize: 9, color: tk.tx3 }}>ref only</div>
+                      <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 800, fontSize: 13, color: c.text, fontVariantNumeric: "tabular-nums" }}>{Rs(log.total_cost)}</div>
+                      <div style={{ fontSize: 11, color: tk.tx3 }}>ref only</div>
                     </div>
-                    <button onClick={() => onDeleteSub(log.id)}
-                      style={{ background: "none", border: "none", cursor: "pointer", color: tk.tx3, padding: 4, borderRadius: 6, display: "flex" }}
+                    <button type="button" onClick={() => onDeleteSub(log.id)}
+                      aria-label={`Delete subcontractor record for ${log.subcontractor_name}`}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: tk.tx3, minWidth: 44, minHeight: 44, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" }}
                       onMouseEnter={e => e.currentTarget.style.color = tk.red}
                       onMouseLeave={e => e.currentTarget.style.color = tk.tx3}
                       title="Delete record">
@@ -345,7 +348,7 @@ export default function Attendance() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 10, animation: "fadeUp .25s ease" }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Labour & Attendance</div>
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.4px" }}>Labour & Attendance</div>
           <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Direct wages · Subcontractor counts</div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -381,8 +384,8 @@ export default function Attendance() {
           </Field>
         </FormGrid>
         <FormGrid>
-          <Field label="Regular Hours"><Input type="number" value={hours} onChange={e => setHours(e.target.value)} min="0" max="12" /></Field>
-          <Field label="Overtime Hrs"><Input type="number" value={ot} onChange={e => setOt(e.target.value)} min="0" /></Field>
+          <Field label="Regular Hours"><Input type="number" inputMode="decimal" value={hours} onChange={e => setHours(e.target.value)} min="0" max="12" /></Field>
+          <Field label="Overtime Hrs"><Input type="number" inputMode="decimal" value={ot} onChange={e => setOt(e.target.value)} min="0" /></Field>
         </FormGrid>
         <Field label="Notes"><Input value={attNote} onChange={e => setAttNote(e.target.value)} placeholder="Optional" /></Field>
         <Btn onClick={submit} disabled={workers.length === 0}><ISave size={14} />Record Attendance</Btn>
@@ -436,7 +439,7 @@ export default function Attendance() {
             <span style={{ fontSize: 13, color: tk.amb }}>
               {subLogCount} {subLogCat}{parseInt(subLogCount) !== 1 ? "s" : ""} × {Rs(parseFloat(subLogRate))}
             </span>
-            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 16, fontWeight: 800, color: tk.amb }}>
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 16, fontWeight: 800, color: tk.amb, fontVariantNumeric: "tabular-nums" }}>
               {Rs(parseInt(subLogCount) * parseFloat(subLogRate))}
             </span>
           </div>
@@ -472,7 +475,7 @@ export default function Attendance() {
                 <div style={{ fontSize: 11, color: tk.tx3 }}>{w.role} · ₹{w.rate}/day · {recs.length} day{recs.length !== 1 ? "s" : ""}</div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 13 }}>{Rs(total)}</div>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{Rs(total)}</div>
                 {hasFinance && (
                   <Btn variant="ghost" small style={{ marginTop: 3 }} onClick={async () => {
                     if (!window.confirm(`Remove ${w.name}?`)) return;
@@ -493,7 +496,7 @@ export default function Attendance() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(130px,1fr))", gap: 9 }}>
             {Object.entries(catTotals).filter(([, v]) => v > 0).map(([cat, total]) => (
               <div key={cat} style={{ background: tk.surf2, border: `1px solid ${tk.bdr}`, borderRadius: 10, padding: 11 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'DM Mono',monospace", marginBottom: 2 }}>{Rs(total)}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'DM Mono',monospace", marginBottom: 2, fontVariantNumeric: "tabular-nums" }}>{Rs(total)}</div>
                 <div style={{ fontSize: 11, color: tk.tx3 }}>{cat}</div>
               </div>
             ))}
@@ -511,12 +514,12 @@ export default function Attendance() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             {logDirectTotal > 0 && (
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: tk.grn }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: tk.grn, fontVariantNumeric: "tabular-nums" }}>
                 {Rs(logDirectTotal)} direct
               </span>
             )}
             {logSubTotal > 0 && (
-              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: tk.amb }}>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: tk.amb, fontVariantNumeric: "tabular-nums" }}>
                 {Rs(logSubTotal)} sub (ref)
               </span>
             )}
@@ -627,7 +630,8 @@ export default function Attendance() {
                       <div style={{ fontWeight: 600, fontSize: 13, color: tk.tx }}>{s.name}</div>
                       <div style={{ fontSize: 11, color: tk.tx2 }}>{s.contact_name || "—"}{s.phone ? ` · ${s.phone}` : ""}{s.total_cost > 0 ? ` · ${Rs(s.total_cost)} total` : ""}</div>
                     </div>
-                    <button onClick={() => deleteSubcontractor(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: tk.tx3, padding: 4 }}>
+                    <button type="button" onClick={() => deleteSubcontractor(s.id)} aria-label={`Delete subcontractor ${s.name}`}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: tk.tx3, minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <ITrash size={14} />
                     </button>
                   </div>

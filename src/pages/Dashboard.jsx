@@ -2,15 +2,20 @@ import React, { useState, useEffect } from "react";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
 import { Card, CardTitle, ProgressBar, Alert, Badge, Empty } from "../components/Primitives";
-import { IUsers, IListChecks, IPkgX, IAlertTri, IClipboard, IPackage, IActivity } from "../icons/Icons";
+import { IUsers, IListChecks, IPkgX, IAlertTri, IClipboard, IPackage, IActivity, ICheck, ISun } from "../icons/Icons";
 
-const today = () => new Date().toISOString().split("T")[0];
+import { toLocalISO } from "../utils/dates";
+import AuthImg from "../components/AuthImg";
+const today = () => toLocalISO();
 const Rs    = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
 
-const WEATHER_EMOJI = { "Clear": "☀️", "Partly Cloudy": "⛅", "Overcast": "☁️", "Light Rain": "🌧️", "Heavy Rain": "⛈️", "Extreme Heat": "🌡️" };
 const SAFETY_COLOR  = { "All Clear": "green", "Minor Concerns": "amber", "Work Stopped": "red" };
 
-function PhotoLightbox({ photo, onClose }) {
+function WeatherIcon({ color }) {
+  return <ISun size={15} color={color} />;
+}
+
+function PhotoLightbox({ photo, onClose, tk }) {
   const url = API.photoUrl(photo);
 
   useEffect(() => {
@@ -22,15 +27,15 @@ function PhotoLightbox({ photo, onClose }) {
   if (!url) return null;
 
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ maxWidth: "min(92vw, 960px)", maxHeight: "88vh", display: "flex", flexDirection: "column", gap: 10 }}>
-        <img src={url} alt={photo.caption || "Site photo"} style={{ maxWidth: "100%", maxHeight: "80vh", objectFit: "contain", borderRadius: 14, display: "block" }} />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, color: "#f3f4f6" }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 1000, background: `${tk.brand}ee`, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ maxWidth: "min(92vw, 960px)", maxHeight: "88dvh", display: "flex", flexDirection: "column", gap: 10 }}>
+        <AuthImg src={url} alt={photo.caption || "Site photo"} style={{ maxWidth: "100%", maxHeight: "80dvh", objectFit: "contain", borderRadius: 14, display: "block" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, color: tk.surf }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 700 }}>{photo.caption || "Site Photo"}</div>
-            <div style={{ fontSize: 12, color: "#d1d5db" }}>{photo.uploader ? `Uploaded by ${photo.uploader}` : "Today's site photo"}</div>
+            <div style={{ fontSize: 12, color: tk.surf }}>{photo.uploader ? `Uploaded by ${photo.uploader}` : "Today's site photo"}</div>
           </div>
-          <button onClick={onClose} style={{ border: "none", borderRadius: 999, padding: "8px 12px", background: "rgba(255,255,255,.12)", color: "#fff", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+          <button type="button" aria-label="Close photo viewer" onClick={onClose} style={{ minWidth: 44, minHeight: 44, border: `1px solid ${tk.bdr2}`, borderRadius: 999, padding: "8px 12px", background: tk.surf3, color: tk.tx, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
             Close
           </button>
         </div>
@@ -44,12 +49,13 @@ function DashboardPhotoCard({ photo, onOpen, tk }) {
 
   return (
     <button
+      type="button"
       onClick={() => onOpen(photo)}
-      style={{ padding: 0, border: `1px solid ${tk.bdr}`, borderRadius: 16, overflow: "hidden", background: tk.surf2, cursor: "pointer", boxShadow: tk.sh, textAlign: "left" }}
+      style={{ minHeight: 44, padding: 0, border: `1px solid ${tk.bdr}`, borderRadius: 16, overflow: "hidden", background: tk.surf2, cursor: "pointer", boxShadow: tk.sh, textAlign: "left" }}
     >
       <div style={{ aspectRatio: "16/10", background: tk.surf2 }}>
         {url ? (
-          <img src={url} alt={photo.caption || "Site photo"} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="lazy" />
+          <AuthImg src={url} alt={photo.caption || "Site photo"} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="lazy" />
         ) : (
           <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: tk.tx3, fontSize: 12 }}>
             Image unavailable
@@ -60,7 +66,7 @@ function DashboardPhotoCard({ photo, onOpen, tk }) {
         <div style={{ fontSize: 13, fontWeight: 700, color: tk.tx, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {photo.caption || "Site Progress Photo"}
         </div>
-        <div style={{ fontSize: 11, color: tk.tx3 }}>
+        <div style={{ fontSize: 11, color: tk.tx2 }}>
           {photo.uploader ? `By ${photo.uploader}` : "Today"}{photo.logged_at ? ` • ${new Date(photo.logged_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}` : ""}
         </div>
       </div>
@@ -82,11 +88,13 @@ function ClickStatCard({ icon: Icon, value, label, color, delay = 0, onClick, tk
 
   return (
     <button
+      type="button"
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
         background: tk.surf,
+        minHeight: 44,
         border: `1px solid ${hovered ? c.text : tk.bdr}`,
         borderRadius: 14,
         padding: "14px 16px",
@@ -109,7 +117,7 @@ function ClickStatCard({ icon: Icon, value, label, color, delay = 0, onClick, tk
       <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono',monospace", color: tk.tx, letterSpacing: "-.3px", lineHeight: 1 }}>
         {value}
       </div>
-      <div style={{ fontSize: 11, color: tk.tx3, fontWeight: 600, marginTop: 4, textTransform: "uppercase", letterSpacing: ".04em" }}>
+      <div style={{ fontSize: 11, color: tk.tx2, fontWeight: 600, marginTop: 4, textTransform: "uppercase", letterSpacing: ".04em" }}>
         {label}
       </div>
     </button>
@@ -129,7 +137,7 @@ export default function Dashboard() {
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
 
   const todayStr     = today();
-  const yesterdayStr = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split("T")[0]; })();
+  const yesterdayStr = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return toLocalISO(d); })();
 
   useEffect(() => {
     setLogLoading(true);
@@ -171,12 +179,12 @@ export default function Dashboard() {
 
   return (
     <div>
-      {lightboxPhoto && <PhotoLightbox photo={lightboxPhoto} onClose={() => setLightboxPhoto(null)} />}
+      {lightboxPhoto && <PhotoLightbox photo={lightboxPhoto} onClose={() => setLightboxPhoto(null)} tk={tk} />}
 
       {/* Header */}
       <div style={{ marginBottom: 18, animation: "fadeUp .25s ease" }}>
-        <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Dashboard</div>
-        <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>
+        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.4px" }}>Dashboard</div>
+        <div style={{ fontSize: 13, color: tk.tx2, marginTop: 2 }}>
           {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
         </div>
       </div>
@@ -189,7 +197,7 @@ export default function Dashboard() {
       )}
 
       {/* Clickable stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 14 }}>
         {statCards.map(card => (
           <ClickStatCard
             key={card.label}
@@ -221,7 +229,7 @@ export default function Dashboard() {
         </CardTitle>
 
         {logLoading ? (
-          <div style={{ padding: "12px 0", color: tk.tx3, fontSize: 13 }}>Loading…</div>
+          <div style={{ padding: "12px 0", color: tk.tx2, fontSize: 13 }}>Loading…</div>
         ) : (todayWorkers.length === 0 && todaySubLogs.length === 0) ? (
           <Empty icon={IUsers} text="No attendance marked today. Go to Labour & Attendance to mark workers." />
         ) : (
@@ -230,7 +238,7 @@ export default function Dashboard() {
             {todayWorkers.length > 0 && (
               <>
                 {todaySubLogs.length > 0 && (
-                  <div style={{ fontSize: 10, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: tk.tx2, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 8 }}>
                     Direct Workers
                   </div>
                 )}
@@ -243,7 +251,7 @@ export default function Dashboard() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 600, fontSize: 13 }}>{w.worker_name || w.name}</div>
-                        <div style={{ fontSize: 11, color: tk.tx3 }}>
+                        <div style={{ fontSize: 11, color: tk.tx2 }}>
                           {w.worker_role || w.role} · {w.hours || 8}h{w.ot_hours > 0 ? ` + ${w.ot_hours}h OT` : ""}
                         </div>
                       </div>
@@ -252,7 +260,7 @@ export default function Dashboard() {
                           {status === "present" ? "Present" : status === "half" ? "Half" : "Absent"}
                         </Badge>
                         {w.total_wage > 0 && (
-                          <div style={{ fontSize: 12, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.tx, marginTop: 2 }}>{Rs(w.total_wage)}</div>
+                          <div style={{ fontSize: 12, fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontWeight: 700, color: tk.tx, marginTop: 2 }}>{Rs(w.total_wage)}</div>
                         )}
                       </div>
                     </div>
@@ -266,7 +274,7 @@ export default function Dashboard() {
               <>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "14px 0 8px" }}>
                   <div style={{ height: 1, background: tk.bdr, flex: 1 }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: tk.amb, textTransform: "uppercase", letterSpacing: ".08em", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: tk.amb, textTransform: "uppercase", letterSpacing: ".08em", whiteSpace: "nowrap" }}>
                     Subcontractor Labour (Reference)
                   </span>
                   <div style={{ height: 1, background: tk.bdr, flex: 1 }} />
@@ -280,15 +288,15 @@ export default function Dashboard() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 600, fontSize: 13, color: tk.tx }}>{log.subcontractor_name}</div>
-                      <div style={{ fontSize: 11, color: tk.tx3 }}>
+                      <div style={{ fontSize: 11, color: tk.tx2 }}>
                         {log.category} · ₹{Number(log.rate_per_worker).toLocaleString("en-IN")}/day
                       </div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
-                      <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 700, color: tk.amb }}>
+                      <div style={{ fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontSize: 13, fontWeight: 700, color: tk.amb }}>
                         {Rs(log.total_cost)}
                       </div>
-                      <div style={{ fontSize: 9, color: tk.tx3 }}>ref only</div>
+                      <div style={{ fontSize: 11, color: tk.tx2 }}>ref only</div>
                     </div>
                   </div>
                 ))}
@@ -298,7 +306,7 @@ export default function Dashboard() {
                   <span style={{ fontSize: 11, color: tk.amb, fontWeight: 600 }}>
                     {todaySubLogs.reduce((s,l)=>s+l.worker_count,0)} subcontract workers total
                   </span>
-                  <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, fontWeight: 700, color: tk.amb }}>
+                  <span style={{ fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontSize: 12, fontWeight: 700, color: tk.amb }}>
                     {Rs(todaySubLogs.reduce((s,l)=>s+l.total_cost,0))}
                   </span>
                 </div>
@@ -313,17 +321,17 @@ export default function Dashboard() {
         <CardTitle icon={IClipboard}>
           Today's Site Log
           {todayLog && (
-            <span style={{ marginLeft: 8, background: tk.grnL, color: tk.grn, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20 }}>
-              ✓ Recorded
+            <span style={{ marginLeft: 8, background: tk.grnL, color: tk.grn, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <ICheck size={12} color={tk.grn} /> Recorded
             </span>
           )}
         </CardTitle>
         {logLoading ? (
-          <div style={{ padding: "12px 0", color: tk.tx3, fontSize: 13 }}>Loading…</div>
+          <div style={{ padding: "12px 0", color: tk.tx2, fontSize: 13 }}>Loading…</div>
         ) : !todayLog ? (
           <div style={{ padding: "16px 0", textAlign: "center" }}>
-            <div style={{ fontSize: 13, color: tk.tx3, marginBottom: 8 }}>No site log recorded for today.</div>
-            <div style={{ fontSize: 12, color: tk.tx3 }}>
+            <div style={{ fontSize: 13, color: tk.tx2, marginBottom: 8 }}>No site log recorded for today.</div>
+            <div style={{ fontSize: 12, color: tk.tx2 }}>
               Go to <strong style={{ color: tk.acc }}>Daily Workflow</strong> to add today's progress notes.
             </div>
           </div>
@@ -331,13 +339,13 @@ export default function Dashboard() {
           <div>
             <div style={{ display: "flex", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
               <div>
-                <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Weather</div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>
-                  {WEATHER_EMOJI[todayLog.weather] || "🌤️"} {todayLog.weather || "Not recorded"}
+                <div style={{ fontSize: 11, color: tk.tx2, textTransform: "uppercase", letterSpacing: ".05em" }}>Weather</div>
+                <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+                  <WeatherIcon color={tk.acc} /> {todayLog.weather || "Not recorded"}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".05em" }}>Safety</div>
+                <div style={{ fontSize: 11, color: tk.tx2, textTransform: "uppercase", letterSpacing: ".05em" }}>Safety</div>
                 <Badge color={SAFETY_COLOR[todayLog.safety] || "gray"}>{todayLog.safety || "All Clear"}</Badge>
               </div>
             </div>
@@ -346,7 +354,7 @@ export default function Dashboard() {
                 {todayLog.notes}
               </div>
             ) : (
-              <div style={{ fontSize: 13, color: tk.tx3, fontStyle: "italic" }}>No observations recorded.</div>
+              <div style={{ fontSize: 13, color: tk.tx2, fontStyle: "italic" }}>No observations recorded.</div>
             )}
           </div>
         )}
@@ -356,13 +364,13 @@ export default function Dashboard() {
       {yesterdayLog && (yesterdayLog.notes || yesterdayLog.weather !== "Clear") && (
         <Card delay={.16}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: tk.tx3 }}>Yesterday's Log</span>
-            <span style={{ fontSize: 10, color: tk.tx3, background: tk.surf2, padding: "1px 8px", borderRadius: 20, border: `1px solid ${tk.bdr}` }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: tk.tx2 }}>Yesterday's Log</span>
+            <span style={{ fontSize: 11, color: tk.tx2, background: tk.surf2, padding: "1px 8px", borderRadius: 20, border: `1px solid ${tk.bdr}` }}>
               {new Date(yesterdayStr + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}
             </span>
             {yesterdayLog.weather && (
-              <span style={{ fontSize: 11, color: tk.tx3, marginLeft: "auto" }}>
-                {{"Clear":"☀️","Partly Cloudy":"⛅","Overcast":"☁️","Light Rain":"🌧️","Heavy Rain":"⛈️","Extreme Heat":"🌡️"}[yesterdayLog.weather] || "🌤️"} {yesterdayLog.weather}
+              <span style={{ fontSize: 11, color: tk.tx2, marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <WeatherIcon color={tk.acc} /> {yesterdayLog.weather}
               </span>
             )}
           </div>
@@ -371,7 +379,7 @@ export default function Dashboard() {
               {yesterdayLog.notes.length > 200 ? yesterdayLog.notes.slice(0, 200) + "…" : yesterdayLog.notes}
             </div>
           ) : (
-            <div style={{ fontSize: 12, color: tk.tx3, fontStyle: "italic" }}>No notes recorded for yesterday.</div>
+            <div style={{ fontSize: 12, color: tk.tx2, fontStyle: "italic" }}>No notes recorded for yesterday.</div>
           )}
         </Card>
       )}

@@ -23,18 +23,18 @@ export default function Vendors() {
   return (
     <div>
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18, flexWrap:"wrap", gap:10, animation:"fadeUp .25s ease" }}>
-        <div><div style={{ fontSize:20, fontWeight:700, letterSpacing:"-.4px" }}>Vendors</div><div style={{ fontSize:12, color:tk.tx2, marginTop:2 }}>Suppliers and outstanding balances</div></div>
+        <div><div style={{ fontSize:22, fontWeight:700, letterSpacing:"-.4px" }}>Vendors</div><div style={{ fontSize:13, color:tk.tx2, marginTop:2 }}>Suppliers and outstanding balances</div></div>
         <Btn variant="secondary" small onClick={()=>setAddOpen(true)}><IPlus size={13}/>Add Vendor</Btn>
       </div>
       <Card delay={.05}>
         <TableWrap>
           <table style={{ width:"100%", borderCollapse:"collapse", minWidth:360 }}>
-            <thead><tr>{["Vendor","Category","Outstanding",""].map(h=><th key={h} style={{ textAlign:"left", padding:"9px 10px", fontSize:10, fontWeight:700, color:tk.tx3, textTransform:"uppercase", letterSpacing:".08em", borderBottom: `1.5px solid ${tk.bdr}`, background:tk.surf2 }}>{h}</th>)}</tr></thead>
+            <thead><tr>{["Vendor","Category","Outstanding",""].map(h=><th key={h} style={{ textAlign:"left", padding:"9px 10px", fontSize:11, fontWeight:700, color:tk.tx3, textTransform:"uppercase", letterSpacing:".08em", borderBottom: `1.5px solid ${tk.bdr}`, background:tk.surf2 }}>{h}</th>)}</tr></thead>
             <tbody>{vendors.map(v=>(
               <tr key={v.id}>
                 <td style={{ padding:"10px", fontSize:13, borderBottom: `1px solid ${tk.bdr}` }}><div style={{ fontWeight:600 }}>{v.name}</div><div style={{ fontSize:11, color:tk.tx3 }}>{v.ph}</div></td>
                 <td style={{ padding:"10px", fontSize:13, borderBottom: `1px solid ${tk.bdr}` }}><Badge>{v.cat}</Badge></td>
-                <td style={{ padding:"10px", fontSize:13, borderBottom: `1px solid ${tk.bdr}`, fontFamily:"'DM Mono',monospace", fontWeight:700, color:v.bal>0?tk.red:tk.grn }}>{v.bal>0?Rs(v.bal):"Nil"}</td>
+                <td style={{ padding:"10px", fontSize:13, borderBottom: `1px solid ${tk.bdr}`, fontFamily:"'DM Mono',monospace", fontWeight:700, color:v.bal>0?tk.red:tk.grn, fontVariantNumeric:"tabular-nums" }}>{v.bal>0?Rs(v.bal):"Nil"}</td>
                 <td style={{ padding:"10px", fontSize:13, borderBottom: `1px solid ${tk.bdr}` }}><Btn variant="ghost" small onClick={async()=>{ try{ await API.deleteVendor(v.id); setVendors(prev=>prev.filter(x=>x.id!==v.id)); }catch(e){alert(e.message);} }} style={{ padding:"4px 8px" }}><ITrash size={12}/></Btn></td>
               </tr>
             ))}</tbody>

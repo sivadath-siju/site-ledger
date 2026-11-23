@@ -47,8 +47,8 @@ function BillUploadWidget({ invoiceId, existingPath, onUploaded, tk }) {
           <button
             type="button"
             onClick={() => API.openBillFile(billPath)}
-            style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.acc, fontWeight: 600, textDecoration: "none", padding: "3px 8px", background: tk.accL, borderRadius: 6, border: "none", cursor: "pointer" }}>
-            <IEye size={11} color={tk.acc} /> Open
+            style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 13, minHeight: 44, minWidth: 44, color: tk.acc, fontWeight: 600, textDecoration: "none", padding: "6px 12px", background: tk.accL, borderRadius: 6, border: "none", cursor: "pointer" }}>
+            <IEye size={15} color={tk.acc} /> Open
           </button>
         </div>
       )}
@@ -133,8 +133,8 @@ export default function Invoices() {
     <div>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 10, animation: "fadeUp .25s ease" }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Invoices & Payables</div>
-          <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Supplier invoices and outstanding payments</div>
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.4px" }}>Invoices & Payables</div>
+          <div style={{ fontSize: 13, color: tk.tx2, marginTop: 2 }}>Supplier invoices and outstanding payments</div>
         </div>
         <Btn variant={showFilter ? "primary" : "secondary"} small onClick={() => setShowFilter(f => !f)}>
           <IFilter size={12} />{hasFilter ? "Filter On" : "Filter"}
@@ -170,9 +170,9 @@ export default function Invoices() {
           {hasFilter && (
             <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap", fontSize: 12 }}>
               <span style={{ color: tk.tx3 }}>Showing <strong style={{ color: tk.tx }}>{filtered.length}</strong> invoices</span>
-              <span style={{ color: tk.tx3 }}>Total: <strong style={{ color: tk.tx }}>{Rs(totalAmount)}</strong></span>
-              <span style={{ color: tk.grn }}>Paid: <strong>{Rs(totalPaid)}</strong></span>
-              {totalUnpaid > 0 && <span style={{ color: tk.red }}>Outstanding: <strong>{Rs(totalUnpaid)}</strong></span>}
+              <span style={{ color: tk.tx3 }}>Total: <strong style={{ color: tk.tx, fontVariantNumeric: "tabular-nums" }}>{Rs(totalAmount)}</strong></span>
+              <span style={{ color: tk.grn }}>Paid: <strong style={{ fontVariantNumeric: "tabular-nums" }}>{Rs(totalPaid)}</strong></span>
+              {totalUnpaid > 0 && <span style={{ color: tk.red }}>Outstanding: <strong style={{ fontVariantNumeric: "tabular-nums" }}>{Rs(totalUnpaid)}</strong></span>}
             </div>
           )}
         </Card>
@@ -197,18 +197,15 @@ export default function Invoices() {
             </Select>
           </Field>
           <Field label="Amount (₹)">
-            <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+            <Input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
           </Field>
         </FormGrid>
         <Field label="Description">
           <Input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Work or supply covered" />
         </Field>
         <FormGrid>
-          <Field label="Due Date"><Input type="date" value={due} onChange={e => setDue(e.target.value)} /></Field>
-          <Field label="Status">
-            <Select value={status} onChange={e => setStatus(e.target.value)}>
-              <option>Unpaid</option><option>Paid</option><option>Partially Paid</option>
-            </Select>
+          <Field label="Due Date" hint="New invoices start as Unpaid. Use Mark Paid or record a payment later.">
+            <Input type="date" value={due} onChange={e => setDue(e.target.value)} />
           </Field>
         </FormGrid>
         <Btn onClick={submit} disabled={adding}><ISave size={14} />{adding ? "Adding…" : "Add Invoice"}</Btn>
@@ -219,7 +216,7 @@ export default function Invoices() {
         <CardTitle icon={IFileText}>
           Invoice Register
           {hasFilter && <span style={{ fontSize: 11, color: tk.tx3, fontWeight: 400, marginLeft: 6 }}>{filtered.length} shown</span>}
-          <span style={{ marginLeft: "auto", fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 800, color: tk.acc }}>{Rs(totalAmount)}</span>
+          <span style={{ marginLeft: "auto", fontFamily: "'DM Mono',monospace", fontSize: 13, fontWeight: 800, color: tk.acc, fontVariantNumeric: "tabular-nums" }}>{Rs(totalAmount)}</span>
         </CardTitle>
 
         {filtered.length === 0 ? (
@@ -234,7 +231,7 @@ export default function Invoices() {
                   {invoice.due && <div style={{ fontSize: 11, color: tk.tx3, marginTop: 2 }}>Due: {invoice.due}</div>}
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 800, fontSize: 15, color: tk.tx }}>{Rs(invoice.amount)}</div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 800, fontSize: 15, color: tk.tx, fontVariantNumeric: "tabular-nums" }}>{Rs(invoice.amount)}</div>
                   {(invoice.paid || 0) > 0 && <div style={{ fontSize: 11, color: tk.grn }}>Paid: {Rs(invoice.paid)}</div>}
                 </div>
               </div>
@@ -247,12 +244,12 @@ export default function Invoices() {
                   <button
                     type="button"
                     onClick={() => API.openBillFile(invoice.bill_path)}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: tk.grn, fontWeight: 600, textDecoration: "none", padding: "2px 7px", background: tk.grnL, borderRadius: 5, border: `1px solid ${tk.grn}33`, cursor: "pointer" }}>
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 3, minWidth: 44, minHeight: 44, fontSize: 11, color: tk.grn, fontWeight: 600, textDecoration: "none", background: tk.grnL, borderRadius: 5, border: `1px solid ${tk.grn}33`, cursor: "pointer" }}>
                     <IEye size={11} color={tk.grn} /> View Bill
                   </button>
                 ) : (
-                  <button onClick={() => { setActiveInv(invoice); setUploadSheet(true); }}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: tk.tx3, fontWeight: 600, cursor: "pointer", padding: "2px 7px", background: tk.surf2, border: `1px solid ${tk.bdr}`, borderRadius: 5 }}>
+                  <button type="button" onClick={() => { setActiveInv(invoice); setUploadSheet(true); }}
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 3, minWidth: 44, minHeight: 44, fontSize: 11, color: tk.tx2, fontWeight: 600, cursor: "pointer", background: tk.surf2, border: `1px solid ${tk.bdr}`, borderRadius: 5 }}>
                     <IUpload size={10} color={tk.tx3} /> Attach Bill
                   </button>
                 )}
@@ -261,8 +258,8 @@ export default function Invoices() {
                   <Btn variant="secondary" small onClick={() => markPaid(invoice)} style={{ marginLeft: "auto" }}>Mark Paid</Btn>
                 )}
                 {invoice.bill_path && (
-                  <button onClick={() => { setActiveInv(invoice); setUploadSheet(true); }}
-                    style={{ fontSize: 11, color: tk.tx3, cursor: "pointer", background: "none", border: "none", textDecoration: "underline" }}>Replace</button>
+                  <button type="button" onClick={() => { setActiveInv(invoice); setUploadSheet(true); }}
+                    style={{ minHeight: 44, fontSize: 11, color: tk.tx2, cursor: "pointer", background: "none", border: "none", textDecoration: "underline" }}>Replace</button>
                 )}
               </div>
             </div>
@@ -279,7 +276,7 @@ export default function Invoices() {
             <div style={{ background: tk.surf2, borderRadius: 10, padding: "11px 14px", marginBottom: 14, border: `1px solid ${tk.bdr}` }}>
               <div style={{ fontWeight: 700, fontSize: 14 }}>{activeInv.vendor}</div>
               <div style={{ fontSize: 12, color: tk.tx2 }}>{activeInv.desc}</div>
-              <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 15, marginTop: 4 }}>{Rs(activeInv.amount)}</div>
+              <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 15, marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{Rs(activeInv.amount)}</div>
             </div>
             <BillUploadWidget tk={tk} invoiceId={activeInv.id} existingPath={activeInv.bill_path}
               onUploaded={(path) => { setInv(prev => prev.map(x => x.id === activeInv.id ? { ...x, bill_path: path } : x)); setActiveInv(prev => ({ ...prev, bill_path: path })); }}

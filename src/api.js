@@ -1,4 +1,4 @@
-const BASE = (process.env.REACT_APP_API_URL || "http://localhost:5001/api").replace(/\/$/, "");
+const BASE = (import.meta.env.REACT_APP_API_URL || "http://localhost:5001/api").replace(/\/$/, "");
 export const BASE_URL = BASE.replace(/\/api$/, "");
 export const getToken   = () => localStorage.getItem("sl_token");
 export const setToken   = t  => localStorage.setItem("sl_token", t);
@@ -10,12 +10,25 @@ const normalizeTimestamp = value => {
   return `${value.replace(" ", "T")}Z`;
 };
 
+// Fired when the server says our session is no longer valid (expired token,
+// deactivated account). App.jsx listens and returns to the login screen.
+export const SESSION_EXPIRED_EVENT = "sl:session-expired";
+function handleUnauthorized(res, hadToken) {
+  if (res.status === 401 && hadToken) {
+    clearToken();
+    window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+  }
+}
+
 async function request(path, options = {}) {
   const token = getToken();
+  const { headers, body, ...rest } = options;
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers },
-    ...options, body: options.body ? JSON.stringify(options.body) : undefined,
+    ...rest,
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers },
+    body: body ? JSON.stringify(body) : undefined,
   });
+  handleUnauthorized(res, !!token);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
   return data;
@@ -24,10 +37,34 @@ async function request(path, options = {}) {
 async function upload(path, formData) {
   const token = getToken();
   const res   = await fetch(`${BASE}${path}`, { method: "POST", headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: formData });
+  handleUnauthorized(res, !!token);
   const data  = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Upload failed: ${res.status}`);
   return data;
 }
+
+// ── Private files (bills, site photos) ──────────────────────────────────────
+// The server requires a login to download uploads, so fetch them with the
+// token and hand out blob: URLs. Cached per session to avoid refetching.
+const fileCache = new Map();
+export async function fetchFileObjectUrl(url) {
+  if (!url) throw new Error("No file");
+  if (fileCache.has(url)) return fileCache.get(url);
+  const promise = (async () => {
+    const token = getToken();
+    const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    handleUnauthorized(res, !!token);
+    if (!res.ok) throw new Error(`File not available (${res.status})`);
+    return URL.createObjectURL(await res.blob());
+  })();
+  fileCache.set(url, promise);
+  promise.catch(() => fileCache.delete(url));
+  return promise;
+}
+export const clearFileCache = () => {
+  fileCache.forEach((p) => p.then((u) => URL.revokeObjectURL(u)).catch(() => {}));
+  fileCache.clear();
+};
 
 async function prepareBillFile(file) {
   if (!file?.type?.startsWith("image/")) return file;
@@ -45,6 +82,7 @@ const del  = p      => request(p, { method: "DELETE" });
 
 // AUTH
 export const login      = (u, p) => post("/auth/login", { username: u, password: p });
+export const changeMyPassword = (current_password, new_password) => patch("/auth/me/password", { current_password, new_password });
 export const getMe      = ()     => get("/auth/me");
 export const getUsers   = ()     => get("/auth/users");
 export const createUser = d      => post("/auth/users", d);
@@ -99,12 +137,20 @@ export const deleteExpCat  = id => del(`/expenses/categories/${id}`);
 export const uploadExpenseBill = async (id, f) => { const fd = new FormData(); fd.append("bill", await prepareBillFile(f)); return upload(`/expenses/${id}/bill`, fd); };
 export const uploadInvoiceBill = async (id, f) => { const fd = new FormData(); fd.append("bill", await prepareBillFile(f)); return upload(`/expenses/invoices/${id}/bill`, fd); };
 export const billUrl           = fn => fn ? `${BASE_URL}/uploads/bills/${fn}` : null;
-export const openBillFile      = filename => {
-  const url  = billUrl(filename);
+export const openBillFile      = async filename => {
+  const url = billUrl(filename);
   if (!url || typeof window === "undefined") return;
-  const popup = window.open(url, "_blank");
-  if (popup) { try { popup.opener = null; } catch {} }
-  else window.location.assign(url);
+  // Open the tab synchronously (inside the click) so popup blockers allow it,
+  // then point it at the downloaded file once it arrives.
+  const popup = window.open("", "_blank");
+  try {
+    const objectUrl = await fetchFileObjectUrl(url);
+    if (popup) { popup.opener = null; popup.location.href = objectUrl; }
+    else window.location.assign(objectUrl);
+  } catch (err) {
+    if (popup) popup.close();
+    alert(err.message || "Could not open the bill.");
+  }
 };
 
 // VENDORS

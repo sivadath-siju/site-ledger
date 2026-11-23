@@ -5,16 +5,16 @@ import loadingImg from "./loading.png";
 export default function LoadingPage() {
   const { tk } = useApp();
   
-  const background = tk?.bg || "#f0f2f5";
-  const accent = tk?.acc || "#1a56db";
-  const textColor = tk?.tx || "#0f1623";
-  const textSecondary = tk?.tx3 || "#8a96a8";
-  const barBg = tk?.surf3 || "#eef0f5";
+  const background = tk.bg;
+  const accent = tk.acc;
+  const textColor = tk.tx;
+  const textSecondary = tk.tx2;
+  const barBg = tk.surf3;
 
   return (
     <div style={{
-      height: "100vh",
-      width: "100vw",
+      minHeight: "100dvh",
+      width: "100%",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
@@ -75,10 +75,10 @@ export default function LoadingPage() {
           borderRadius: 10, 
           overflow: "hidden", 
           marginBottom: 12,
-          border: `1px solid ${tk?.bdr || "#e2e5eb"}`
+          border: `1px solid ${tk.bdr}`
         }}>
           <div style={{ 
-            height: "100%", 
+            height: "100%",
             background: accent, 
             borderRadius: 10,
             animation: "loadingBar 10s cubic-bezier(0.1, 0, 0.2, 1) forwards" 

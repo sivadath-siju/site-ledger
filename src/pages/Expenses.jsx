@@ -7,7 +7,8 @@ import {
 } from "../components/Primitives";
 import { ITag, IPlus, ICheckCirc, IXCircle, IReceipt, ISave, IFilter } from "../icons/Icons";
 
-const today   = () => new Date().toISOString().split("T")[0];
+import { toLocalISO } from "../utils/dates";
+const today   = () => toLocalISO();
 const Rs      = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
 const IUpload = ({ size = 13, color = "currentColor" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
@@ -60,8 +61,8 @@ function BillWidget({ expenseId, existingPath, onUploaded, tk }) {
           <button
             type="button"
             onClick={() => API.openBillFile(billPath)}
-            style={{ fontSize: 11, color: tk.acc, fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", background: tk.accL, borderRadius: 6, border: "none", cursor: "pointer" }}>
-            <IEye size={11} color={tk.acc} /> View
+            style={{ fontSize: 13, minHeight: 44, minWidth: 44, color: tk.acc, fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 4, padding: "6px 12px", background: tk.accL, borderRadius: 6, border: "none", cursor: "pointer" }}>
+            <IEye size={15} color={tk.acc} /> View
           </button>
         </div>
       )}
@@ -143,8 +144,8 @@ export default function Expenses() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 10, animation: "fadeUp .25s ease" }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Expenses</div>
-          <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Log and categorise expenditures</div>
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.4px" }}>Expenses</div>
+          <div style={{ fontSize: 13, color: tk.tx2, marginTop: 2 }}>Log and categorise expenditures</div>
         </div>
         <Btn variant="secondary" small onClick={() => setCatOpen(true)}><ITag size={13} />Categories</Btn>
       </div>
@@ -158,7 +159,7 @@ export default function Expenses() {
             {msg.t === "ok" && lastId && (
               <div style={{ padding: "10px 12px", background: tk.surf2, borderRadius: 10, border: `1px solid ${tk.bdr}`, marginBottom: 8 }}>
                 <div style={{ fontSize: 12, color: tk.tx2, marginBottom: 6 }}>Attach a bill / receipt for this expense?</div>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: tk.tx2, cursor: "pointer", fontWeight: 600 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, minHeight: 44, fontSize: 12, color: tk.tx2, cursor: "pointer", fontWeight: 600 }}>
                   <IUpload size={13} color={tk.tx3} /> Attach bill now (optional)
                   <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" style={{ display: "none" }}
                     onChange={async e => {
@@ -167,7 +168,8 @@ export default function Expenses() {
                       catch (err) { alert(err.message); }
                     }} />
                 </label>
-                <button onClick={() => { setMsg(null); setLastId(null); }} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, color: tk.tx3, marginTop: 6, display: "block" }}>
+                <button type="button" onClick={() => { setMsg(null); setLastId(null); }}
+                  style={{ background: "none", border: "none", cursor: "pointer", minHeight: 44, fontSize: 11, color: tk.tx2, marginTop: 6, display: "block" }}>
                   Skip — add later
                 </button>
               </div>
@@ -181,7 +183,7 @@ export default function Expenses() {
             </Select>
           </Field>
           <Field label="Amount (₹)">
-            <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+            <Input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
           </Field>
         </FormGrid>
         <Field label="Description">
@@ -210,7 +212,8 @@ export default function Expenses() {
           <IFilter size={13} color={hasFilter ? tk.acc : tk.tx3} />
           <span style={{ fontSize: 12, fontWeight: 700, color: hasFilter ? tk.acc : tk.tx2 }}>Filter by Date</span>
           {hasFilter && (
-            <button onClick={() => { setFilterFrom(""); setFilterTo(""); }} style={{ marginLeft: "auto", fontSize: 11, color: tk.tx3, cursor: "pointer", background: "none", border: "none", textDecoration: "underline" }}>Clear</button>
+            <button type="button" onClick={() => { setFilterFrom(""); setFilterTo(""); }}
+              style={{ marginLeft: "auto", minHeight: 44, fontSize: 11, color: tk.tx2, cursor: "pointer", background: "none", border: "none", textDecoration: "underline" }}>Clear</button>
           )}
         </div>
         <FormGrid>
@@ -236,10 +239,10 @@ export default function Expenses() {
           return (
             <Card key={catName} delay={.08 + idx * 0.03}>
               {/* Category header — clickable to collapse */}
-              <button onClick={() => toggleCat(catName)} style={{
+              <button type="button" onClick={() => toggleCat(catName)} style={{
                 display: "flex", alignItems: "center", width: "100%",
                 background: "none", border: "none", cursor: "pointer",
-                padding: "0 0 12px", gap: 10,
+                minHeight: 44, padding: "0 0 12px", gap: 10,
               }}>
                 <div style={{ width: 10, height: 10, borderRadius: 3, background: tk.acc, flexShrink: 0 }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: tk.tx, flex: 1, textAlign: "left" }}>{catName}</span>
@@ -259,7 +262,7 @@ export default function Expenses() {
                         <span>· {e.paymentMode || "Cash"}</span>
                       </div>
                     </div>
-                    <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 14, color: tk.tx, flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 14, color: tk.tx, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
                       {Rs(e.amount)}
                     </div>
                   </div>

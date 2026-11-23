@@ -78,12 +78,12 @@ export default function BillUpload({ billPath, onUpload, compact = false }) {
           <button
             type="button"
             onClick={() => API.openBillFile(localPath)}
-            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.acc, fontWeight: 600, textDecoration: "none", background: "none", border: "none", padding: 0, cursor: "pointer" }}>
+            style={{ minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.acc, fontWeight: 600, textDecoration: "none", background: "none", border: "none", padding: 0, cursor: "pointer" }}>
             <IEye size={12} color={tk.acc} /> View bill
           </button>
         ) : (
-          <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.tx3, cursor: "pointer", fontWeight: 600 }}>
-            <IUpload size={11} color={tk.tx3} />
+          <label style={{ minHeight: 44, display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.tx2, cursor: "pointer", fontWeight: 600 }}>
+            <IUpload size={11} color={tk.tx2} />
             {uploading ? "Uploading…" : "Attach bill"}
             <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={handleFile} style={{ display: "none" }} />
           </label>
@@ -110,12 +110,12 @@ export default function BillUpload({ billPath, onUpload, compact = false }) {
             <div style={{ fontSize: 12, fontWeight: 600, color: tk.tx, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {localPath}
             </div>
-            <div style={{ fontSize: 10, color: tk.tx3 }}>Bill attached</div>
+            <div style={{ fontSize: 11, color: tk.tx2 }}>Bill attached</div>
           </div>
           <button
             type="button"
             onClick={() => API.openBillFile(localPath)}
-            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: tk.acc, fontWeight: 600, textDecoration: "none", background: tk.accL, padding: "5px 10px", borderRadius: 7, whiteSpace: "nowrap", border: "none", cursor: "pointer" }}>
+            style={{ minWidth: 44, minHeight: 44, display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: tk.acc, fontWeight: 600, textDecoration: "none", background: tk.accL, padding: "5px 10px", borderRadius: 8, whiteSpace: "nowrap", border: "none", cursor: "pointer" }}>
             <IEye size={13} color={tk.acc} /> Open
           </button>
         </div>
@@ -123,17 +123,17 @@ export default function BillUpload({ billPath, onUpload, compact = false }) {
 
       {/* Upload area */}
       <label style={{
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        display: "flex", minHeight: 44, flexDirection: "column", alignItems: "center", justifyContent: "center",
         gap: 6, padding: "18px 12px",
-        border: `2px dashed ${error ? tk.red : tk.bdr}`,
+        border: `2px dashed ${error ? tk.red : tk.bdr2}`,
         borderRadius: 12, cursor: "pointer",
         background: tk.surf2, transition: "border-color .15s",
       }}>
-        <IUpload size={20} color={uploading ? tk.acc : tk.tx3} />
+        <IUpload size={20} color={uploading ? tk.acc : tk.tx2} />
         <div style={{ fontSize: 13, fontWeight: 600, color: tk.tx2 }}>
           {uploading ? "Uploading…" : localPath ? "Replace bill" : "Attach bill / receipt"}
         </div>
-        <div style={{ fontSize: 11, color: tk.tx3 }}>JPEG, PNG, WebP or PDF · max 10 MB</div>
+        <div style={{ fontSize: 11, color: tk.tx2 }}>JPEG, PNG, WebP or PDF · max 10 MB</div>
         {error && <div style={{ fontSize: 11, color: tk.red, marginTop: 2 }}>{error}</div>}
         <input ref={inputRef} type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={handleFile} style={{ display: "none" }} disabled={uploading} />
       </label>

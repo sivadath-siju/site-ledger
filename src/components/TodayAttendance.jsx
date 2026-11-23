@@ -16,7 +16,8 @@ import * as API from "../api";
 import { Badge, Btn, Field, Select, Input, FormGrid, Alert, Sheet } from "../components/Primitives";
 import { ICheckCirc, IXCircle, ISave, IEdit, ITrash } from "../icons/Icons";
 
-const todayStr = () => new Date().toISOString().split("T")[0];
+import { toLocalISO } from "../utils/dates";
+const todayStr = () => toLocalISO();
 const Rs       = n  => "₹" + Number(n || 0).toLocaleString("en-IN");
 
 const ILock = ({ size = 12, color = "currentColor" }) => (
@@ -106,8 +107,8 @@ export default function TodayAttendance({ att, setAtt, workers }) {
           <span style={{ fontSize: 11, background: tk.accL, color: tk.acc, borderRadius: 20, padding: "2px 8px", fontWeight: 700 }}>
             {todayRecords.length} marked
           </span>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: tk.tx3 }}>
-            <ILock size={10} color={tk.tx3} /> Locked after midnight
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.tx2 }}>
+            <ILock size={11} color={tk.tx2} /> Locked after midnight
           </div>
         </div>
 
@@ -118,7 +119,7 @@ export default function TodayAttendance({ att, setAtt, workers }) {
 
           return (
             <div key={rec.id} style={{
-              display: "flex", alignItems: "center", gap: 10,
+              display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10,
               padding: "9px 0", borderBottom: i < todayRecords.length - 1 ? `1px solid ${tk.bdr}` : "none",
               background: isSub ? tk.ambL : "transparent",
             }}>
@@ -130,9 +131,9 @@ export default function TodayAttendance({ att, setAtt, workers }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 5, color: tk.tx }}>
                   {rec.name}
-                  {isSub && <span style={{ fontSize: 9, color: tk.amb, fontWeight: 500 }}>sub</span>}
+                  {isSub && <span style={{ fontSize: 11, color: tk.amb, fontWeight: 500 }}>sub</span>}
                 </div>
-                <div style={{ fontSize: 11, color: tk.tx3 }}>
+                <div style={{ fontSize: 11, color: tk.tx2 }}>
                   {rec.hours || 8}h{(rec.ot || rec.ot_hours || 0) > 0 ? ` + ${rec.ot || rec.ot_hours}h OT` : ""}
                   {rec.note ? ` · ${rec.note}` : ""}
                 </div>
@@ -141,18 +142,18 @@ export default function TodayAttendance({ att, setAtt, workers }) {
               <Badge color={statusColor(status)}>{statusLabel(status)}</Badge>
 
               <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontSize: 13, color: isSub ? tk.amb : tk.tx }}>
+                <div style={{ fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontWeight: 700, fontSize: 13, color: isSub ? tk.amb : tk.tx }}>
                   {Rs(wage)}
                 </div>
-                {isSub && <div style={{ fontSize: 9, color: tk.tx3 }}>ref</div>}
+                {isSub && <div style={{ fontSize: 11, color: tk.tx2 }}>ref</div>}
               </div>
 
               {/* Edit/Delete — today only */}
-              <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-                <button onClick={() => openEdit(rec)} style={{ background: tk.surf2, border: `1px solid ${tk.bdr}`, borderRadius: 7, padding: "4px 7px", cursor: "pointer", color: tk.tx2, display: "flex", alignItems: "center", gap: 3, fontSize: 11 }}>
+              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                <button type="button" onClick={() => openEdit(rec)} style={{ minWidth: 44, minHeight: 44, background: tk.surf2, border: `1px solid ${tk.bdr}`, borderRadius: 8, padding: "4px 7px", cursor: "pointer", color: tk.tx2, display: "flex", alignItems: "center", justifyContent: "center", gap: 3, fontSize: 11 }}>
                   <IEdit size={11} color={tk.tx2} /> Edit
                 </button>
-                <button onClick={() => deleteRecord(rec)} style={{ background: tk.redL, border: `1px solid ${tk.red}44`, borderRadius: 7, padding: "4px 7px", cursor: "pointer", color: tk.red, display: "flex", alignItems: "center" }}>
+                <button type="button" aria-label={`Delete attendance for ${rec.name}`} onClick={() => deleteRecord(rec)} style={{ minWidth: 44, minHeight: 44, background: tk.redL, border: `1px solid ${tk.red}`, borderRadius: 8, padding: "4px 7px", cursor: "pointer", color: tk.red, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <ITrash size={11} color={tk.red} />
                 </button>
               </div>
@@ -167,7 +168,7 @@ export default function TodayAttendance({ att, setAtt, workers }) {
           return (
             <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", padding: "8px 10px", background: tk.surf2, borderRadius: 8, fontSize: 12 }}>
               <span style={{ fontWeight: 600, color: tk.tx }}>Today's direct labour total</span>
-              <span style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.acc }}>{Rs(directTotal)}</span>
+              <span style={{ fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", fontWeight: 700, color: tk.acc }}>{Rs(directTotal)}</span>
             </div>
           );
         })()}
@@ -188,7 +189,7 @@ export default function TodayAttendance({ att, setAtt, workers }) {
         }
       >
         {editMsg && <Alert type={editMsg.t}>{editMsg.t === "ok" ? <ICheckCirc size={14} /> : <IXCircle size={14} />}{editMsg.s}</Alert>}
-        <div style={{ padding: "8px 12px", background: tk.surf2, borderRadius: 8, marginBottom: 14, fontSize: 12, color: tk.tx3 }}>
+        <div style={{ padding: "8px 12px", background: tk.surf2, borderRadius: 8, marginBottom: 14, fontSize: 12, color: tk.tx2 }}>
           Date: <strong style={{ color: tk.tx }}>{today}</strong> · Changes only allowed today
         </div>
         <Field label="Status">
@@ -199,8 +200,8 @@ export default function TodayAttendance({ att, setAtt, workers }) {
           </Select>
         </Field>
         <FormGrid>
-          <Field label="Regular Hours"><Input type="number" value={editHours} onChange={e => setEditHours(e.target.value)} min="0" max="12" /></Field>
-          <Field label="Overtime Hours"><Input type="number" value={editOt} onChange={e => setEditOt(e.target.value)} min="0" /></Field>
+          <Field label="Regular Hours"><Input type="number" inputMode="decimal" value={editHours} onChange={e => setEditHours(e.target.value)} min="0" max="12" /></Field>
+          <Field label="Overtime Hours"><Input type="number" inputMode="decimal" value={editOt} onChange={e => setEditOt(e.target.value)} min="0" /></Field>
         </FormGrid>
         <Field label="Notes"><Input value={editNote} onChange={e => setEditNote(e.target.value)} placeholder="Optional remark" /></Field>
       </Sheet>

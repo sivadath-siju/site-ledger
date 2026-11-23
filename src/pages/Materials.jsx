@@ -4,7 +4,8 @@ import * as API from "../api";
 import { Card, CardTitle, Btn, Alert, Field, Select, Input, FormGrid, TableWrap, Badge, Sheet } from "../components/Primitives";
 import { IPlus, IArrows, ICheckCirc, IXCircle, IPackage, ITrash, IFileText, IAlertTri, ISave } from "../icons/Icons";
 
-const todayFn = () => new Date().toISOString().split("T")[0];
+import { toLocalISO } from "../utils/dates";
+const todayFn = () => toLocalISO();
 const Nf      = n  => Number(n || 0).toLocaleString("en-IN");
 
 export default function Materials() {
@@ -69,8 +70,8 @@ export default function Materials() {
     <div>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 10, animation: "fadeUp .25s ease" }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Materials</div>
-          <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Stock tracking and usage log</div>
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.4px" }}>Materials</div>
+          <div style={{ fontSize: 13, color: tk.tx2, marginTop: 2 }}>Stock tracking and usage log</div>
         </div>
         <Btn variant="secondary" small onClick={() => setAddOpen(true)}><IPlus size={13} />Add Material</Btn>
       </div>
@@ -94,7 +95,7 @@ export default function Materials() {
             </Select>
           </Field>
           <Field label="Quantity">
-            <Input type="number" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" />
+            <Input type="number" inputMode="decimal" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" />
           </Field>
         </FormGrid>
         {/* Editable date — defaults to today but can be changed for back-dating */}
@@ -114,7 +115,7 @@ export default function Materials() {
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 400 }}>
             <thead>
               <tr>{["Material", "Stock", "Unit", "Min", "Status", ""].map(h => (
-                <th key={h} style={{ textAlign: "left", padding: "9px 10px", fontSize: 10, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".08em", borderBottom: `1.5px solid ${tk.bdr}`, background: tk.surf2, whiteSpace: "nowrap" }}>{h}</th>
+                <th key={h} style={{ textAlign: "left", padding: "9px 10px", fontSize: 11, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".08em", borderBottom: `1.5px solid ${tk.bdr}`, background: tk.surf2, whiteSpace: "nowrap" }}>{h}</th>
               ))}</tr>
             </thead>
             <tbody>
@@ -123,9 +124,9 @@ export default function Materials() {
                 return (
                   <tr key={m.id}>
                     <td style={{ padding: "11px 10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}`, fontWeight: 600 }}>{m.name}</td>
-                    <td style={{ padding: "11px 10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", fontWeight: 700 }}>{Nf(m.stock)}</td>
+                    <td style={{ padding: "11px 10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{Nf(m.stock)}</td>
                     <td style={{ padding: "11px 10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}` }}>{m.unit}</td>
-                    <td style={{ padding: "11px 10px", fontSize: 12, borderBottom: `1px solid ${tk.bdr}`, color: tk.tx3 }}>{Nf(m.min)}</td>
+                    <td style={{ padding: "11px 10px", fontSize: 12, borderBottom: `1px solid ${tk.bdr}`, color: tk.tx2, fontVariantNumeric: "tabular-nums" }}>{Nf(m.min)}</td>
                     <td style={{ padding: "11px 10px", fontSize: 13, borderBottom: `1px solid ${tk.bdr}` }}>
                       <Badge color={s === "Low" ? "red" : s === "Caution" ? "amber" : "green"}>{s}</Badge>
                     </td>
@@ -164,7 +165,7 @@ export default function Materials() {
                 {/* Date divider */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, marginTop: 14 }}>
                   <div style={{ height: 1, background: tk.bdr, flex: 1 }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".1em", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: tk.tx3, textTransform: "uppercase", letterSpacing: ".1em", whiteSpace: "nowrap" }}>
                     {new Date(d + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
                   </span>
                   <div style={{ height: 1, background: tk.bdr, flex: 1 }} />
@@ -181,7 +182,7 @@ export default function Materials() {
                     <div style={{
                       width: 28, height: 28, borderRadius: 8, flexShrink: 0,
                       background: l.type === "in" ? tk.grn : tk.red,
-                      color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                      color: tk.onAcc, display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 14, fontWeight: 700,
                     }}>
                       {l.type === "in" ? "↓" : "↑"}
@@ -195,13 +196,13 @@ export default function Materials() {
                         </span>
                       </div>
                       {l.note && <div style={{ fontSize: 11, color: tk.tx2, marginTop: 1 }}>{l.note}</div>}
-                      {l.by && <div style={{ fontSize: 10, color: tk.tx3 }}>by {l.by}</div>}
+                      {l.by && <div style={{ fontSize: 11, color: tk.tx3 }}>by {l.by}</div>}
                     </div>
 
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{
                         fontFamily: "'DM Mono',monospace", fontWeight: 800, fontSize: 14,
-                        color: l.type === "in" ? tk.grn : tk.red,
+                        color: l.type === "in" ? tk.grn : tk.red, fontVariantNumeric: "tabular-nums",
                       }}>
                         {l.type === "in" ? "+" : "−"}{Nf(l.qty)} {l.unit}
                       </div>

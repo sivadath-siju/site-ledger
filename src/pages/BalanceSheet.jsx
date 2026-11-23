@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useApp } from "../context/AppCtx";
 import * as API from "../api";
-import { Card, CardTitle, Btn, Alert, Field, Select, Input, FormGrid, Sheet, Badge, Empty } from "../components/Primitives";
+import { Card, CardTitle, Btn, Alert, Field, Select, Input, FormGrid, Sheet, Badge, Empty, TableWrap } from "../components/Primitives";
 import { IFileText, ICheckCirc, IXCircle, IBuilding, IClock, ITrash, IUsers, IReceipt } from "../icons/Icons";
 
+import { toLocalISO } from "../utils/dates";
 const Rs   = n => "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtD = d => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 const fmtDT = d => d ? new Date(d).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
@@ -38,7 +39,7 @@ const IFilter = ({ size = 13, color = "currentColor" }) => (
 function SourceBadge({ source, tk, C }) {
   const cfg = { invoice: { bg:tk.redL, c:C.debitInvoice, l:"INV" }, expense: { bg:tk.ambL, c:C.debitExpense, l:"EXP" }, payment: { bg:tk.grnL, c:C.credit, l:"PMT" }, labour: { bg:tk.accL, c:C.debitLabour, l:"LAB" } };
   const x = cfg[source] || cfg.invoice;
-  return <span style={{ background: x.bg, color: x.c, fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6, border: `1px solid ${x.c}33`, whiteSpace: "nowrap" }}>{x.l}</span>;
+  return <span style={{ background: x.bg, color: x.c, fontSize: 11, fontWeight: 700, padding: "2px 6px", borderRadius: 6, border: `1px solid ${x.c}33`, whiteSpace: "nowrap" }}>{x.l}</span>;
 }
 
 function exportCSV(rows, filename) {
@@ -79,7 +80,7 @@ export default function BalanceSheet() {
   const [payMode,    setPayMode]    = useState("Cash");
   const [payRef,     setPayRef]     = useState("");
   const [payNotes,   setPayNotes]   = useState("");
-  const [payDate,    setPayDate]    = useState(() => new Date().toISOString().split("T")[0]);
+  const [payDate,    setPayDate]    = useState(() => toLocalISO());
   const [payMsg,     setPayMsg]     = useState(null);
   const [paying,     setPaying]     = useState(false);
   const [histSheet,  setHistSheet]  = useState(false);
@@ -155,7 +156,7 @@ export default function BalanceSheet() {
   const openPaySheet = (invoice) => {
     setPayInvoice(invoice); setPayAmount((invoice.amount - (invoice.paid || 0)).toFixed(2));
     setPayMode("Cash"); setPayRef(""); setPayNotes("");
-    setPayDate(new Date().toISOString().split("T")[0]); setPayMsg(null); setPaySheet(true);
+    setPayDate(toLocalISO()); setPayMsg(null); setPaySheet(true);
   };
   const submitPayment = async () => {
     const amt = parseFloat(payAmount);
@@ -191,7 +192,7 @@ export default function BalanceSheet() {
 
   const TabBtn = ({ id, label, icon }) => {
     const active = view === id;
-    return <button onClick={() => setView(id)} style={{ padding: "8px 14px", border: `1.5px solid ${active ? tk.acc : tk.bdr}`, borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: "pointer", background: active ? tk.acc : "transparent", color: active ? "#fff" : tk.tx2, display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: active ? `0 2px 8px ${tk.acc}44` : "none" }}>{icon}{label}</button>;
+    return <button type="button" onClick={() => setView(id)} style={{ minWidth: 44, minHeight: 44, padding: "8px 14px", border: `1.5px solid ${active ? tk.acc : tk.bdr}`, borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: "pointer", background: active ? tk.acc : "transparent", color: active ? tk.onAcc : tk.tx2, display: "flex", alignItems: "center", gap: 5, transition: "all .15s", boxShadow: active ? `0 2px 8px ${tk.acc}44` : "none" }}>{icon}{label}</button>;
   };
 
   // ── Summary cards ────────────────────────────────────────────
@@ -211,8 +212,8 @@ export default function BalanceSheet() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 10, animation: "fadeUp .25s ease" }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Balance Sheet</div>
-          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.4px" }}>Balance Sheet</div>
+          <div style={{ fontSize: 13, color: tk.tx2, marginTop: 2 }}>
             {hasFilter ? `${from || "All time"} → ${to || "today"}` : "All time · Financial overview"}
           </div>
         </div>
@@ -228,7 +229,7 @@ export default function BalanceSheet() {
             ["Grand Total",    grandTotals.grandTotal.toFixed(2)],
             ["Paid",           grandTotals.paidTotal.toFixed(2)],
             ["Outstanding",    grandTotals.outstanding.toFixed(2)],
-          ], `balance-sheet-${new Date().toISOString().slice(0,10)}.csv`)}>
+          ], `balance-sheet-${toLocalISO()}.csv`)}>
             <IDownload />Export
           </Btn>
         </div>
@@ -237,7 +238,7 @@ export default function BalanceSheet() {
       {/* ── Date range filter ─────────────────────────────────── */}
       {showFilter && (
         <Card delay={0} style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 10, fontWeight: 600 }}>
+          <div style={{ fontSize: 12, color: tk.tx2, marginBottom: 10, fontWeight: 600 }}>
             Date Range — leave blank for all-time totals
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
@@ -250,8 +251,8 @@ export default function BalanceSheet() {
             <div style={{ paddingBottom: 2, display: "flex", gap: 6 }}>
               {/* Quick shortcuts */}
               {[
-                { l: "This month", fn: () => { const n = new Date(); setFrom(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-01`); setTo(new Date().toISOString().split("T")[0]); } },
-                { l: "This year",  fn: () => { setFrom(`${new Date().getFullYear()}-01-01`); setTo(new Date().toISOString().split("T")[0]); } },
+                { l: "This month", fn: () => { const n = new Date(); setFrom(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-01`); setTo(toLocalISO()); } },
+                { l: "This year",  fn: () => { setFrom(`${new Date().getFullYear()}-01-01`); setTo(toLocalISO()); } },
                 { l: "Clear",      fn: () => { setFrom(""); setTo(""); } },
               ].map(b => (
                 <Btn key={b.l} variant="ghost" small onClick={b.fn}>{b.l}</Btn>
@@ -259,7 +260,7 @@ export default function BalanceSheet() {
             </div>
           </div>
           {hasFilter && (
-            <div style={{ fontSize: 11, color: "#6b7280", marginTop: 6 }}>
+            <div style={{ fontSize: 11, color: tk.tx2, marginTop: 6 }}>
               Showing data from <strong>{from}</strong> to <strong>{to || "today"}</strong>. Grand totals below reflect this range.
             </div>
           )}
@@ -275,8 +276,8 @@ export default function BalanceSheet() {
             <div style={{ fontSize: isDesktop ? 26 : 22, fontWeight: 800, fontFamily: "'DM Mono',monospace", color: card.color, letterSpacing: "-.5px", marginBottom: 4 }}>
               {totalsLoading ? "—" : card.value}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>{card.label}</div>
-            <div style={{ fontSize: 11, color: "#6b7280", marginBottom: card.breakdown.length ? 10 : 0 }}>{card.sublabel}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: tk.tx }}>{card.label}</div>
+            <div style={{ fontSize: 11, color: tk.tx2, marginBottom: card.breakdown.length ? 10 : 0 }}>{card.sublabel}</div>
             {card.breakdown.length > 0 && (
               <div style={{ borderTop: `1px solid ${card.border}`, paddingTop: 8 }}>
                 {card.breakdown.map(b => (
@@ -317,8 +318,8 @@ export default function BalanceSheet() {
         <Card>
           <CardTitle icon={IBuilding}>Vendor-wise Summary — Invoices + Expenses</CardTitle>
           {vendors.length === 0 ? <Empty icon={IBuilding} text="No vendors added yet." /> : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+            <TableWrap>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520, fontVariantNumeric: "tabular-nums" }}>
                 <thead><tr style={{ background: tk.surf2 }}>
                   {["Vendor","Invoiced","Expenses","Total Debit","Paid","Balance"].map((h, i) => (
                     <th key={h} style={{ textAlign: i > 0 ? "right" : "left", padding: "10px 12px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: tk.tx2, borderBottom: `2px solid ${tk.bdr}`, whiteSpace: "nowrap" }}>{h}</th>
@@ -327,17 +328,17 @@ export default function BalanceSheet() {
                 <tbody>
                   {vendorSummary.map(v => (
                     <tr key={v.id} style={{ cursor: "pointer" }} onClick={() => { setSelectedVendor(String(v.id)); setView("vendor"); }}>
-                      <td style={{ padding: "11px 12px", borderBottom: `1px solid #f3f4f6` }}>
+                      <td style={{ padding: "11px 12px", borderBottom: `1px solid ${tk.bdr}` }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ width: 28, height: 28, borderRadius: 8, background: "#e0f2fe", color: "#0369a1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{v.name.charAt(0)}</div>
+                          <div style={{ width: 28, height: 28, borderRadius: 8, background: tk.accL, color: tk.accD, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{v.name.charAt(0)}</div>
                           <span style={{ fontWeight: 600, fontSize: 13 }}>{v.name}</span>
                         </div>
                       </td>
-                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid #f3f4f6`, fontFamily: "'DM Mono',monospace", color: C.debitInvoice, fontWeight: 600, whiteSpace: "nowrap" }}>{Rs(v.invTotal)}</td>
-                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid #f3f4f6`, fontFamily: "'DM Mono',monospace", color: C.debitExpense, fontWeight: 600, whiteSpace: "nowrap" }}>{Rs(v.expTotal)}</td>
-                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid #f3f4f6`, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>{Rs(v.debit)}</td>
-                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid #f3f4f6`, fontFamily: "'DM Mono',monospace", color: C.credit, fontWeight: 600, whiteSpace: "nowrap" }}>{Rs(v.paid)}</td>
-                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid #f3f4f6`, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: v.balance > 0.01 ? C.debitInvoice : C.credit, whiteSpace: "nowrap" }}>{Rs(v.balance)}</td>
+                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", color: C.debitInvoice, fontWeight: 600, whiteSpace: "nowrap" }}>{Rs(v.invTotal)}</td>
+                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", color: C.debitExpense, fontWeight: 600, whiteSpace: "nowrap" }}>{Rs(v.expTotal)}</td>
+                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: tk.tx, whiteSpace: "nowrap" }}>{Rs(v.debit)}</td>
+                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", color: C.credit, fontWeight: 600, whiteSpace: "nowrap" }}>{Rs(v.paid)}</td>
+                      <td style={{ padding: "11px 12px", textAlign: "right", borderBottom: `1px solid ${tk.bdr}`, fontFamily: "'DM Mono',monospace", fontWeight: 700, color: v.balance > 0.01 ? C.debitInvoice : C.credit, whiteSpace: "nowrap" }}>{Rs(v.balance)}</td>
                     </tr>
                   ))}
                   <tr style={{ background: tk.surf2 }}>
@@ -350,7 +351,7 @@ export default function BalanceSheet() {
                   </tr>
                 </tbody>
               </table>
-            </div>
+            </TableWrap>
           )}
 
           {/* Outstanding invoices */}
@@ -363,14 +364,14 @@ export default function BalanceSheet() {
                   <IClock size={13} /> Outstanding ({unpaid.length})
                 </div>
                 {unpaid.map(invoice => (
-                  <div key={invoice.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid #f3f4f6`, flexWrap: "wrap" }}>
+                  <div key={invoice.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: `1px solid ${tk.bdr}`, flexWrap: "wrap" }}>
                     <div style={{ flex: 1, minWidth: 100 }}>
                       <div style={{ fontWeight: 600, fontSize: 13 }}>{invoice.vendor}</div>
-                      <div style={{ fontSize: 11, color: "#6b7280" }}>{invoice.desc}</div>
+                      <div style={{ fontSize: 11, color: tk.tx2 }}>{invoice.desc}</div>
                     </div>
                     <div style={{ textAlign: "right", flexShrink: 0 }}>
                       <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: C.debitInvoice, fontSize: 14, whiteSpace: "nowrap" }}>{Rs(invoice.amount - (invoice.paid||0))}</div>
-                      <div style={{ fontSize: 10, color: "#9ca3af" }}>of {Rs(invoice.amount)}</div>
+                      <div style={{ fontSize: 11, color: tk.tx3 }}>of {Rs(invoice.amount)}</div>
                     </div>
                     {statusBadge(invoice)}
                     <Btn variant="primary" small onClick={() => openPaySheet(invoice)}><ICreditCard size={11}/> Pay</Btn>
@@ -389,9 +390,9 @@ export default function BalanceSheet() {
             {selectedVendor === "all" ? "Select a vendor above" : (vendorLedger?.vendor?.name || "Vendor Ledger")}
           </CardTitle>
           {selectedVendor === "all" ? (
-            <div style={{ padding: "20px 0", textAlign: "center", color: "#9ca3af", fontSize: 13 }}>Choose a vendor from the dropdown above.</div>
+            <div style={{ padding: "20px 0", textAlign: "center", color: tk.tx2, fontSize: 13 }}>Choose a vendor from the dropdown above.</div>
           ) : ledgerLoading ? (
-            <div style={{ padding: "20px 0", textAlign: "center", color: "#9ca3af" }}>Loading…</div>
+            <div style={{ padding: "20px 0", textAlign: "center", color: tk.tx2 }}>Loading…</div>
           ) : !vendorLedger ? (
             <Empty icon={IFileText} text="No transactions." />
           ) : (
@@ -411,15 +412,15 @@ export default function BalanceSheet() {
                   </div>
                 ))}
               </div>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width:"100%", borderCollapse:"collapse", minWidth:580 }}>
+              <TableWrap>
+                <table style={{ width:"100%", borderCollapse:"collapse", minWidth:580, fontVariantNumeric:"tabular-nums" }}>
                   <thead><tr style={{ background:tk.surf2 }}>
                     {["Date","Type","Particulars","Ref","Dr","Cr","Balance",""].map((h,i)=>(
                       <th key={i} style={{ textAlign:i>3?"right":"left", padding:"10px 10px", fontSize:10, fontWeight:700, textTransform:"uppercase", color:tk.tx2, borderBottom:`2px solid ${tk.bdr}`, whiteSpace:"nowrap" }}>{h}</th>
                     ))}
                   </tr></thead>
                   <tbody>
-                    <tr><td colSpan={8} style={{ padding:"7px 10px", fontSize:11, color:"#9ca3af", fontStyle:"italic", background:"#f9fafb", borderBottom:"1px solid #f3f4f6" }}>Opening Balance — ₹0.00</td></tr>
+                    <tr><td colSpan={8} style={{ padding:"7px 10px", fontSize:11, color:tk.tx3, fontStyle:"italic", background:tk.surf2, borderBottom:`1px solid ${tk.bdr}` }}>Opening Balance — ₹0.00</td></tr>
                     {vendorLedger.entries.map((e, i) => {
                       const isDr = e.type === "debit";
                       const dc   = e.source==="invoice"?C.debitInvoice:e.source==="expense"?C.debitExpense:C.credit;
@@ -427,13 +428,13 @@ export default function BalanceSheet() {
                       return (
                         <tr key={i} style={{ background:rowBg }}>
                           <td style={{ padding:"9px 10px", borderBottom:`1px solid ${tk.bdr}`, fontSize:11, color:tk.tx2, whiteSpace:"nowrap" }}>{fmtD(e.date)}</td>
-                          <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6" }}><SourceBadge source={e.source} tk={tk} C={C}/></td>
-                          <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", fontSize:12, fontWeight:isDr?600:400, maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.particulars}</td>
+                          <td style={{ padding:"9px 10px", borderBottom:`1px solid ${tk.bdr}` }}><SourceBadge source={e.source} tk={tk} C={C}/></td>
+                          <td style={{ padding:"9px 10px", borderBottom:`1px solid ${tk.bdr}`, fontSize:12, fontWeight:isDr?600:400, maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{e.particulars}</td>
                           <td style={{ padding:"9px 10px", borderBottom:`1px solid ${tk.bdr}`, fontSize:10, fontFamily:"'DM Mono',monospace", color:tk.tx3, whiteSpace:"nowrap" }}>{e.ref}</td>
-                          <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:isDr?dc:"#d1d5db", whiteSpace:"nowrap" }}>{isDr?Rs(e.amount):"—"}</td>
-                          <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:!isDr?C.credit:"#d1d5db", whiteSpace:"nowrap" }}>{!isDr?Rs(e.amount):"—"}</td>
-                          <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:e.running_balance>0.01?C.debitInvoice:C.credit, whiteSpace:"nowrap" }}>{Rs(Math.max(0,e.running_balance))}</td>
-                          <td style={{ padding:"9px 10px", borderBottom:"1px solid #f3f4f6", whiteSpace:"nowrap" }}>
+                          <td style={{ padding:"9px 10px", borderBottom:`1px solid ${tk.bdr}`, textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:isDr?dc:tk.tx3, whiteSpace:"nowrap" }}>{isDr?Rs(e.amount):"—"}</td>
+                          <td style={{ padding:"9px 10px", borderBottom:`1px solid ${tk.bdr}`, textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:!isDr?C.credit:tk.tx3, whiteSpace:"nowrap" }}>{!isDr?Rs(e.amount):"—"}</td>
+                          <td style={{ padding:"9px 10px", borderBottom:`1px solid ${tk.bdr}`, textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:e.running_balance>0.01?C.debitInvoice:C.credit, whiteSpace:"nowrap" }}>{Rs(Math.max(0,e.running_balance))}</td>
+                          <td style={{ padding:"9px 10px", borderBottom:`1px solid ${tk.bdr}`, whiteSpace:"nowrap" }}>
                             {e.source==="invoice"&&(()=>{const mi=inv.find(x=>x.id===e.invoice_id);if(!mi)return null;const isPaid=mi.status==="Paid"||Math.abs((mi.paid||0)-mi.amount)<0.01;return(<div style={{display:"flex",gap:4}}>{!isPaid&&<Btn variant="primary" small onClick={()=>openPaySheet(mi)}><ICreditCard size={11}/>Pay</Btn>}{(mi.paid||0)>0&&<Btn variant="ghost" small onClick={()=>openHistory(mi)}>Hist</Btn>}</div>);})()}
                           </td>
                         </tr>
@@ -448,7 +449,7 @@ export default function BalanceSheet() {
                     </tr>
                   </tbody>
                 </table>
-              </div>
+              </TableWrap>
             </>
           )}
         </Card>
@@ -461,11 +462,11 @@ export default function BalanceSheet() {
             Direct Labour Payments
             <span style={{ fontSize:12, fontFamily:"'DM Mono',monospace", color:C.debitLabour, marginLeft:8, fontWeight:700 }}>{Rs(grandTotals.labourTotal)}</span>
           </CardTitle>
-          {labourLoading ? <div style={{ padding:"20px 0", textAlign:"center", color:"#9ca3af" }}>Loading…</div>
+          {labourLoading ? <div style={{ padding:"20px 0", textAlign:"center", color:tk.tx2 }}>Loading…</div>
           : labourLedger.length === 0 ? <Empty icon={IUsers} text="No direct labour attendance recorded." />
           : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width:"100%", borderCollapse:"collapse", minWidth:380 }}>
+            <TableWrap>
+              <table style={{ width:"100%", borderCollapse:"collapse", minWidth:380, fontVariantNumeric:"tabular-nums" }}>
                 <thead><tr style={{ background:tk.surf2 }}>
                   {["Date","Workers","Day Total","Running Total"].map((h,i)=>(
                     <th key={h} style={{ textAlign:i>1?"right":"left", padding:"10px 10px", fontSize:10, fontWeight:700, textTransform:"uppercase", color:tk.tx2, borderBottom:`2px solid ${tk.bdr}`, whiteSpace:"nowrap" }}>{h}</th>
@@ -477,7 +478,7 @@ export default function BalanceSheet() {
                       <td style={{ padding:"10px", borderBottom:`1px solid ${tk.bdr}`, fontSize:12, color:tk.tx2, whiteSpace:"nowrap" }}>{e.date}</td>
                       <td style={{ padding:"10px", borderBottom:`1px solid ${tk.bdr}` }}>
                         <div style={{ fontSize:13, color:tk.tx }}>{e.particulars}</div>
-                        {e.workers?.length>0&&<div style={{ fontSize:10, color:"#9ca3af", marginTop:2 }}>{e.workers.slice(0,2).join(" · ")}{e.workers.length>2?` +${e.workers.length-2} more`:""}</div>}
+                        {e.workers?.length>0&&<div style={{ fontSize:11, color:tk.tx3, marginTop:2 }}>{e.workers.slice(0,2).join(" · ")}{e.workers.length>2?` +${e.workers.length-2} more`:""}</div>}
                       </td>
                       <td style={{ padding:"10px", borderBottom:`1px solid ${tk.bdr}`, textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:700, color:C.debitLabour, whiteSpace:"nowrap" }}>{Rs(e.amount)}</td>
                       <td style={{ padding:"10px", borderBottom:`1px solid ${tk.bdr}`, textAlign:"right", fontFamily:"'DM Mono',monospace", fontWeight:600, color:tk.tx2, whiteSpace:"nowrap" }}>{Rs(e.running_balance)}</td>
@@ -490,7 +491,7 @@ export default function BalanceSheet() {
                   </tr>
                 </tbody>
               </table>
-            </div>
+            </TableWrap>
           )}
         </Card>
       )}
@@ -501,12 +502,12 @@ export default function BalanceSheet() {
       >
         {payInvoice && (
           <>
-            <div style={{ background:"#f8fafc", borderRadius:10, padding:"12px 14px", marginBottom:14, border:"1px solid #e5e7eb" }}>
+            <div style={{ background:tk.surf2, borderRadius:10, padding:"12px 14px", marginBottom:14, border:`1px solid ${tk.bdr}` }}>
               <div style={{ fontWeight:700 }}>{payInvoice.vendor}</div>
-              <div style={{ fontSize:12, color:"#6b7280", marginBottom:10 }}>{payInvoice.desc}</div>
+              <div style={{ fontSize:12, color:tk.tx2, marginBottom:10 }}>{payInvoice.desc}</div>
               <div style={{ display:"flex", gap:20, flexWrap:"wrap" }}>
-                {[{l:"Total",v:Rs(payInvoice.amount),c:"#111827"},{l:"Paid",v:Rs(payInvoice.paid||0),c:C.credit},{l:"Remaining",v:Rs(payInvoice.amount-(payInvoice.paid||0)),c:C.debitInvoice}].map(s=>(
-                  <div key={s.l}><div style={{ fontSize:10, color:"#6b7280", textTransform:"uppercase" }}>{s.l}</div><div style={{ fontFamily:"'DM Mono',monospace", fontWeight:700, color:s.c, whiteSpace:"nowrap" }}>{s.v}</div></div>
+                {[{l:"Total",v:Rs(payInvoice.amount),c:tk.tx},{l:"Paid",v:Rs(payInvoice.paid||0),c:C.credit},{l:"Remaining",v:Rs(payInvoice.amount-(payInvoice.paid||0)),c:C.debitInvoice}].map(s=>(
+                  <div key={s.l}><div style={{ fontSize:11, color:tk.tx2, textTransform:"uppercase" }}>{s.l}</div><div style={{ fontFamily:"'DM Mono',monospace", fontVariantNumeric:"tabular-nums", fontWeight:700, color:s.c, whiteSpace:"nowrap" }}>{s.v}</div></div>
                 ))}
               </div>
             </div>
@@ -526,21 +527,21 @@ export default function BalanceSheet() {
       <Sheet open={histSheet} onClose={() => setHistSheet(false)} title="Payment History" icon={IFileText}>
         {histInv && (
           <>
-            <div style={{ background:"#f8fafc", borderRadius:10, padding:"11px 14px", marginBottom:14, border:"1px solid #e5e7eb" }}>
+            <div style={{ background:tk.surf2, borderRadius:10, padding:"11px 14px", marginBottom:14, border:`1px solid ${tk.bdr}` }}>
               <div style={{ fontWeight:600 }}>{histInv.vendor} — {histInv.desc}</div>
-              <div style={{ fontSize:12, color:"#6b7280", marginTop:4 }}>Total: {Rs(histInv.amount)} · Paid: <span style={{color:C.credit}}>{Rs(histInv.paid||0)}</span></div>
+              <div style={{ fontSize:12, color:tk.tx2, marginTop:4 }}>Total: {Rs(histInv.amount)} · Paid: <span style={{color:C.credit, fontVariantNumeric:"tabular-nums"}}>{Rs(histInv.paid||0)}</span></div>
             </div>
-            {histLoading ? <div style={{ textAlign:"center", padding:24, color:"#9ca3af" }}>Loading…</div>
+            {histLoading ? <div style={{ textAlign:"center", padding:24, color:tk.tx2 }}>Loading…</div>
             : payments.length === 0 ? <Empty icon={IFileText} text="No payments yet." />
             : payments.map(p=>(
-              <div key={p.id} style={{ display:"flex", gap:10, padding:"11px 0", borderBottom:"1px solid #f3f4f6", alignItems:"flex-start" }}>
+              <div key={p.id} style={{ display:"flex", gap:10, padding:"11px 0", borderBottom:`1px solid ${tk.bdr}`, alignItems:"flex-start" }}>
                 <div style={{ width:36, height:36, borderRadius:10, background:tk.grnL, color:C.credit, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, flexShrink:0 }}>₹</div>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:700, fontFamily:"'DM Mono',monospace", color:C.credit }}>{Rs(p.amount)}</div>
-                  <div style={{ fontSize:12, color:"#6b7280" }}>{p.payment_mode}{p.reference?` · ${p.reference}`:""}</div>
-                  <div style={{ fontSize:11, color:"#9ca3af" }}>{fmtDT(p.paid_at)}</div>
+                  <div style={{ fontWeight:700, fontFamily:"'DM Mono',monospace", fontVariantNumeric:"tabular-nums", color:C.credit }}>{Rs(p.amount)}</div>
+                  <div style={{ fontSize:12, color:tk.tx2 }}>{p.payment_mode}{p.reference?` · ${p.reference}`:""}</div>
+                  <div style={{ fontSize:11, color:tk.tx3 }}>{fmtDT(p.paid_at)}</div>
                 </div>
-                <button onClick={() => deletePaymentEntry(p.id)} style={{ background:"none", border:"none", cursor:"pointer", color:"#d1d5db", padding:4, borderRadius:6 }}><ITrash size={13}/></button>
+                <button type="button" aria-label="Delete payment" onClick={() => deletePaymentEntry(p.id)} style={{ minWidth:44, minHeight:44, background:"none", border:"none", cursor:"pointer", color:tk.tx3, padding:4, borderRadius:6, display:"inline-flex", alignItems:"center", justifyContent:"center" }}><ITrash size={13}/></button>
               </div>
             ))}
           </>

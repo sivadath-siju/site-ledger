@@ -34,7 +34,8 @@ const PAGE_LABELS = {
 };
 
 export default function App() {
-  const [theme, _setTheme]  = useState(() => localStorage.getItem("sl_theme") || "light");
+  // Default to the phone/OS theme the first time; remember the user's choice after that.
+  const [theme, _setTheme]  = useState(() => localStorage.getItem("sl_theme") || (window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
   const [user,  setUser]    = useState(null);
   const [page,  setPage]    = useState("dashboard");
   const [sideOpen, setSideOpen]   = useState(false);
@@ -61,7 +62,15 @@ export default function App() {
   }, []);
 
   const setTheme = useCallback(t => { _setTheme(t); localStorage.setItem("sl_theme", t); }, []);
+  const closeSide = useCallback(() => setSideOpen(false), []);
   const tk = theme === "dark" ? DARK : LIGHT;
+
+  // Expired/revoked session anywhere in the app → back to the login screen.
+  useEffect(() => {
+    const onExpired = () => { API.clearFileCache(); setUser(null); };
+    window.addEventListener(API.SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(API.SESSION_EXPIRED_EVENT, onExpired);
+  }, []);
 
   useEffect(() => {
     const token = API.getToken();
@@ -131,7 +140,7 @@ export default function App() {
     }
   };
 
-  const mobileBottomPad = "calc(62px + env(safe-area-inset-bottom, 16px) + 8px)";
+  const mobileBottomPad = "calc(76px + env(safe-area-inset-bottom, 0px))";
 
   return (
     <AppCtx.Provider value={{
@@ -144,12 +153,12 @@ export default function App() {
     }}>
       <GlobalStyles tk={tk} isDesktop={isDesktop} />
 
-      <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: tk.bg }}>
+      <div style={{ display: "flex", height: "100dvh", overflow: "hidden", background: tk.bg }}>
         {isDesktop && <Sidebar open desktop />}
-        {!isDesktop && <Sidebar open={sideOpen} onClose={() => setSideOpen(false)} />}
+        {!isDesktop && <Sidebar open={sideOpen} onClose={closeSide} />}
 
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-          {!isDesktop && <Topbar onMenuClick={() => setSideOpen(true)} />}
+          {!isDesktop && <Topbar onMenuClick={() => setSideOpen(true)} title={PAGE_LABELS[safePage]} />}
           {isDesktop  && <DesktopTopbar tk={tk} user={user} page={safePage} />}
 
           <main style={{
@@ -175,17 +184,17 @@ export default function App() {
 
 function DesktopTopbar({ tk, user, page }) {
   return (
-    <div style={{ height: 56, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 32px", borderBottom: `1px solid ${tk.bdr}`, background: tk.surf }}>
-      <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-.2px" }}>{PAGE_LABELS[page] || "Ciel Homes"}</span>
+    <header style={{ height: 60, flexShrink: 0, display: "flex", alignItems: "center", padding: "0 32px", borderBottom: `1px solid ${tk.bdr}`, background: tk.surf }}>
+      <h1 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-.3px", margin: 0 }}>{PAGE_LABELS[page] || "Ciel Homes"}</h1>
       <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: tk.tx }}>{user?.name}</div>
-          <div style={{ fontSize: 10, color: tk.tx3 }}>{user?.role}</div>
+          <div style={{ fontSize: 12, color: tk.tx3 }}>{user?.role}</div>
         </div>
-        <div style={{ width: 34, height: 34, borderRadius: "50%", background: tk.acc, color: "#fff", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div aria-hidden="true" style={{ width: 36, height: 36, borderRadius: "50%", background: tk.accL, color: tk.acc, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {user?.ini || "U"}
         </div>
       </div>
-    </div>
+    </header>
   );
 }

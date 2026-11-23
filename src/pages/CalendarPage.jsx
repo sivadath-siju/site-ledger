@@ -1,14 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import * as API from "../api";
 import { useApp } from "../context/AppCtx";
+import "./CalendarPage.css";
 
+import { toLocalISO } from "../utils/dates";
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAYS   = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const AVATAR_COLORS = [
-  { bg: "#B5D4F4", fg: "#0C447C" }, { bg: "#9FE1CB", fg: "#085041" },
-  { bg: "#FAC775", fg: "#633806" }, { bg: "#F5C4B3", fg: "#712B13" },
-  { bg: "#CECBF6", fg: "#3C3489" },
-];
+const AVATAR_TONES = ["acc", "grn", "amb", "red", "vio"];
 
 const Rs = n => "₹" + Number(n || 0).toLocaleString("en-IN");
 // Short form for day cells — avoids overflow on mobile
@@ -23,12 +21,20 @@ function initials(name) {
   return name.split(" ").filter(Boolean).map(w => w[0]).join("").toUpperCase().slice(0, 2);
 }
 
+function IChevron({ direction }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points={direction === "prev" ? "15 18 9 12 15 6" : "9 18 15 12 9 6"} />
+    </svg>
+  );
+}
+
 function MetricCard({ label, value, sub, tk }) {
   return (
     <div style={{ background: tk.surf2, border: `1px solid ${tk.bdr}`, borderRadius: 12, padding: "12px 14px" }}>
-      <div style={{ fontSize: 10, color: tk.tx3, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: tk.tx, fontFamily: "'DM Mono',monospace", lineHeight: 1.2 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: tk.tx3, marginTop: 3 }}>{sub}</div>}
+      <div style={{ fontSize: 11, color: tk.tx2, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: tk.tx, fontFamily: "'DM Mono',monospace", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: tk.tx2, marginTop: 3 }}>{sub}</div>}
     </div>
   );
 }
@@ -36,9 +42,9 @@ function MetricCard({ label, value, sub, tk }) {
 function DayCell({ day, data, isToday, isSelected, maxSpend, onClick, tk, compact }) {
   const spend = data?.total ?? 0;
   const ratio = maxSpend > 0 ? spend / maxSpend : 0;
-  const bgColor    = ratio > 0.6 ? "#dbeafe" : ratio > 0.25 ? "#eff6ff" : data ? tk.surf : "transparent";
+  const bgColor    = ratio > 0.6 ? tk.accL : ratio > 0.25 ? tk.surf2 : data ? tk.surf : "transparent";
   const borderColor = isSelected
-    ? tk.acc : ratio > 0.6 ? "#93c5fd" : ratio > 0.25 ? "#bfdbfe" : data ? tk.bdr : "transparent";
+    ? tk.acc : ratio > 0.6 ? tk.acc : ratio > 0.25 ? tk.bdr2 : data ? tk.bdr : "transparent";
 
   const totalWorkers = (data?.attendees || []).reduce((s, a) => s + (a.worker_count || 1), 0);
 
@@ -67,11 +73,11 @@ function DayCell({ day, data, isToday, isSelected, maxSpend, onClick, tk, compac
         lineHeight: 1,
         flexShrink: 0,
         ...(isToday ? {
-          background: tk.acc, color: "#fff",
+          background: tk.acc, color: tk.onAcc,
           borderRadius: compact ? 4 : 6,
           width: compact ? 16 : 20, height: compact ? 16 : 20,
           display: "inline-flex", alignItems: "center", justifyContent: "center",
-        } : { color: tk.tx3 })
+        } : { color: tk.tx2 })
       }}>
         {day}
       </div>
@@ -80,7 +86,7 @@ function DayCell({ day, data, isToday, isSelected, maxSpend, onClick, tk, compac
         <>
           {/* ── FIX: use RsShort on mobile, full Rs on desktop ── */}
           <div style={{
-            fontSize: compact ? 10 : 12,
+            fontSize: compact ? 11 : 12,
             fontWeight: 700,
             color: tk.tx,
             lineHeight: 1.1,
@@ -94,13 +100,13 @@ function DayCell({ day, data, isToday, isSelected, maxSpend, onClick, tk, compac
             {compact ? RsShort(spend) : Rs(spend)}
           </div>
           <div style={{
-            fontSize: 9,
-            color: tk.tx3,
+            fontSize: 11,
+            color: tk.tx2,
             display: "flex", alignItems: "center", gap: 2,
             marginTop: "auto", flexShrink: 0,
             overflow: "hidden",
           }}>
-            <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#16a34a", display: "inline-block", flexShrink: 0 }} />
+            <span style={{ width: 4, height: 4, borderRadius: "50%", background: tk.grn, display: "inline-block", flexShrink: 0 }} />
             <span style={{ overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
               {totalWorkers}
             </span>
@@ -128,7 +134,7 @@ function DetailPanel({ year, month, day, data, tk }) {
 
   const Sec = ({ title, children }) => (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 10, color: tk.tx3, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
+      <div style={{ fontSize: 11, color: tk.tx2, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 8 }}>{title}</div>
       {children}
     </div>
   );
@@ -140,7 +146,8 @@ function DetailPanel({ year, month, day, data, tk }) {
       {data.attendees.length > 0 && (
         <Sec title={`Present (${totalWorkers})`}>
           {data.attendees.slice(0, 8).map((p, i) => {
-            const c = AVATAR_COLORS[i % AVATAR_COLORS.length];
+            const tone = AVATAR_TONES[i % AVATAR_TONES.length];
+            const c = { bg: tk[`${tone}L`], fg: tk[tone] };
             return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
                 <div style={{ width: 28, height: 28, borderRadius: "50%", background: c.bg, color: c.fg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, flexShrink: 0 }}>
@@ -153,19 +160,19 @@ function DetailPanel({ year, month, day, data, tk }) {
                   <div style={{ fontSize: 10, color: tk.tx3 }}>{p.role}</div>
                 </div>
                 {!p.isSubcontract && p.total_wage > 0 && (
-                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, fontWeight: 700, color: "#1d4ed8", flexShrink: 0 }}>{Rs(p.total_wage)}</div>
+                  <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: tk.acc, flexShrink: 0 }}>{Rs(p.total_wage)}</div>
                 )}
               </div>
             );
           })}
-          {data.attendees.length > 8 && <div style={{ fontSize: 11, color: tk.tx3 }}>+{data.attendees.length - 8} more entries</div>}
+          {data.attendees.length > 8 && <div style={{ fontSize: 11, color: tk.tx2 }}>+{data.attendees.length - 8} more entries</div>}
         </Sec>
       )}
 
       {data.labourTotal > 0 && (
-        <div style={{ background: "#eff6ff", borderRadius: 8, padding: "6px 10px", marginBottom: 12, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
-          <span style={{ color: "#1e40af", fontWeight: 600 }}>Labour wages</span>
-          <span style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#1d4ed8" }}>{Rs(data.labourTotal)}</span>
+        <div style={{ background: tk.accL, borderRadius: 8, padding: "6px 10px", marginBottom: 12, display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+          <span style={{ color: tk.accD, fontWeight: 600 }}>Labour wages</span>
+          <span style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, fontVariantNumeric: "tabular-nums", color: tk.acc }}>{Rs(data.labourTotal)}</span>
         </div>
       )}
 
@@ -174,7 +181,7 @@ function DetailPanel({ year, month, day, data, tk }) {
           {data.expenses.map((e, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: `1px solid ${tk.surf2}`, fontSize: 12 }}>
               <span style={{ color: tk.tx2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, marginRight: 8 }}>{e.cat}</span>
-              <span style={{ fontWeight: 700, color: tk.tx, flexShrink: 0 }}>{Rs(e.amt)}</span>
+              <span style={{ fontWeight: 700, color: tk.tx, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{Rs(e.amt)}</span>
             </div>
           ))}
         </Sec>
@@ -183,14 +190,14 @@ function DetailPanel({ year, month, day, data, tk }) {
       {/* Day total */}
       <div style={{ background: tk.surf2, borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: tk.tx }}>Day Total</span>
-        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 16, fontWeight: 800, color: tk.acc }}>{Rs(data.total)}</span>
+        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 16, fontWeight: 800, fontVariantNumeric: "tabular-nums", color: tk.acc }}>{Rs(data.total)}</span>
       </div>
 
       {data.logs.length > 0 && (
         <Sec title="Site Log">
           {data.logs.map((l, i) => (
             <div key={i} style={{ padding: "7px 0", borderBottom: i < data.logs.length - 1 ? `1px solid ${tk.surf2}` : "none" }}>
-              <div style={{ fontSize: 9, color: tk.tx3, fontWeight: 700, marginBottom: 2, textTransform: "uppercase" }}>{l.time}</div>
+              <div style={{ fontSize: 11, color: tk.tx2, fontWeight: 700, marginBottom: 2, textTransform: "uppercase" }}>{l.time}</div>
               <div style={{ fontSize: 12, color: tk.tx2, lineHeight: 1.55 }}>{l.note}</div>
             </div>
           ))}
@@ -215,8 +222,8 @@ export default function CalendarPage() {
     try {
       const firstDay = new Date(y, m, 1);
       const lastDay  = new Date(y, m + 1, 0);
-      const from = firstDay.toISOString().split("T")[0];
-      const to   = lastDay.toISOString().split("T")[0];
+      const from = toLocalISO(firstDay);
+      const to   = toLocalISO(lastDay);
 
       const [attRaw, expRaw, logsRaw, subLogsRaw] = await Promise.all([
         API.getAttendance({ from, to }),
@@ -305,18 +312,39 @@ export default function CalendarPage() {
   const nextMonth = () => { if (month === 11) { setYear(y => y + 1); setMonth(0); } else setMonth(m => m + 1); };
 
   return (
-    <div style={{ fontFamily: "'DM Sans',sans-serif", color: tk.tx }}>
+    <div
+      className="cal-page"
+      style={{
+        "--cal-bg": tk.bg,
+        "--cal-surf": tk.surf,
+        "--cal-surf2": tk.surf2,
+        "--cal-surf3": tk.surf3,
+        "--cal-bdr": tk.bdr,
+        "--cal-bdr2": tk.bdr2,
+        "--cal-tx": tk.tx,
+        "--cal-tx2": tk.tx2,
+        "--cal-tx3": tk.tx3,
+        "--cal-acc": tk.acc,
+        "--cal-acc-l": tk.accL,
+        "--cal-on-acc": tk.onAcc,
+        "--cal-grn": tk.grn,
+        "--cal-ring": tk.ring,
+        "--cal-sh": tk.sh,
+        fontFamily: "'DM Sans',sans-serif",
+        color: tk.tx,
+      }}
+    >
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, flexWrap: "wrap", gap: 10, animation: "fadeUp .25s ease" }}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-.4px" }}>Calendar Log</div>
-          <div style={{ fontSize: 12, color: tk.tx2, marginTop: 2 }}>Daily spend and attendance history</div>
+          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-.4px" }}>Calendar Log</div>
+          <div style={{ fontSize: 13, color: tk.tx2, marginTop: 2 }}>Daily spend and attendance history</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={prevMonth} style={{ background: tk.surf, border: `1px solid ${tk.bdr}`, borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontSize: 14, color: tk.tx, fontWeight: 700 }}>‹</button>
+          <button type="button" aria-label="Previous month" onClick={prevMonth} style={{ background: tk.surf, border: `1px solid ${tk.bdr}`, borderRadius: 8, minWidth: 44, minHeight: 44, padding: 8, cursor: "pointer", color: tk.tx, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><IChevron direction="prev" /></button>
           <div style={{ fontSize: 14, fontWeight: 700, color: tk.tx, minWidth: 140, textAlign: "center" }}>{MONTHS[month]} {year}</div>
-          <button onClick={nextMonth} style={{ background: tk.surf, border: `1px solid ${tk.bdr}`, borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontSize: 14, color: tk.tx, fontWeight: 700 }}>›</button>
+          <button type="button" aria-label="Next month" onClick={nextMonth} style={{ background: tk.surf, border: `1px solid ${tk.bdr}`, borderRadius: 8, minWidth: 44, minHeight: 44, padding: 8, cursor: "pointer", color: tk.tx, display: "inline-flex", alignItems: "center", justifyContent: "center" }}><IChevron direction="next" /></button>
         </div>
       </div>
 
@@ -336,7 +364,7 @@ export default function CalendarPage() {
           {/* Day headers — single letter on mobile */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0,1fr))", gap: isDesktop ? 5 : 4, marginBottom: isDesktop ? 5 : 4 }}>
             {DAYS.map(d => (
-              <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: tk.tx3, padding: "3px 0", textTransform: "uppercase", letterSpacing: ".08em" }}>
+              <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: tk.tx2, padding: "3px 0", textTransform: "uppercase", letterSpacing: ".08em" }}>
                 {isDesktop ? d : d.slice(0, 1)}
               </div>
             ))}
@@ -362,10 +390,10 @@ export default function CalendarPage() {
           <div style={{ display: "flex", gap: 12, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
             {[
               { bg: tk.surf, border: tk.bdr, label: "No data" },
-              { bg: "#eff6ff", border: "#bfdbfe", label: "Low spend" },
-              { bg: "#dbeafe", border: "#93c5fd", label: "High spend" },
+              { bg: tk.surf2, border: tk.bdr2, label: "Low spend" },
+              { bg: tk.accL, border: tk.acc, label: "High spend" },
             ].map(l => (
-              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: tk.tx3 }}>
+              <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: tk.tx2 }}>
                 <span style={{ width: 10, height: 10, borderRadius: 3, background: l.bg, border: `1px solid ${l.border}`, display: "inline-block" }} />
                 {l.label}
               </div>
